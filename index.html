@@ -723,7 +723,7 @@
             cWrapper.className = 'relative flex-shrink-0';
 
             const c = document.createElement('div');
-            c.className = `w-6 h-6 rounded-full cursor-pointer border-2 transition-all ${blockColor === cat.color && !isTbColorEditMode ? 'border-black shadow-md opacity-100' : 'border-transparent opacity-60'}`;
+            c.className = `w-6 h-6 rounded-full cursor-pointer border-2 transition-all ${blockColor === cat.color && !isTbColorEditMode ? 'border-black shadow-md' : 'border-transparent'}`;
             c.style.backgroundColor = cat.color;
 
             if (isTbColorEditMode) {
