@@ -57,7 +57,8 @@
     .dashboard-item { transition: all 0.1s; position: relative; color: #000; padding: 6px 8px !important; display: flex; align-items: center; gap: 8px; }
     .drag-handle-dash { cursor: grab; color: #9ca3af; font-size: 16px; user-select: none; display: flex; align-items: center; }
     
-    .cat-badge-bg { padding: 2px 5px; border-radius: 4px; font-size: 9px !important; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+    /* 뱃지 강제 폰트 속성 제거 */
+    .cat-badge-bg { padding: 2px 5px; border-radius: 4px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
 
     .color-circle { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); position: relative; }
     .color-circle.selected { outline: 4px solid #000; outline-offset: 2px; }
@@ -281,10 +282,10 @@
     // --- 2. 전역 상태 관리 ---
     const defaultCats = [
       { id: 'cat1', color: '#000000', name: '기본' },
-      { id: 'cat2', color: '#ef4444', name: '이곳을' },
-      { id: 'cat3', color: '#1c64f2', name: '수정해' },
-      { id: 'cat4', color: '#facc15', name: '주세요' },
-      { id: 'cat5', color: '#22c55e', name: '마음껏' }
+      { id: 'cat2', color: '#ef4444', name: '유튜브' },
+      { id: 'cat3', color: '#1c64f2', name: '편집' },
+      { id: 'cat4', color: '#facc15', name: '마켓' },
+      { id: 'cat5', color: '#22c55e', name: '공부' }
     ];
     let categories = getLocal('ianCategories', defaultCats);
     let allTasks = getLocal('ianSchedulerTasks', {});
@@ -430,7 +431,7 @@
         
         item.innerHTML = `<div class="drag-handle-dash text-gray-400">≡</div>
                           <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox">
-                          <span class="cat-badge-bg" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${cat.color}">[${cat.name}]</span>
+                          <span class="cat-badge-bg text-[12px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${cat.color}">${cat.name}</span>
                           <div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[12px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}">${t.text}</span></div>`;
         
         item.ondragstart = (e) => {
@@ -1024,7 +1025,7 @@
       
       const isCheckedClass = t.isChecked ? 'line-through opacity-40 text-gray-500' : 'text-black';
       
-      div.innerHTML = `<div class="drag-handle-dash">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${cat.color}">[${cat.name}]</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}">${t.text}</span></div>`;
+      div.innerHTML = `<div class="drag-handle-dash">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg text-[13px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${cat.color}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}">${t.text}</span></div>`;
       
       div.ondragstart = (e) => { 
           draggedTaskInfo = { type: 'single', dateKey: key, index: idx };
