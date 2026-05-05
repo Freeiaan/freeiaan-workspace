@@ -281,13 +281,24 @@
 
     // --- 2. 전역 상태 관리 ---
     const defaultCats = [
-      { id: 'cat1', color: '#000000', name: '이곳에' },
-      { id: 'cat2', color: '#ef4444', name: '카테고리를' },
-      { id: 'cat3', color: '#1c64f2', name: '하나씩' },
-      { id: 'cat4', color: '#facc15', name: '입력해' },
-      { id: 'cat5', color: '#22c55e', name: '주세요' }
+      { id: 'cat1', color: '#000000', name: '기본' },
+      { id: 'cat2', color: '#ef4444', name: '유튜브' },
+      { id: 'cat3', color: '#1c64f2', name: '편집' },
+      { id: 'cat4', color: '#facc15', name: '마켓' },
+      { id: 'cat5', color: '#22c55e', name: '공부' }
     ];
+
+    // 타임트래커 전용 컬러 (메인 카테고리와 분리)
+    const defaultTrackerColors = [
+      { id: 'tc1', color: '#000000' },
+      { id: 'tc2', color: '#ef4444' },
+      { id: 'tc3', color: '#3b82f6' },
+      { id: 'tc4', color: '#facc15' },
+      { id: 'tc5', color: '#4ade80' }
+    ];
+
     let categories = getLocal('ianCategories', defaultCats);
+    let trackerColors = getLocal('ianTrackerColors', defaultTrackerColors);
     let allTasks = getLocal('ianSchedulerTasks', {});
     let multiTasks = getLocal('ianMultiTasks', []).filter(t => t && t.start && t.end);
     let dailyRecords = getLocal('ianDailyRecords', {}); 
@@ -554,6 +565,7 @@
         item.appendChild(circle);
         item.appendChild(textWrapper);
 
+        // 브러쉬 기능용 색상 선택 (카테고리 색상 사용)
         item.onclick = () => selectBrush(cat.color, item);
         list.appendChild(item);
       });
@@ -701,7 +713,7 @@
         cellElement.style.backgroundColor = 'transparent';
       } else {
         let brush = activeBrushColor;
-        if (!brush) brush = categories[0].color; 
+        if (!brush) brush = trackerColors[0].color; // 기본 브러쉬는 전용 컬러 사용
         dailyRecords[currentPlannerDateKey].grid[idx] = brush;
         cellElement.style.backgroundColor = hexToRgba(brush, 0.3);
       }
@@ -719,13 +731,14 @@
         const blockColor = colorContainer.dataset.selectedColor; 
         colorContainer.innerHTML = '';
 
-        categories.forEach(cat => {
+        // 타임트래커 전용 컬러 리스트 사용
+        trackerColors.forEach(tc => {
             const cWrapper = document.createElement('div');
             cWrapper.className = 'relative flex-shrink-0';
 
             const c = document.createElement('div');
-            c.className = `w-6 h-6 rounded-full cursor-pointer border-2 transition-all ${blockColor === cat.color && !isTbColorEditMode ? 'border-black shadow-md' : 'border-transparent'}`;
-            c.style.backgroundColor = cat.color;
+            c.className = `w-6 h-6 rounded-full cursor-pointer border-2 transition-all ${blockColor === tc.color && !isTbColorEditMode ? 'border-black shadow-md' : 'border-transparent'}`;
+            c.style.backgroundColor = tc.color;
 
             if (isTbColorEditMode) {
                 const delBtn = document.createElement('div');
@@ -733,16 +746,15 @@
                 delBtn.innerHTML = '×';
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
-                    if (categories.length > 1) {
-                        categories = categories.filter(x => x.id !== cat.id);
-                        saveCategories();
-                        buildCategoryUI();
-                        if (colorContainer.dataset.selectedColor === cat.color) {
-                            colorContainer.dataset.selectedColor = categories[0].color;
+                    if (trackerColors.length > 1) {
+                        trackerColors = trackerColors.filter(x => x.id !== tc.id);
+                        saveTrackerColors();
+                        if (colorContainer.dataset.selectedColor === tc.color) {
+                            colorContainer.dataset.selectedColor = trackerColors[0].color;
                         }
                         renderTbColors();
                     } else {
-                        alert("최소 1개의 색상은 유지해야 합니다.");
+                        alert("최소 1개의 컬러는 유지해야 합니다.");
                     }
                 };
                 cWrapper.appendChild(delBtn);
@@ -750,16 +762,17 @@
                 const picker = document.createElement('input');
                 picker.type = 'color';
                 picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0';
-                picker.value = cat.color;
+                picker.value = tc.color;
                 picker.onchange = (e) => {
-                    const oldColor = cat.color;
+                    const oldColor = tc.color;
                     const newColor = e.target.value;
-                    cat.color = newColor;
+                    tc.color = newColor;
 
                     if (colorContainer.dataset.selectedColor === oldColor) {
                         colorContainer.dataset.selectedColor = newColor;
                     }
 
+                    // 기존 기록된 타임트래커 블록의 색상 업데이트
                     for (let dKey in dailyRecords) {
                         const grid = dailyRecords[dKey].grid;
                         for(let i=0; i<grid.length; i++) {
@@ -775,9 +788,7 @@
                     }
                     
                     savePlannerData();
-                    saveCategories();
-                    buildCategoryUI();
-                    renderCalendar();
+                    saveTrackerColors();
                     if(currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey);
                     renderTbColors();
                 };
@@ -785,7 +796,7 @@
                 c.onclick = () => picker.click();
             } else {
                 c.onclick = () => {
-                    colorContainer.dataset.selectedColor = cat.color;
+                    colorContainer.dataset.selectedColor = tc.color;
                     renderTbColors(); 
                 };
             }
@@ -799,13 +810,16 @@
             addBtn.className = 'w-6 h-6 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-100 text-gray-500 text-sm font-bold flex-shrink-0';
             addBtn.innerHTML = '+';
             addBtn.onclick = () => {
-                categories.push({ id: 'cat' + Date.now(), color: '#94a3b8', name: '새 색상' });
-                saveCategories();
-                buildCategoryUI();
+                trackerColors.push({ id: 'tc' + Date.now(), color: '#94a3b8' });
+                saveTrackerColors();
                 renderTbColors();
             };
             colorContainer.appendChild(addBtn);
         }
+    }
+
+    function saveTrackerColors() {
+        setLocal('ianTrackerColors', trackerColors);
     }
 
     function openTimeBlockModal(idx, dateKey) {
@@ -818,7 +832,7 @@
         $('tbLabelInput').value = data.labels[idx] ? data.labels[idx].text : '';
 
         const colorContainer = $('tbColorContainer');
-        colorContainer.dataset.selectedColor = blockColor || categories[0].color;
+        colorContainer.dataset.selectedColor = blockColor || trackerColors[0].color;
         
         isTbColorEditMode = false;
         $('tbEditColorBtn').textContent = '수정';
@@ -905,12 +919,11 @@
         
         cell.onclick = (e) => { if (window.innerWidth <= 768 && !e.target.closest('.todo-item') && !e.target.closest('.multi-task')) openDetailModal(key, d); };
         
-        // 변경: selectEndKey 초기화 버그 수정
         cell.onmousedown = (e) => {
           if (window.innerWidth > 768 && !e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.resize-handle') && !e.target.closest('.date-trigger')) {
             isSelecting = true; 
             selectStartKey = key; 
-            selectEndKey = key; // 버그 수정: 클릭 시마다 끝나는 지점도 동일하게 초기화
+            selectEndKey = key; 
             highlightSelection(key, key);
           }
         };
@@ -1100,7 +1113,7 @@
     }
 
     // --- 7. 유틸리티 & 시스템 액션 ---
-    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks })))); alert("데이터 복사 완료!"); }
+    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks })))); alert("데이터 복사 완료!"); }
     
     function importData() { 
       const c = prompt("코드를 붙여넣으세요."); 
@@ -1110,6 +1123,7 @@
         setLocal('ianSchedulerTasks', d.allTasks); 
         setLocal('ianMultiTasks', d.multiTasks); 
         setLocal('ianCategories', d.categories); 
+        setLocal('ianTrackerColors', d.trackerColors || defaultTrackerColors);
         localStorage.setItem('ianMemo', d.memo); 
         setLocal('ianDailyRecords', d.dailyRecords || {}); 
         setLocal('ianInboxTasks', d.inboxTasks || []);
@@ -1174,7 +1188,7 @@
         const cat = categories.find(c => c.id === t.categoryId) || categories[0];
         const div = document.createElement('div');
         div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl";
-        div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-40' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">[${cat.name}]</span>`;
+        div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-40' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`;
         div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); };
         div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } };
         l.appendChild(div);
@@ -1273,27 +1287,22 @@
       draggedTaskInfo = null;
     }
     
-    // --- 새로 추가된 할 일 보관함 Drop 처리 함수 ---
     function handleInboxDrop(e) {
       e.preventDefault();
       if (!draggedTaskInfo) return;
 
       if (draggedTaskInfo.type === 'single') {
-        // 캘린더나 상단 대시보드에서 보관함으로 옮길 때
         const { dateKey: src, index } = draggedTaskInfo;
         const task = allTasks[src].splice(index, 1)[0];
         inboxTasks.push(task);
-
         setLocal('ianInboxTasks', inboxTasks);
         saveAndRefresh();
         renderInbox();
       } else if (draggedTaskInfo.type === 'multi') {
-        // 빅 사이즈 일정(여러 날짜)을 보관함으로 옮길 때
         const taskIdx = multiTasks.findIndex(t => String(t.id) === String(draggedTaskInfo.id));
         if (taskIdx > -1) {
           const task = multiTasks.splice(taskIdx, 1)[0];
           inboxTasks.push({ text: task.text, categoryId: task.categoryId, isChecked: false });
-          
           setLocal('ianInboxTasks', inboxTasks);
           saveAndRefresh();
           renderInbox();
