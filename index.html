@@ -35,19 +35,22 @@
     #memoArea { resize: none; line-height: 1.6; outline: none; overflow-y: auto; font-weight: 400; color: #000; }
     #timerDial { cursor: crosshair; touch-action: none; overflow: hidden; border-radius: 9999px; }
     
-    .multi-task { z-index: 5; pointer-events: auto; position: absolute; left: 0; right: 0; }
+    .multi-task { z-index: 50; pointer-events: auto; position: absolute; left: 0; right: 0; }
     .todo-list-container { position: relative; z-index: 20; pointer-events: none; }
     .todo-item { cursor: pointer !important; font-weight: 600; position: relative; z-index: 30; pointer-events: auto; color: #000; }
     
-    .resize-handle { width: 16px; height: 100%; position: absolute; top: 0; cursor: col-resize !important; z-index: 60; background: transparent; }
+    .resize-handle { width: 16px; height: 100%; position: absolute; top: 0; cursor: col-resize !important; z-index: 100; background: transparent; }
     .resize-handle-start { left: -4px; }
     .resize-handle-end { right: -4px; }
     
-    .date-block { margin: -4px -4px 0 -4px !important; padding: 4px 6px !important; width: calc(100% + 8px) !important; border-radius: 0 !important; display: block !important; cursor: pointer; transition: background-color 0.2s; }
-    .date-block:not(.today-highlight):hover { background-color: rgba(0,0,0,0.04); }
+    /* 날짜 헤더 배경색 */
+    .date-block { margin: 0 !important; padding: 4px 6px !important; width: 100% !important; box-sizing: border-box !important; display: block !important; cursor: pointer; transition: background-color 0.2s; border-radius: 0 !important; }
     .today-highlight { background-color: #1b4332 !important; color: #ffffff !important; }
+    .other-day-highlight { background-color: rgba(196, 252, 228, 0.3) !important; }
+    .other-day-highlight:hover { background-color: rgba(196, 252, 228, 0.5) !important; }
     
-    .multi-task-text-container { position: relative; z-index: 10; background-color: #ffffff; border-radius: 0.375rem; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
+    /* 긴 일정 텍스트 컨테이너 */
+    .multi-task-text-container { position: absolute; left: 30px; z-index: 60; background-color: #ffffff; border-radius: 0.375rem; overflow: visible; border: 1px solid rgba(0,0,0,0.1); white-space: nowrap; max-width: none; min-width: max-content; }
     .multi-task-color-overlay { position: absolute; inset: 0; opacity: 0.2; pointer-events: none; }
 
     .day-header { background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000; }
@@ -57,7 +60,6 @@
     .dashboard-item { transition: all 0.1s; position: relative; color: #000; padding: 6px 8px !important; display: flex; align-items: center; gap: 8px; }
     .drag-handle-dash { cursor: grab; color: #9ca3af; font-size: 16px; user-select: none; display: flex; align-items: center; }
     
-    /* 뱃지 강제 폰트 속성 제거 */
     .cat-badge-bg { padding: 2px 5px; border-radius: 4px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
 
     .color-circle { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); position: relative; }
@@ -83,20 +85,20 @@
 <body class="bg-slate-50 min-h-screen p-2 md:p-8 flex justify-center items-start relative">
   <div class="w-full max-w-[1400px] flex flex-col xl:flex-row gap-4 md:gap-6 items-start mx-auto">
     
-    <!-- 메인 캘린더 영역 -->
     <div class="w-full xl:flex-1 bg-white rounded-2xl md:rounded-3xl shadow-md border border-gray-200 px-3 py-4 md:px-8 md:py-8 select-none relative z-10">
       
-      <!-- 상단 컨트롤 -->
       <div class="flex justify-end gap-2 mb-4">
         <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 내보내기</button>
         <button onclick="importData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📥 가져오기</button>
       </div>
 
-      <!-- 대시보드 위젯 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 mb-6">
         <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col h-40 md:h-52 overflow-hidden">
           <div class="flex justify-between items-center mb-3">
-            <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-[#22741C] rounded-sm"></span> 오늘 일정</h3>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-[#22741C] rounded-sm"></span> 오늘 일정</h3>
+              <button onclick="openModal('createSingle', { dateKey: getDateKey(new Date()) })" class="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-md text-gray-600 font-bold hover:bg-gray-50 shadow-sm transition whitespace-nowrap">+ 일정 입력</button>
+            </div>
             <span id="todayDateStr" class="text-[10px] text-[#22741C] font-bold bg-[#e4f8c4] px-2 py-0.5 rounded-md"></span>
           </div>
           <div id="todayTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'today')"></div>
@@ -117,7 +119,6 @@
         </div>
       </div>
 
-      <!-- 필터 및 월 이동 -->
       <div class="flex items-center gap-2 mb-6 pb-1">
         <span class="text-[10px] font-bold text-black flex-shrink-0 mr-1 uppercase">Filter:</span>
         <div id="filterBar" class="flex gap-1.5 no-scrollbar overflow-x-auto"></div>
@@ -137,28 +138,30 @@
       </div>
     </div>
 
-    <!-- 타이머 및 보관함 영역 -->
     <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)]">
       <h2 class="text-base font-bold text-black mb-4 flex-shrink-0">타이머</h2>
+      
       <div id="timerClickArea" class="w-40 h-40 md:w-52 md:h-52 flex-shrink-0 bg-[#ede8e1] rounded-[2rem] p-3 md:p-4 shadow-lg relative flex justify-center items-center mb-5">
         <div id="timerDial" class="w-full h-full bg-[#1b4332] rounded-full relative flex justify-center items-center shadow-inner cursor-crosshair">
           <div id="pieSlice" class="absolute inset-0 transition-all origin-center"></div>
+          
+          <div class="absolute top-1.5 md:top-2 left-1/2 -translate-x-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">0</div>
+          <div class="absolute right-1.5 md:right-2 top-1/2 -translate-y-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">15</div>
+          <div class="absolute bottom-1.5 md:bottom-2 left-1/2 -translate-x-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">30</div>
+          <div class="absolute left-1.5 md:left-2 top-1/2 -translate-y-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">45</div>
+          
           <div class="w-2.5 h-2.5 md:w-3 md:h-3 bg-[#ede8e1] rounded-full shadow-md z-20 absolute pointer-events-none"></div>
         </div>
       </div>
-      <div id="digitalTime" class="text-2xl md:text-3xl timer-font flex-shrink-0 text-black mb-5 tracking-widest">00:00:00</div>
-      <div class="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-3 flex-shrink-0">
-        <div class="grid grid-cols-4 gap-1.5">
-          <button onclick="adjustTime(-10)" class="bg-white border border-gray-200 py-2 rounded-lg text-[10px] font-bold text-black">-10m</button>
-          <button onclick="adjustTime(-5)" class="bg-white border border-gray-200 py-2 rounded-lg text-[10px] font-bold text-black">-5m</button>
-          <button onclick="adjustTime(5)" class="bg-white border border-gray-200 py-2 rounded-lg text-[10px] font-bold text-black">+5m</button>
-          <button onclick="adjustTime(10)" class="bg-white border border-gray-200 py-2 rounded-lg text-[10px] font-bold text-black">+10m</button>
-        </div>
-      </div>
-      <button id="startPauseBtn" onclick="toggleTimer()" class="bg-[#22741C] flex-shrink-0 text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-base w-full mb-3 hover:bg-[#1b5e16]">시작</button>
-      <button onclick="resetTimer()" class="text-gray-500 hover:text-black flex-shrink-0 text-[10px] font-bold transition">초기화</button>
       
-      <!-- 미지정 할 일 보관함 -->
+      <div id="digitalTime" class="text-2xl md:text-3xl timer-font flex-shrink-0 text-black mb-5 tracking-widest">00:00:00</div>
+      
+      <div class="flex w-full gap-2 mb-3 flex-shrink-0">
+        <button id="startBtn" onclick="startTimer()" class="flex-1 bg-[#22741C] text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-base hover:bg-[#1b5e16]">시작</button>
+        <button id="pauseBtn" onclick="pauseTimer()" class="flex-1 bg-gray-500 text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-base hover:bg-gray-600">일시정지</button>
+      </div>
+      <button onclick="resetTimer()" class="text-gray-500 hover:text-black flex-shrink-0 text-[10px] font-bold transition mb-3">초기화</button>
+      
       <hr class="w-full border-gray-200 my-4 flex-shrink-0">
       <div class="w-full flex justify-between items-center mb-2 flex-shrink-0">
         <h3 class="font-bold text-black text-sm flex items-center gap-2">
@@ -170,7 +173,6 @@
     </div>
   </div>
 
-  <!-- 데일리 플래너 모달 -->
   <div id="dailyPlannerModal" class="hidden fixed inset-0 z-[400] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-2 md:p-6" onclick="if(event.target === this) closePlanner()">
     <div class="bg-[#faf8f5] w-full max-w-5xl h-[90vh] md:h-[80vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
       <header class="p-6 md:p-8 flex justify-between items-end border-b border-[#e6e2d8]">
@@ -182,7 +184,6 @@
       </header>
       
       <div class="flex-1 overflow-hidden flex flex-col md:flex-row p-4 md:p-8 gap-8">
-         <!-- Left: Time Tracker -->
          <div class="w-full md:w-1/2 flex flex-col h-full">
             <h3 class="font-bold text-sm mb-1 text-gray-800 tracking-wide">TIME TRACKER</h3>
             <p class="text-[10px] text-gray-400 mb-3">(빈 칸을 드래그하면 색이 칠해지고, 칠해진 칸을 다시 드래그하면 지워집니다)</p>
@@ -197,7 +198,6 @@
             <div id="timeGrid" class="flex-1 overflow-y-auto custom-scrollbar pr-2 select-none border-l border-[#e6e2d8] relative"></div>
          </div>
          
-         <!-- Right: Tasks & Notes -->
          <div class="w-full md:w-1/2 flex flex-col h-full gap-6">
             <div class="flex-shrink-0 max-h-[50%] flex flex-col">
                <h3 class="font-bold text-sm mb-3 text-gray-800 tracking-wide">TASKS <span class="text-[10px] font-normal text-gray-400 ml-2 tracking-normal">(항목을 클릭해서 붓처럼 사용하세요)</span></h3>
@@ -213,7 +213,6 @@
     </div>
   </div>
 
-  <!-- 타임 블록 설정 모달 (색상/라벨 편집) -->
   <div id="timeBlockModal" class="hidden fixed inset-0 z-[500] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[320px] p-6">
       <h3 class="text-lg font-bold mb-4">타임 블록 설정</h3>
@@ -235,7 +234,6 @@
     </div>
   </div>
 
-  <!-- 일정 상세/추가 관련 모달 -->
   <div id="mobileDetailModal" class="hidden fixed inset-0 z-[200] flex items-end justify-center bg-black bg-opacity-40 backdrop-blur-sm md:hidden">
     <div class="bg-white w-full rounded-t-3xl p-6 shadow-2xl overflow-y-auto max-h-[80vh]">
       <div class="flex justify-between items-center mb-6"><h3 id="detailTitle" class="text-xl font-bold">상세 일정</h3><button onclick="closeDetailModal()" class="text-2xl">×</button></div>
@@ -244,7 +242,6 @@
     </div>
   </div>
 
-  <!-- z-index를 가장 높게(600) 유지하여 모든 모달 위에 뜨도록 보장 -->
   <div id="eventModal" class="hidden fixed inset-0 z-[600] flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[440px] p-8">
       <h3 class="text-lg font-bold mb-6">일정 설정</h3>
@@ -288,7 +285,6 @@
       { id: 'cat5', color: '#22c55e', name: '공부' }
     ];
 
-    // 타임트래커 전용 컬러 (메인 카테고리와 분리)
     const defaultTrackerColors = [
       { id: 'tc1', color: '#000000' },
       { id: 'tc2', color: '#ef4444' },
@@ -310,7 +306,6 @@
     let pendingStart = null, pendingEnd = null, selectedCategoryId = 'cat1';
     let currentMode = '', editData = null;
 
-    // 데일리 플래너 전역 변수
     let activeBrushColor = null;
     let isPainting = false;
     let dragHasMoved = false;
@@ -320,8 +315,10 @@
     let tbCurrentIdx = -1;
     let isTbColorEditMode = false;
 
-    // --- 3. 타이머 로직 ---
+    // --- 3. 타이머 로직 (스톱워치 모드 추가) ---
     let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0;
+    let timerMode = 'idle'; // 'idle', 'timer', 'stopwatch'
+
     const tDial = $('timerDial'), pSlice = $('pieSlice');
     
     function updateTUI() {
@@ -342,6 +339,7 @@
     tDial.onmousedown = (e) => {
       if (isR) return;
       isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e);
+      timerMode = 'idle'; // 다이얼을 돌리면 모드 초기화 (타이머 모드 준비)
     };
 
     window.addEventListener('mousemove', (e) => {
@@ -375,7 +373,6 @@
       }
       if (isDT) {
         isDT = false;
-        if (isR) { clearInterval(tInt); isR = false; $('startPauseBtn').textContent = '계속'; }
       }
       if (isSelecting) {
         isSelecting = false;
@@ -390,29 +387,49 @@
       if (isResizing) { isResizing = false; saveAndRefresh(); }
     });
 
-    function toggleTimer() {
-      if (isR) {
-        clearInterval(tInt); isR = false; $('startPauseBtn').textContent = '계속';
-      } else {
-        if (timeLeft <= 0) return;
-        isR = true;
-        tInt = setInterval(() => {
-          timeLeft--; updateTUI();
-          if (timeLeft <= 0) resetTimer();
-        }, 1000);
-        $('startPauseBtn').textContent = '일시정지';
+    function startTimer() {
+      if (isR) return;
+
+      // 현재 모드 판별
+      if (timerMode === 'idle') {
+          // 시간이 0이면 스톱워치(카운트업), 0보다 크면 타이머(카운트다운)
+          timerMode = timeLeft === 0 ? 'stopwatch' : 'timer';
       }
+
+      isR = true;
+      $('startBtn').textContent = '진행중';
+      $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]');
+
+      tInt = setInterval(() => {
+        if (timerMode === 'stopwatch') {
+            timeLeft++;
+        } else {
+            timeLeft--;
+        }
+        updateTUI();
+        
+        // 타이머 모드일 때 시간이 다 되면 종료
+        if (timerMode === 'timer' && timeLeft <= 0) resetTimer();
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      if (!isR) return;
+      clearInterval(tInt);
+      isR = false;
+      $('startBtn').textContent = '계속';
+      $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]');
     }
     
     function resetTimer() {
-      clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0;
-      updateTUI(); $('startPauseBtn').textContent = '시작';
-    }
-    
-    function adjustTime(m) {
-      timeLeft = Math.max(0, Math.min(360000, timeLeft + m * 60));
-      tLaps = Math.floor(timeLeft / 3600);
-      updateTUI();
+      clearInterval(tInt); 
+      isR = false; 
+      timeLeft = 0; 
+      tLaps = 0; 
+      timerMode = 'idle';
+      updateTUI(); 
+      $('startBtn').textContent = '시작';
+      $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]');
     }
 
     // --- 할 일 보관함 (Inbox) 로직 ---
@@ -438,12 +455,13 @@
         item.draggable = true;
         item.className = 'dashboard-item bg-gray-50 rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0';
         
-        const isCheckedClass = t.isChecked ? 'line-through opacity-40 text-gray-500' : 'text-black';
+        const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black';
+        const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
         
         item.innerHTML = `<div class="drag-handle-dash text-gray-400">≡</div>
                           <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox">
-                          <span class="cat-badge-bg text-[12px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${cat.color}">${cat.name}</span>
-                          <div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[12px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}">${t.text}</span></div>`;
+                          <span class="cat-badge-bg text-[12px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span>
+                          <div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[12px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>`;
         
         item.ondragstart = (e) => {
             draggedTaskInfo = { type: 'inbox', index: idx };
@@ -526,14 +544,15 @@
         const item = document.createElement('div');
         item.className = 'flex items-center gap-3 py-1.5 px-2 rounded-xl cursor-pointer transition-all border-2 border-transparent hover:bg-white hover:shadow-sm brush-item';
         
-        const isDone = t.isChecked ? 'line-through text-gray-400' : 'text-gray-800';
+        const isDoneClass = t.isChecked ? 'line-through opacity-60' : '';
+        const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
 
         const circle = document.createElement('div');
         circle.className = 'w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2';
-        circle.style.borderColor = cat.color;
+        circle.style.borderColor = colorStyle;
         
         if (t.isChecked) {
-            circle.style.backgroundColor = cat.color;
+            circle.style.backgroundColor = colorStyle;
             circle.innerHTML = `<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
         } else {
             circle.style.backgroundColor = 'white';
@@ -552,8 +571,9 @@
         textWrapper.title = "클릭하여 일정 수정";
         
         const textSpan = document.createElement('span');
-        textSpan.className = `text-[14px] pt-px leading-none font-bold truncate block w-full ${isDone} hover:underline`;
+        textSpan.className = `text-[14px] pt-px leading-none font-bold truncate block w-full ${isDoneClass} hover:underline`;
         textSpan.textContent = t.text;
+        textSpan.style.color = colorStyle;
         
         textWrapper.onclick = (e) => {
             e.stopPropagation(); 
@@ -565,7 +585,6 @@
         item.appendChild(circle);
         item.appendChild(textWrapper);
 
-        // 브러쉬 기능용 색상 선택 (카테고리 색상 사용)
         item.onclick = () => selectBrush(cat.color, item);
         list.appendChild(item);
       });
@@ -713,7 +732,7 @@
         cellElement.style.backgroundColor = 'transparent';
       } else {
         let brush = activeBrushColor;
-        if (!brush) brush = trackerColors[0].color; // 기본 브러쉬는 전용 컬러 사용
+        if (!brush) brush = trackerColors[0].color; 
         dailyRecords[currentPlannerDateKey].grid[idx] = brush;
         cellElement.style.backgroundColor = hexToRgba(brush, 0.3);
       }
@@ -731,7 +750,6 @@
         const blockColor = colorContainer.dataset.selectedColor; 
         colorContainer.innerHTML = '';
 
-        // 타임트래커 전용 컬러 리스트 사용
         trackerColors.forEach(tc => {
             const cWrapper = document.createElement('div');
             cWrapper.className = 'relative flex-shrink-0';
@@ -772,7 +790,6 @@
                         colorContainer.dataset.selectedColor = newColor;
                     }
 
-                    // 기존 기록된 타임트래커 블록의 색상 업데이트
                     for (let dKey in dailyRecords) {
                         const grid = dailyRecords[dKey].grid;
                         for(let i=0; i<grid.length; i++) {
@@ -828,8 +845,15 @@
         const data = dailyRecords[dateKey];
         const blockColor = data.grid[idx];
 
+        let startIdx = idx;
+        if (blockColor) {
+            while (startIdx > 0 && data.grid[startIdx - 1] === blockColor) {
+                startIdx--;
+            }
+        }
+
         if (!data.labels) data.labels = {};
-        $('tbLabelInput').value = data.labels[idx] ? data.labels[idx].text : '';
+        $('tbLabelInput').value = data.labels[startIdx] ? data.labels[startIdx].text : '';
 
         const colorContainer = $('tbColorContainer');
         colorContainer.dataset.selectedColor = blockColor || trackerColors[0].color;
@@ -913,9 +937,11 @@
         const key = getDateKey(d);
         const cell = document.createElement('div');
         
-        cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300 overflow-hidden';
+        cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300';
         cell.setAttribute('data-date', key);
-        if (d.getMonth() !== month) cell.classList.add('bg-gray-50', 'text-gray-300');
+        
+        const isCurrentMonth = d.getMonth() === month;
+        if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
         
         cell.onclick = (e) => { if (window.innerWidth <= 768 && !e.target.closest('.todo-item') && !e.target.closest('.multi-task')) openDetailModal(key, d); };
         
@@ -940,7 +966,15 @@
         dateWrap.className = 'w-full';
         
         const dateNum = document.createElement('div');
-        dateNum.className = `date-trigger date-block text-[11px] font-bold ${isWeekend ? 'text-red-500' : 'text-gray-700'} ${isToday ? 'today-highlight' : 'bg-transparent'}`;
+        
+        let textColor = isWeekend ? 'text-red-500' : 'text-gray-700';
+        if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
+        
+        let bgClass = 'bg-transparent';
+        if (isToday) bgClass = 'today-highlight';
+        else if (isCurrentMonth) bgClass = 'other-day-highlight';
+        
+        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`;
         dateNum.textContent = d.getDate();
         dateNum.onclick = (e) => {
            e.stopPropagation();
@@ -959,8 +993,11 @@
               const item = document.createElement('div');
               item.draggable = (window.innerWidth > 768);
               item.className = 'todo-item text-[12px] truncate px-1 rounded flex items-center gap-1.5';
-              item.style.color = cat.color;
-              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="${t.isChecked ? 'line-through opacity-40 text-gray-500' : ''} font-medium leading-none">${t.text}</span>`;
+              
+              const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : '';
+              const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+              
+              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="${isCheckedClass} font-medium leading-none" style="color: ${colorStyle}">${t.text}</span>`;
               
               item.ondragstart = () => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; };
               item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); };
@@ -983,11 +1020,17 @@
             bar.className = 'absolute h-6 left-0 right-0 multi-task flex items-center justify-center pointer-events-none';
             bar.style.bottom = `${t.slot * 25 + 4}px`;
             
+            const isStartOrSunday = (key === t.start || d.getDay() === 0);
+            bar.style.zIndex = isStartOrSunday ? '50' : '10';
+            
             let innerHTML = `<div class="relative w-full h-full flex items-center justify-center">`;
-            if (key === t.start && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[70]" onmousedown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'start')"></div>`;
+            if (key === t.start && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onmousedown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'start')"></div>`;
             innerHTML += `<div class="h-[1.5px] opacity-50 absolute" style="background-color: ${cat.color}; left: ${key === t.start ? '8px' : '0'}; right: ${key === t.end ? '8px' : '0'};"></div>`;
-            if (key === t.end && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[70]" onmousedown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'end')"></div>`;
-            if (key === t.start || d.getDay() === 0) innerHTML += `<div class="absolute z-10 grab-handle pointer-events-auto px-2 py-0.5 rounded-md flex items-center justify-center multi-task-text-container" style="border: 1px solid ${hexToRgba(cat.color, 0.5)};" draggable="${window.innerWidth > 768}" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[11px] md:text-[12px] pt-px truncate text-black font-medium leading-none">${t.text}</span></div>`;
+            if (key === t.end && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onmousedown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'end')"></div>`;
+            
+            if (isStartOrSunday) {
+                innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-2 py-0.5 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)};" draggable="${window.innerWidth > 768}" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[11px] md:text-[12px] pt-px text-black font-medium leading-none">${t.text}</span></div>`;
+            }
             innerHTML += `</div>`;
             
             bar.innerHTML = innerHTML;
@@ -1036,9 +1079,10 @@
       div.draggable = true; div.className = "dashboard-item bg-white rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0";
       div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
       
-      const isCheckedClass = t.isChecked ? 'line-through opacity-40 text-gray-500' : 'text-black';
+      const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black';
+      const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
       
-      div.innerHTML = `<div class="drag-handle-dash">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg text-[13px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${cat.color}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}">${t.text}</span></div>`;
+      div.innerHTML = `<div class="drag-handle-dash">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg text-[13px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>`;
       
       div.ondragstart = (e) => { 
           draggedTaskInfo = { type: 'single', dateKey: key, index: idx };
@@ -1166,6 +1210,12 @@
       currentMode = mode; 
       editData = data; 
       
+      if (mode.includes('create')) {
+          $('modalDeleteBtn').style.display = 'none';
+      } else {
+          $('modalDeleteBtn').style.display = 'block';
+      }
+      
       if (data && data.categoryId) {
           selectedCategoryId = data.categoryId;
       } else {
@@ -1188,7 +1238,7 @@
         const cat = categories.find(c => c.id === t.categoryId) || categories[0];
         const div = document.createElement('div');
         div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl";
-        div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-40' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`;
+        div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`;
         div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); };
         div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } };
         l.appendChild(div);
@@ -1223,7 +1273,7 @@
           activeBrushColor = null; 
           renderPlannerTasks(currentPlannerDateKey);
       }
-    }
+    };
 
     $('modalDeleteBtn').onclick = () => {
       if (currentMode.includes('Multi')) {
@@ -1236,11 +1286,11 @@
           allTasks[editData.dateKey].splice(editData.index, 1);
       }
       
-      if (currentMode !== 'editInbox') saveAndRefresh();
+      if (currentMode !== 'editInbox') saveAndRefresh(); 
       closeModal();
       
       if(currentPlannerDateKey) {
-          activeBrushColor = null;
+          activeBrushColor = null; 
           renderPlannerTasks(currentPlannerDateKey);
       }
     };
@@ -1323,7 +1373,6 @@
     $('prevBtn').onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
     $('nextBtn').onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
 
-    // --- 8. 초기 로딩 ---
     window.onload = () => { 
         renderFilterBar(); 
         renderCalendar(); 
