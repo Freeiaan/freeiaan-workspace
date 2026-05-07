@@ -92,6 +92,7 @@
     <div class="w-full xl:flex-1 bg-white rounded-2xl md:rounded-3xl shadow-md border border-gray-200 px-3 py-4 md:px-8 md:py-8 select-none relative z-10">
       
       <div class="flex justify-end gap-2 mb-4">
+        <button onclick="openAnalytics()" class="text-[10px] font-bold bg-[#1b4332] text-white border border-[#1b4332] px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#22741C] transition">📊 성취 리포트</button>
         <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 내보내기</button>
         <button onclick="importData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📥 가져오기</button>
       </div>
@@ -196,6 +197,53 @@
     </div>
   </div>
 
+  <div id="analyticsModal" class="hidden fixed inset-0 z-[900] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) closeAnalytics()">
+    <div class="bg-white w-full max-w-4xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-gray-200">
+      
+      <header class="p-6 md:px-8 md:pt-8 md:pb-4 flex flex-col border-b border-gray-100 bg-white flex-shrink-0">
+         <div class="flex justify-between items-start w-full mb-5">
+           <div>
+             <h2 class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Achievement Report</h2>
+           </div>
+           <button onclick="closeAnalytics()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+         </div>
+         
+         <div class="flex flex-col gap-3">
+             <div class="flex items-center gap-3">
+                 <button onclick="changeAnalyticsMonth(-1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">◀</button>
+                 <span id="analyticsMonthLabel" class="text-sm font-extrabold text-gray-800 tracking-wide"></span>
+                 <button onclick="changeAnalyticsMonth(1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">▶</button>
+             </div>
+             <div id="analyticsTabs" class="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
+                 </div>
+         </div>
+      </header>
+      
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 flex flex-col gap-10 bg-gray-50/30">
+          
+          <section>
+              <div class="flex justify-between items-end mb-6">
+                  <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2" id="chartTitle"><span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 집중 시간 분석</h3>
+                  <span id="totalFocusTime" class="text-sm font-extrabold text-[#22741C]"></span>
+              </div>
+              <div id="focusChart" class="flex items-end gap-3 h-48 w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                  </div>
+          </section>
+
+          <section>
+              <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6"><span class="w-1.5 h-5 bg-blue-500 rounded-sm"></span> 해빗 달성률 스코어</h3>
+              <div id="habitStatsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  </div>
+          </section>
+
+          <div class="bg-[#e4f8c4] p-6 rounded-2xl border border-[#c4e8b0] flex flex-col items-center justify-center text-center">
+              <span class="text-2xl mb-2">🔥</span>
+              <p class="text-sm font-bold text-[#1b4332]" id="cheerMessage"></p>
+          </div>
+      </div>
+    </div>
+  </div>
+
   <div id="extendedMemoModal" class="hidden fixed inset-0 z-[800] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) closeExtendedMemo()">
     <div class="bg-[#faf8f5] w-full max-w-3xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
       <header class="p-6 md:px-8 md:pt-8 md:pb-4 flex justify-between items-center bg-white border-b border-[#e6e2d8] flex-shrink-0">
@@ -238,7 +286,7 @@
          
          <div class="w-full md:w-1/2 flex flex-col h-full gap-6">
             <div class="flex-shrink-0 max-h-[50%] flex flex-col">
-               <h3 class="font-bold text-sm mb-3 text-gray-800 tracking-wide">TASKS <span class="text-[10px] font-normal text-gray-400 ml-2 tracking-normal">(항목을 클릭해서 붓처럼 사용하세요)</span></h3>
+               <h3 class="font-bold text-sm mb-3 text-gray-800 tracking-wide">TASKS</h3>
                <input type="text" id="plannerNewTaskInput" placeholder="+ 새로운 할 일 추가 (작성 후 Enter)" class="w-full text-[13px] font-bold px-3 py-2.5 rounded-xl border border-[#e6e2d8] focus:outline-none focus:ring-1 focus:ring-[#1b4332] mb-2 bg-white/50 text-gray-700 transition">
                <div id="plannerTaskList" class="flex flex-col gap-1 overflow-y-auto custom-scrollbar pr-2"></div>
             </div>
@@ -262,7 +310,6 @@
       </header>
       
       <div class="flex-1 overflow-hidden flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
-         
          <div class="flex-1 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
              <div class="flex justify-between items-end bg-[#f8fafc] px-4 py-2 border-b border-[#e6e2d8]">
                  <h3 class="font-bold text-[13px] text-gray-800 tracking-wide">WEEKLY TIME TRACKER</h3>
@@ -279,7 +326,6 @@
          </div>
 
          <div class="w-full md:w-64 flex flex-col gap-4 flex-shrink-0">
-            
             <div class="h-60 bg-[#fffbeb] rounded-xl p-4 border border-orange-100 flex flex-col shadow-sm">
                 <div class="flex justify-between items-center mb-2">
                     <h4 class="text-xs font-bold text-orange-800 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-orange-400 rounded-sm"></span> 이번 주 메모</h4>
@@ -291,19 +337,15 @@
             <div class="flex-1 bg-white rounded-xl p-4 border border-gray-200 flex flex-col shadow-sm min-h-[260px]">
                 <div class="flex justify-between items-center mb-3">
                     <h4 class="text-xs font-bold text-gray-800 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-blue-400 rounded-sm"></span> 해빗 트래커</h4>
-                    <button onclick="window.addHabit()" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold transition">+ 추가</button>
+                    <div class="flex gap-1.5">
+                        <button onclick="window.addHabit()" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold transition">+ 추가</button>
+                        <button id="habitEditBtn" onclick="toggleHabitEdit()" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold transition">- 삭제</button>
+                    </div>
                 </div>
-                
                 <div class="flex text-[10px] font-bold text-gray-400 mb-2 border-b border-gray-100 pb-1">
                     <div class="w-[45%] pl-1">Objective</div>
                     <div class="w-[55%] flex justify-between px-1">
-                        <div class="w-4 text-center text-red-400">S</div>
-                        <div class="w-4 text-center">M</div>
-                        <div class="w-4 text-center">T</div>
-                        <div class="w-4 text-center">W</div>
-                        <div class="w-4 text-center">T</div>
-                        <div class="w-4 text-center">F</div>
-                        <div class="w-4 text-center text-blue-400">S</div>
+                        <div class="w-4 text-center text-red-400">S</div><div class="w-4 text-center">M</div><div class="w-4 text-center">T</div><div class="w-4 text-center">W</div><div class="w-4 text-center">T</div><div class="w-4 text-center">F</div><div class="w-4 text-center text-blue-400">S</div>
                     </div>
                 </div>
                 <div id="habitList" class="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 flex-1 pb-2"></div>
@@ -374,13 +416,8 @@
     };
 
     const getLocal = (key, fallback) => {
-        try {
-            const val = localStorage.getItem(key);
-            return val ? JSON.parse(val) : fallback;
-        } catch(e) {
-            console.error('Local storage parse error:', e);
-            return fallback;
-        }
+        try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : fallback; } 
+        catch(e) { return fallback; }
     };
     const setLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
@@ -393,37 +430,24 @@
     ];
 
     const defaultTrackerColors = [
-      { id: 'tc1', color: '#000000' },
-      { id: 'tc2', color: '#ef4444' },
-      { id: 'tc3', color: '#3b82f6' },
-      { id: 'tc4', color: '#facc15' },
-      { id: 'tc5', color: '#4ade80' }
+      { id: 'tc1', color: '#000000' }, { id: 'tc2', color: '#ef4444' }, { id: 'tc3', color: '#3b82f6' }, { id: 'tc4', color: '#facc15' }, { id: 'tc5', color: '#4ade80' }
     ];
 
     let _cats = getLocal('ianCategories', defaultCats);
     let categories = Array.isArray(_cats) ? _cats : defaultCats;
-    
     let _tc = getLocal('ianTrackerColors', defaultTrackerColors);
     let trackerColors = Array.isArray(_tc) ? _tc : defaultTrackerColors;
-    
     let allTasks = getLocal('ianSchedulerTasks', {});
-    
     let _multi = getLocal('ianMultiTasks', []);
     let multiTasks = Array.isArray(_multi) ? _multi.filter(t => t && t.start && t.end) : [];
-    
     let dailyRecords = getLocal('ianDailyRecords', {}); 
-    
     let inboxTasks = getLocal('ianInboxTasks', []);
     if (!Array.isArray(inboxTasks)) inboxTasks = [];
-    
     let weeklyMemos = getLocal('ianWeeklyMemos', {});
     let weeklyHabits = getLocal('ianWeeklyHabits', {});
 
     const defaultExtMemos = [
-        { title: '메모 1', content: '' },
-        { title: '메모 2', content: '' },
-        { title: '메모 3', content: '' },
-        { title: '메모 4', content: '' }
+        { title: '메모 1', content: '' }, { title: '메모 2', content: '' }, { title: '메모 3', content: '' }, { title: '메모 4', content: '' }
     ];
     let extendedMemos = getLocal('ianExtendedMemos', defaultExtMemos);
     if (!Array.isArray(extendedMemos) || extendedMemos.length < 4) extendedMemos = defaultExtMemos;
@@ -434,176 +458,252 @@
     let draggedTaskInfo = null, isSelecting = false, selectStartKey = null, selectEndKey = null;
     let pendingStart = null, pendingEnd = null, selectedCategoryId = 'cat1';
     let currentMode = '', editData = null;
+    let activeBrushColor = null, isPainting = false, dragHasMoved = false, dragStartIdx = -1, dragAction = 'paint';
+    let currentPlannerDateKey = null, tbCurrentIdx = -1, isTbColorEditMode = false;
+    let isHabitEditMode = false;
 
-    let activeBrushColor = null;
-    let isPainting = false;
-    let dragHasMoved = false;
-    let dragStartIdx = -1;
-    let dragAction = 'paint';
-    let currentPlannerDateKey = null;
-    let tbCurrentIdx = -1;
-    let isTbColorEditMode = false;
+    // 💡 Analytics 관련 상태 변수
+    let analyticsDate = new Date();
+    let analyticsMode = 'month'; // 'month' or 'week'
+    let analyticsSelectedWeekKey = null;
 
     let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0;
-    let timerMode = 'idle';
-    let sessionElapsed = 0;
-
+    let timerMode = 'idle', sessionElapsed = 0;
     const tDial = $('timerDial'), pSlice = $('pieSlice');
     
+    // ---------------- 타이머 로직 ----------------
     function updateTUI() {
       const h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60;
       $('digitalTime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       const angle = ((timeLeft % 3600) / 3600) * 360;
       pSlice.style.background = timeLeft <= 0 ? 'none' : `conic-gradient(from 0deg, #1b4332 ${angle}deg, transparent ${angle}deg)`;
     }
-    
     function getAngle(e) {
-      const r = tDial.getBoundingClientRect();
-      const x = (e.clientX || e.touches?.[0].clientX) - (r.left + r.width / 2);
-      const y = (e.clientY || e.touches?.[0].clientY) - (r.top + r.height / 2);
-      let a = Math.atan2(y, x) * (180 / Math.PI) + 90;
-      return a < 0 ? a + 360 : a;
+      const r = tDial.getBoundingClientRect(); const x = (e.clientX || e.touches?.[0].clientX) - (r.left + r.width / 2); const y = (e.clientY || e.touches?.[0].clientY) - (r.top + r.height / 2);
+      let a = Math.atan2(y, x) * (180 / Math.PI) + 90; return a < 0 ? a + 360 : a;
     }
-
-    tDial.onmousedown = (e) => {
-      if (isR) return;
-      isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e);
-      timerMode = 'idle'; 
-    };
-
+    tDial.onmousedown = (e) => { if (isR) return; isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e); timerMode = 'idle'; };
     window.addEventListener('mousemove', (e) => {
-      if (isDT) {
-        let a = getAngle(e);
-        if (lastA > 270 && a < 90) tLaps++;
-        else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1);
-        lastA = a;
-        const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600);
-        timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300);
-        updateTUI();
-      }
-      if (isResizing) {
-        const hC = document.elementFromPoint(e.clientX, e.clientY)?.closest('.group-cell');
-        if (hC) {
-          const hD = hC.getAttribute('data-date');
-          const t = multiTasks.find(x => String(x.id) === String(resizingTaskId));
-          if (t) {
-            if (resizingEdge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD;
-            else if (resizingEdge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD;
-            renderCalendar();
-          }
-        }
-      }
+      if (isDT) { let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
+      if (isResizing) { const hC = document.elementFromPoint(e.clientX, e.clientY)?.closest('.group-cell'); if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizingTaskId)); if (t) { if (resizingEdge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizingEdge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } }
     });
-
     window.addEventListener('mouseup', () => {
-      if (isPainting) {
-         isPainting = false; 
-         if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); 
-      }
-      if (isDT) {
-        isDT = false;
-      }
-      if (isSelecting) {
-        isSelecting = false;
-        if (selectStartKey !== selectEndKey) {
-          let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)];
-          if (s > e) [s, e] = [e, s];
-          pendingStart = getDateKey(s); pendingEnd = getDateKey(e);
-          openModal('createMulti', { start: pendingStart, end: pendingEnd });
-        }
-        document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range'));
-      }
+      if (isPainting) { isPainting = false; if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); }
+      if (isDT) { isDT = false; }
+      if (isSelecting) { isSelecting = false; if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); }
       if (isResizing) { isResizing = false; saveAndRefresh(); }
     });
+    function startTimer() { if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); tInt = setInterval(() => { if (timerMode === 'stopwatch') timeLeft++; else timeLeft--; sessionElapsed++; updateTUI(); if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); }, 1000); }
+    function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
+    function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
+    function recordTimer() { if (sessionElapsed <= 0) return; const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; dailyRecords[todayKey].recorded[type] += sessionElapsed; savePlannerData(); updateRecordDisplay(); resetTimer(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); }
+    function hardResetTimer() { if(confirm("오늘 하루 동안 기록된 총 누적 시간(스톱워치+타이머)이 모두 0으로 삭제됩니다. 정말 완전히 초기화할까요?")) { const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
+    function formatSecs(sec) { const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+    function updateRecordDisplay() { const todayKey = getDateKey(new Date()); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
+    function updateModalRecordDisplay(dateKey) { const dRec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 }; const total = dRec.stopwatch + dRec.timer; const target = $('modalRecordDisplay'); if (target) { if (total > 0) target.innerHTML = `총 기록 시간: ${formatSecs(total)} <span class="text-gray-400 text-[10px] ml-1 font-normal">(⏱️ ${formatSecs(dRec.stopwatch)} / ⏳ ${formatSecs(dRec.timer)})</span>`; else target.innerHTML = ''; } }
 
-    function startTimer() {
-      if (isR) return;
-      if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer';
-      isR = true;
-      $('startBtn').textContent = '진행중';
-      $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]');
-
-      tInt = setInterval(() => {
-        if (timerMode === 'stopwatch') timeLeft++;
-        else timeLeft--;
-        sessionElapsed++; 
-        updateTUI();
-        
-        if (timerMode === 'timer' && timeLeft <= 0) recordTimer();
-      }, 1000);
+    // ---------------- 💡 성취 리포트 (Analytics) 대시보드 로직 ----------------
+    function openAnalytics() {
+        analyticsDate = new Date(); // 창 열때 항상 현재 달 기준으로 시작
+        analyticsMode = 'month'; 
+        $('analyticsModal').classList.remove('hidden');
+        renderAnalyticsTabs();
     }
 
-    function pauseTimer() {
-      if (!isR) return;
-      clearInterval(tInt);
-      isR = false;
-      $('startBtn').textContent = '계속';
-      $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]');
-    }
-    
-    function resetTimer() {
-      clearInterval(tInt); 
-      isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0;
-      updateTUI(); 
-      $('startBtn').textContent = '시작';
-      $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]');
+    function closeAnalytics() {
+        $('analyticsModal').classList.add('hidden');
     }
 
-    function recordTimer() {
-        if (sessionElapsed <= 0) return;
-        const todayKey = getDateKey(new Date());
-
-        if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
-        if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 };
-
-        let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer';
-        if (timerMode === 'idle') type = 'timer'; 
-        
-        dailyRecords[todayKey].recorded[type] += sessionElapsed;
-        
-        savePlannerData();
-        updateRecordDisplay();
-        resetTimer();
-        
-        if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey);
+    // 달 이동 화살표
+    window.changeAnalyticsMonth = function(dir) {
+        analyticsDate.setMonth(analyticsDate.getMonth() + dir);
+        analyticsMode = 'month'; // 달 넘기면 기본적으로 전체보기
+        renderAnalyticsTabs();
     }
 
-    function hardResetTimer() {
-        if(confirm("오늘 하루 동안 기록된 총 누적 시간(스톱워치+타이머)이 모두 0으로 삭제됩니다. 정말 완전히 초기화할까요?")) {
-            const todayKey = getDateKey(new Date());
-            if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
-            dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 };
-            
-            savePlannerData();
-            updateRecordDisplay();
-            resetTimer(); 
-            
-            if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey);
+    // 해당 월의 주차 목록을 계산해주는 꿀기능
+    function getMonthWeeks(year, month) {
+        let weeks = [];
+        let firstDay = new Date(year, month, 1);
+        let lastDay = new Date(year, month + 1, 0);
+        let current = new Date(firstDay);
+        
+        // 첫 번째 주의 일요일 찾기
+        current.setDate(current.getDate() - current.getDay()); 
+        
+        let weekNum = 1;
+        while(current <= lastDay) {
+            let end = new Date(current);
+            end.setDate(end.getDate() + 6);
+            weeks.push({
+                weekNum: weekNum,
+                start: new Date(current),
+                end: new Date(end),
+                key: getDateKey(current),
+                label: `${weekNum}주차 ${String(current.getMonth()+1).padStart(2,'0')}.${String(current.getDate()).padStart(2,'0')}~${String(end.getMonth()+1).padStart(2,'0')}.${String(end.getDate()).padStart(2,'0')}`
+            });
+            weekNum++;
+            current.setDate(current.getDate() + 7);
+        }
+        return weeks;
+    }
+
+    function renderAnalyticsTabs() {
+        const year = analyticsDate.getFullYear();
+        const month = analyticsDate.getMonth();
+        $('analyticsMonthLabel').textContent = `${year}년 ${month + 1}월`;
+
+        const weeks = getMonthWeeks(year, month);
+        const tabsContainer = $('analyticsTabs');
+        tabsContainer.innerHTML = '';
+
+        // [O월 전체] 탭 생성
+        const btnAll = document.createElement('button');
+        btnAll.className = `px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-colors border ${analyticsMode === 'month' ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+        btnAll.textContent = `${month + 1}월 전체`;
+        btnAll.onclick = () => {
+            analyticsMode = 'month';
+            renderAnalyticsTabs(); // 탭 색깔 다시 칠하기
+            renderAnalyticsContent(weeks);
+        };
+        tabsContainer.appendChild(btnAll);
+
+        // [N주차] 탭 생성
+        weeks.forEach(w => {
+            const btn = document.createElement('button');
+            const isSelected = (analyticsMode === 'week' && analyticsSelectedWeekKey === w.key);
+            btn.className = `px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-colors border ${isSelected ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+            btn.textContent = w.label;
+            btn.onclick = () => {
+                analyticsMode = 'week';
+                analyticsSelectedWeekKey = w.key;
+                renderAnalyticsTabs();
+                renderAnalyticsContent(weeks, w);
+            };
+            tabsContainer.appendChild(btn);
+        });
+
+        // 탭 그려지자마자 내용도 맞게 그려주기
+        if (analyticsMode === 'month') {
+            renderAnalyticsContent(weeks);
+        } else {
+            const selWeek = weeks.find(w => w.key === analyticsSelectedWeekKey) || weeks[0];
+            if(selWeek) renderAnalyticsContent(weeks, selWeek);
         }
     }
 
-    function formatSecs(sec) {
-        const h = Math.floor(sec / 3600);
-        const m = Math.floor((sec % 3600) / 60);
-        const s = sec % 60;
-        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    }
+    function renderAnalyticsContent(allWeeks, selectedWeek = null) {
+        const focusChart = $('focusChart');
+        const habitGrid = $('habitStatsGrid');
+        focusChart.innerHTML = '';
+        habitGrid.innerHTML = '';
 
-    function updateRecordDisplay() {
-        const todayKey = getDateKey(new Date());
-        const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 };
-        $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`;
-    }
+        let totalSec = 0;
+        let chartData = [];
+        let totalHabitBoxes = 0;
+        let successHabitCount = 0;
+        let habitsToDisplay = [];
 
-    function updateModalRecordDisplay(dateKey) {
-        const dRec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 };
-        const total = dRec.stopwatch + dRec.timer;
-        const target = $('modalRecordDisplay');
-        if (target) {
-            if (total > 0) target.innerHTML = `총 기록 시간: ${formatSecs(total)} <span class="text-gray-400 text-[10px] ml-1 font-normal">(⏱️ ${formatSecs(dRec.stopwatch)} / ⏳ ${formatSecs(dRec.timer)})</span>`;
-            else target.innerHTML = '';
+        if (analyticsMode === 'month') {
+            $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 월간 집중 시간 분석`;
+            
+            allWeeks.forEach(w => {
+                let weekTotal = 0;
+                for(let i=0; i<7; i++) {
+                    const d = new Date(w.start); d.setDate(d.getDate() + i);
+                    const k = getDateKey(d);
+                    const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 };
+                    weekTotal += (rec.stopwatch + rec.timer);
+                }
+                totalSec += weekTotal;
+                chartData.push({ label: `${w.weekNum}주차`, sec: weekTotal });
+
+                const wHabits = weeklyHabits[w.key] || [];
+                wHabits.forEach(h => {
+                    if(!h.text.trim()) return; // 빈칸 패스
+                    const count = h.tracker.filter(v => v === 1).length;
+                    successHabitCount += count;
+                    totalHabitBoxes += 7;
+                    
+                    let existing = habitsToDisplay.find(x => x.text === h.text);
+                    if(existing) {
+                        existing.count += count;
+                        existing.total += 7;
+                    } else {
+                        habitsToDisplay.push({ text: h.text, count: count, total: 7 });
+                    }
+                });
+            });
+        } else if (analyticsMode === 'week' && selectedWeek) {
+            $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 주간 집중 시간 분석`;
+            const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+            for(let i=0; i<7; i++) {
+                const d = new Date(selectedWeek.start); d.setDate(d.getDate() + i);
+                const k = getDateKey(d);
+                const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 };
+                const dayTotal = rec.stopwatch + rec.timer;
+                totalSec += dayTotal;
+                chartData.push({ label: dayNames[i], sec: dayTotal });
+            }
+
+            const wHabits = weeklyHabits[selectedWeek.key] || [];
+            wHabits.forEach(h => {
+                if(!h.text.trim()) return;
+                const count = h.tracker.filter(v => v === 1).length;
+                successHabitCount += count;
+                totalHabitBoxes += 7;
+                habitsToDisplay.push({ text: h.text, count: count, total: 7 });
+            });
         }
+
+        // 집중 시간 렌더링
+        $('totalFocusTime').textContent = `총 집중: ${Math.floor(totalSec/3600)}h ${Math.floor((totalSec%3600)/60)}m`;
+        const maxSec = Math.max(...chartData.map(d => d.sec), 3600); // 안 삐져나가게 최소 1시간 잡기
+        chartData.forEach(d => {
+            const barWrap = document.createElement('div');
+            barWrap.className = 'flex-1 flex flex-col items-center gap-2';
+            const hPercent = (d.sec / maxSec) * 100;
+            
+            let timeStr = `${Math.floor(d.sec/3600)}h`;
+            if(d.sec === 0) timeStr = '0';
+            else if (d.sec < 3600 || analyticsMode === 'week') timeStr = `${Math.floor(d.sec/60)}m`;
+            
+            barWrap.innerHTML = `
+                <div class="text-[9px] font-bold text-gray-400">${timeStr}</div>
+                <div class="w-full max-w-[40px] bg-[#e4f8c4] rounded-t-lg transition-all duration-500 relative group" style="height: ${hPercent}%">
+                    <div class="absolute inset-0 bg-[#22741C] opacity-0 group-hover:opacity-100 rounded-t-lg transition-opacity cursor-pointer" title="${Math.floor(d.sec/3600)}시간 ${Math.floor((d.sec%3600)/60)}분"></div>
+                </div>
+                <div class="text-[10px] font-extrabold text-gray-500">${d.label}</div>
+            `;
+            focusChart.appendChild(barWrap);
+        });
+
+        // 해빗 스코어 렌더링
+        if(habitsToDisplay.length === 0) {
+            habitGrid.innerHTML = '<div class="col-span-2 text-center text-gray-400 text-[12px] font-bold py-6">기록된 해빗 목표가 없습니다.</div>';
+        } else {
+            habitsToDisplay.forEach(h => {
+                const percent = Math.round((h.count / h.total) * 100);
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center';
+                div.innerHTML = `
+                    <div class="flex flex-col overflow-hidden pr-2">
+                        <span class="text-[13px] font-bold text-gray-800 truncate">${h.text}</span>
+                        <span class="text-[10px] text-gray-400 mt-1">${analyticsMode==='month'?'월간':'주간'} ${h.total}일 중 ${h.count}일 성공</span>
+                    </div>
+                    <div class="text-xl font-black text-blue-500 flex-shrink-0">${percent}%</div>
+                `;
+                habitGrid.appendChild(div);
+            });
+        }
+
+        const totalPercent = totalHabitBoxes > 0 ? Math.round((successHabitCount / totalHabitBoxes) * 100) : 0;
+        const cheerMsg = $('cheerMessage');
+        if (totalPercent >= 80) cheerMsg.textContent = `달성률 ${totalPercent}%! 완벽한 기간이었네요! 스스로에게 선물을 줘보세요 🎁`;
+        else if (totalPercent >= 50) cheerMsg.textContent = `달성률 ${totalPercent}%! 충분히 잘하고 있어요. 조금만 더 힘내봐요! 👍`;
+        else cheerMsg.textContent = `기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
     }
+    // ----------------------------------------------------------------------------------
 
     function renderInbox() {
       const list = $('inboxList');
@@ -624,23 +724,9 @@
                           <span class="cat-badge-bg text-[12px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span>
                           <div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[12px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>`;
         
-        item.ondragstart = (e) => {
-            draggedTaskInfo = { type: 'inbox', index: idx };
-            e.dataTransfer.setData('text/plain', ''); 
-        };
-        
-        item.querySelector('input').onclick = (e) => {
-            e.stopPropagation();
-            t.isChecked = e.target.checked;
-            setLocal('ianInboxTasks', inboxTasks);
-            renderInbox();
-        };
-        
-        item.onclick = (e) => {
-            if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) {
-                openModal('editInbox', { index: idx, ...t });
-            }
-        };
+        item.ondragstart = (e) => { draggedTaskInfo = { type: 'inbox', index: idx }; e.dataTransfer.setData('text/plain', ''); };
+        item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; setLocal('ianInboxTasks', inboxTasks); renderInbox(); };
+        item.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) { openModal('editInbox', { index: idx, ...t }); } };
         
         list.appendChild(item);
       });
@@ -650,34 +736,20 @@
       currentPlannerDateKey = dateKey;
       $('plannerTitle').textContent = `Day ${dateObj.getDate()}`;
       $('plannerSubtitle').textContent = `${dateObj.getFullYear()} . ${String(dateObj.getMonth() + 1).padStart(2, '0')} . ${String(dateObj.getDate()).padStart(2, '0')}`;
-      
       if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; 
       if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
-      
       $('plannerNote').value = dailyRecords[dateKey].note;
       activeBrushColor = null; 
-      
-      updateModalRecordDisplay(dateKey);
-      renderPlannerTasks(dateKey);
-      renderTimeGrid(dateKey);
-      
+      updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey);
       $('dailyPlannerModal').classList.remove('hidden');
     }
 
-    function closePlanner() {
-      $('dailyPlannerModal').classList.add('hidden');
-      currentPlannerDateKey = null;
-    }
-
+    function closePlanner() { $('dailyPlannerModal').classList.add('hidden'); currentPlannerDateKey = null; }
     function savePlannerData() { setLocal('ianDailyRecords', dailyRecords); }
 
     function renderPlannerTasks(dateKey) {
-      const list = $('plannerTaskList');
-      list.innerHTML = '';
-      let tasks = [];
-      if (Array.isArray(allTasks[dateKey])) {
-          tasks = allTasks[dateKey];
-      }
+      const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = [];
+      if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
 
       tasks.forEach((t, idx) => {
         const cat = categories.find(c => c.id === t.categoryId) || categories[0];
@@ -691,20 +763,10 @@
         circle.className = 'w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2';
         circle.style.borderColor = colorStyle;
         
-        if (t.isChecked) {
-            circle.style.backgroundColor = colorStyle;
-            circle.innerHTML = `<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
-        } else {
-            circle.style.backgroundColor = 'white';
-            circle.innerHTML = '';
-        }
+        if (t.isChecked) { circle.style.backgroundColor = colorStyle; circle.innerHTML = `<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`; } 
+        else { circle.style.backgroundColor = 'white'; circle.innerHTML = ''; }
 
-        circle.onclick = (e) => {
-            e.stopPropagation(); 
-            t.isChecked = !t.isChecked;
-            saveAndRefresh();
-            if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
-        };
+        circle.onclick = (e) => { e.stopPropagation(); t.isChecked = !t.isChecked; saveAndRefresh(); if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey); };
 
         const textWrapper = document.createElement('div');
         textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; 
@@ -712,514 +774,187 @@
         
         const textSpan = document.createElement('span');
         textSpan.className = `text-[14px] pt-px leading-none font-bold truncate block w-full ${isDoneClass} hover:underline`;
-        textSpan.textContent = t.text;
-        textSpan.style.color = colorStyle;
+        textSpan.textContent = t.text; textSpan.style.color = colorStyle;
         
-        textWrapper.onclick = (e) => {
-            e.stopPropagation(); 
-            openModal('editSingle', { dateKey: dateKey, index: idx, ...t });
-        };
+        textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); };
         
-        textWrapper.appendChild(textSpan);
-        item.appendChild(circle);
-        item.appendChild(textWrapper);
+        textWrapper.appendChild(textSpan); item.appendChild(circle); item.appendChild(textWrapper);
         item.onclick = () => selectBrush(cat.color, item);
         list.appendChild(item);
       });
     }
 
     function selectBrush(color, element) {
-      if (activeBrushColor === color) {
-          activeBrushColor = null;
-          element.classList.remove('bg-white', 'shadow-md', 'border-gray-200');
-          element.classList.add('border-transparent');
-          return;
-      }
+      if (activeBrushColor === color) { activeBrushColor = null; element.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); element.classList.add('border-transparent'); return; }
       activeBrushColor = color;
-      document.querySelectorAll('#plannerTaskList > div.brush-item').forEach(el => {
-        el.classList.remove('bg-white', 'shadow-md', 'border-gray-200');
-        el.classList.add('border-transparent');
-      });
-      element.classList.remove('border-transparent');
-      element.classList.add('bg-white', 'shadow-md', 'border-gray-200');
+      document.querySelectorAll('#plannerTaskList > div.brush-item').forEach(el => { el.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); el.classList.add('border-transparent'); });
+      element.classList.remove('border-transparent'); element.classList.add('bg-white', 'shadow-md', 'border-gray-200');
     }
 
     function renderTimeGrid(dateKey) {
-      const container = $('timeGrid');
-      container.innerHTML = '';
-      const data = dailyRecords[dateKey].grid;
-      const labels = dailyRecords[dateKey].labels || {};
-
+      const container = $('timeGrid'); container.innerHTML = ''; const data = dailyRecords[dateKey].grid; const labels = dailyRecords[dateKey].labels || {};
       for(let h = 5; h < 29; h++) {
-        const realH = h % 24;
-        const row = document.createElement('div');
-        row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
-        
-        const hourLabel = document.createElement('div');
-        hourLabel.className = 'w-10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 border-r border-[#e6e2d8] bg-[#fdfbf7]';
-        hourLabel.textContent = String(realH).padStart(2, '0');
-        row.appendChild(hourLabel);
+        const realH = h % 24; const row = document.createElement('div'); row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
+        const hourLabel = document.createElement('div'); hourLabel.className = 'w-10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 border-r border-[#e6e2d8] bg-[#fdfbf7]'; hourLabel.textContent = String(realH).padStart(2, '0'); row.appendChild(hourLabel);
+        const cellContainer = document.createElement('div'); cellContainer.className = 'flex flex-1 relative';
 
-        const cellContainer = document.createElement('div');
-        cellContainer.className = 'flex flex-1 relative';
-
-        let currentSegment = null;
-        let segments = [];
+        let currentSegment = null; let segments = [];
 
         for(let m = 0; m < 6; m++) {
-          const idx = (h - 5) * 6 + m;
-          const color = data[idx];
-          
+          const idx = (h - 5) * 6 + m; const color = data[idx];
           if (color) {
-            if (!currentSegment || currentSegment.color !== color) {
-                if (currentSegment) segments.push(currentSegment);
-                currentSegment = { start: m, end: m, color: color, idxs: [idx] };
-            } else {
-                currentSegment.end = m;
-                currentSegment.idxs.push(idx);
-            }
+            if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } 
+            else { currentSegment.end = m; currentSegment.idxs.push(idx); }
           } else {
-            if (currentSegment) {
-                segments.push(currentSegment);
-                currentSegment = null;
-            }
+            if (currentSegment) { segments.push(currentSegment); currentSegment = null; }
           }
           
-          const cell = document.createElement('div');
-          cell.id = `time-cell-${idx}`;
-          cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell';
-          if (m === 5) cell.classList.remove('border-dashed'); 
-          
+          const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
 
-          cell.onmousedown = (e) => { 
-            e.preventDefault(); 
-            isPainting = true; 
-            dragHasMoved = false;
-            dragStartIdx = idx;
-            dragAction = data[idx] ? 'erase' : 'paint';
-          };
-
-          cell.onmouseenter = () => { 
-            if(isPainting) {
-               if (!dragHasMoved) {
-                   applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`));
-                   dragHasMoved = true;
-               }
-               applyBrushToCell(idx, cell); 
-            }
-          };
-
-          cell.onmouseup = () => {
-             if (!dragHasMoved) {
-                 if (data[idx]) openTimeBlockModal(idx, dateKey); 
-                 else applyBrushToCell(idx, cell); 
-             }
-          };
-          
+          cell.onmousedown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
+          cell.onmouseenter = () => { if(isPainting) { if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } applyBrushToCell(idx, cell); } };
+          cell.onmouseup = () => { if (!dragHasMoved) { if (data[idx]) openTimeBlockModal(idx, dateKey); else applyBrushToCell(idx, cell); } };
           cellContainer.appendChild(cell);
         }
-
         if (currentSegment) segments.push(currentSegment);
 
         segments.forEach(seg => {
-           let segText = '';
-           seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
-           
+           let segText = ''; seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
            if(segText) {
-               const overlay = document.createElement('div');
-               overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10';
-               const leftPercent = (seg.start / 6) * 100;
-               const widthPercent = ((seg.end - seg.start + 1) / 6) * 100;
-               overlay.style.left = `${leftPercent}%`;
-               overlay.style.width = `${widthPercent}%`;
-               
-               overlay.innerHTML = `
-                 <div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div>
-                 <div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}">
-                    <span>◀</span><span>▶</span>
-                 </div>
-                 <div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" style="color: ${seg.color}; border-color: ${seg.color}">
-                     ${segText}
-                 </div>
-               `;
+               const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10';
+               const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100;
+               overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
+               overlay.innerHTML = `<div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
                cellContainer.appendChild(overlay);
            }
         });
-
-        row.appendChild(cellContainer);
-        container.appendChild(row);
+        row.appendChild(cellContainer); container.appendChild(row);
       }
     }
 
     function applyBrushToCell(idx, cellElement) {
       if(!currentPlannerDateKey || !cellElement) return; 
-
-      if(dragAction === 'erase') {
-        dailyRecords[currentPlannerDateKey].grid[idx] = null;
-        if(dailyRecords[currentPlannerDateKey].labels) delete dailyRecords[currentPlannerDateKey].labels[idx]; 
-        cellElement.style.backgroundColor = 'transparent';
-      } else {
-        let brush = activeBrushColor || trackerColors[0].color; 
-        dailyRecords[currentPlannerDateKey].grid[idx] = brush;
-        cellElement.style.backgroundColor = hexToRgba(brush, 0.3);
-      }
+      if(dragAction === 'erase') { dailyRecords[currentPlannerDateKey].grid[idx] = null; if(dailyRecords[currentPlannerDateKey].labels) delete dailyRecords[currentPlannerDateKey].labels[idx]; cellElement.style.backgroundColor = 'transparent'; } 
+      else { let brush = activeBrushColor || trackerColors[0].color; dailyRecords[currentPlannerDateKey].grid[idx] = brush; cellElement.style.backgroundColor = hexToRgba(brush, 0.3); }
       savePlannerData();
     }
 
-    function saveWeeklySpecifics() {
-        setLocal('ianWeeklyMemos', weeklyMemos);
-        setLocal('ianWeeklyHabits', weeklyHabits);
-    }
-    
-    window.toggleTaskFromWeekly = function(dateKey, index, event) {
-        allTasks[dateKey][index].isChecked = event.target.checked;
-        saveAndRefresh();
-        
-        const span = event.target.nextElementSibling;
-        if (event.target.checked) span.classList.add('line-through', 'opacity-50');
-        else span.classList.remove('line-through', 'opacity-50');
-    };
-
-    window.addHabit = function() {
-        if (!weeklyHabits[window.currentWeekKey]) weeklyHabits[window.currentWeekKey] = [];
-        weeklyHabits[window.currentWeekKey].push({ text: '', tracker: [0,0,0,0,0,0,0] });
-        saveWeeklySpecifics();
-        renderHabits();
-    };
-
-    window.updateHabitText = function(index, value) {
-        if(weeklyHabits[window.currentWeekKey]) {
-            weeklyHabits[window.currentWeekKey][index].text = value;
-            saveWeeklySpecifics();
-        }
-    };
-
-    window.toggleHabit = function(hIndex, dIndex) {
-        if(weeklyHabits[window.currentWeekKey]) {
-            let val = weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex];
-            val = (val + 1) % 3;
-            weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex] = val;
-            saveWeeklySpecifics();
-            renderHabits();
-        }
-    };
+    function saveWeeklySpecifics() { setLocal('ianWeeklyMemos', weeklyMemos); setLocal('ianWeeklyHabits', weeklyHabits); }
+    window.toggleTaskFromWeekly = function(dateKey, index, event) { allTasks[dateKey][index].isChecked = event.target.checked; saveAndRefresh(); const span = event.target.nextElementSibling; if (event.target.checked) span.classList.add('line-through', 'opacity-50'); else span.classList.remove('line-through', 'opacity-50'); };
+    window.addHabit = function() { if (!weeklyHabits[window.currentWeekKey]) weeklyHabits[window.currentWeekKey] = []; weeklyHabits[window.currentWeekKey].push({ text: '', tracker: [0,0,0,0,0,0,0] }); saveWeeklySpecifics(); renderHabits(); };
+    window.updateHabitText = function(index, value) { if(weeklyHabits[window.currentWeekKey]) { weeklyHabits[window.currentWeekKey][index].text = value; saveWeeklySpecifics(); } };
+    window.toggleHabit = function(hIndex, dIndex) { if(weeklyHabits[window.currentWeekKey]) { let val = weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex]; val = (val + 1) % 3; weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex] = val; saveWeeklySpecifics(); renderHabits(); } };
 
     function openWeeklyPlanner(startDate, endDate) {
       window.currentWeekKey = getDateKey(startDate);
-
       $('weeklySubtitle').textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')} - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}`;
       
       const wMemoArea = $('weeklySpecificMemo');
-      if(wMemoArea) {
-          wMemoArea.value = weeklyMemos[currentWeekKey] || '';
-          wMemoArea.oninput = (e) => {
-              if(window.currentWeekKey) {
-                  weeklyMemos[window.currentWeekKey] = e.target.value;
-                  saveWeeklySpecifics();
-              }
-          };
-      }
+      if(wMemoArea) { wMemoArea.value = weeklyMemos[currentWeekKey] || ''; wMemoArea.oninput = (e) => { if(window.currentWeekKey) { weeklyMemos[window.currentWeekKey] = e.target.value; saveWeeklySpecifics(); } }; }
       
-      renderHabits();
-
-      const slotHeight = 20;
-
-      const timeLabels = $('weeklyTimeLabels');
-      timeLabels.innerHTML = '';
-      for(let h = 5; h < 29; h++) {
-         const div = document.createElement('div');
-         div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`;
-         div.style.height = `${slotHeight}px`;
-         div.textContent = `${h % 24}:00`;
-         timeLabels.appendChild(div);
-      }
-
-      const gridContainer = $('weeklyGridContainer');
-      gridContainer.innerHTML = '';
-      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-      
+      renderHabits(); const slotHeight = 20; const timeLabels = $('weeklyTimeLabels'); timeLabels.innerHTML = '';
+      for(let h = 5; h < 29; h++) { const div = document.createElement('div'); div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`; div.style.height = `${slotHeight}px`; div.textContent = `${h % 24}:00`; timeLabels.appendChild(div); }
+      const gridContainer = $('weeklyGridContainer'); gridContainer.innerHTML = ''; const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
       for(let i=0; i<7; i++) {
-         const currentDay = new Date(startDate);
-         currentDay.setDate(startDate.getDate() + i);
-         const dateKey = getDateKey(currentDay);
-         
-         const col = document.createElement('div');
-         col.className = 'flex-1 min-w-[100px] flex-shrink-0 border-r border-[#e6e2d8] last:border-r-0 flex flex-col relative w-full';
-         
-         const isToday = getDateKey(new Date()) === dateKey;
-         const isWeekend = (i === 0 || i === 6); 
-         const header = document.createElement('div');
-         const textColor = isToday ? 'text-white' : (isWeekend ? 'text-red-500' : 'text-gray-700');
-         
+         const currentDay = new Date(startDate); currentDay.setDate(startDate.getDate() + i); const dateKey = getDateKey(currentDay);
+         const col = document.createElement('div'); col.className = 'flex-1 min-w-[100px] flex-shrink-0 border-r border-[#e6e2d8] last:border-r-0 flex flex-col relative w-full';
+         const isToday = getDateKey(new Date()) === dateKey; const isWeekend = (i === 0 || i === 6); 
+         const header = document.createElement('div'); const textColor = isToday ? 'text-white' : (isWeekend ? 'text-red-500' : 'text-gray-700');
          header.className = `h-10 flex-shrink-0 border-b border-[#e6e2d8] flex flex-col items-center justify-center text-[11px] font-bold sticky top-0 z-20 box-border ${isToday ? 'bg-[#1b4332]' : 'bg-[#f8fafc]'} ${textColor}`;
          
-         const rec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 };
-         const totalSec = rec.stopwatch + rec.timer;
-         let totalStr = '';
-         if (totalSec > 0) {
-             const h = Math.floor(totalSec / 3600);
-             const m = Math.floor((totalSec % 3600) / 60);
-             totalStr = `<div class="${isToday ? 'text-green-200' : 'text-[#22741C]'} text-[9px] font-extrabold mt-0.5 tracking-tighter leading-none">${h}h ${m}m</div>`;
-         }
-         header.innerHTML = `<span>${dayNames[i]} <span class="text-[9px] ${isToday ? 'opacity-90' : 'text-gray-400'}">${currentDay.getDate()}</span></span>${totalStr}`;
-         col.appendChild(header);
+         const rec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 }; const totalSec = rec.stopwatch + rec.timer; let totalStr = '';
+         if (totalSec > 0) { const h = Math.floor(totalSec / 3600); const m = Math.floor((totalSec % 3600) / 60); totalStr = `<div class="${isToday ? 'text-green-200' : 'text-[#22741C]'} text-[9px] font-extrabold mt-0.5 tracking-tighter leading-none">${h}h ${m}m</div>`; }
+         header.innerHTML = `<span>${dayNames[i]} <span class="text-[9px] ${isToday ? 'opacity-90' : 'text-gray-400'}">${currentDay.getDate()}</span></span>${totalStr}`; col.appendChild(header);
 
-         const checklist = document.createElement('div');
-         checklist.className = 'h-[120px] flex-shrink-0 overflow-y-auto custom-scrollbar p-1.5 border-b border-[#e6e2d8] flex flex-col bg-[#faf8f5]';
+         const checklist = document.createElement('div'); checklist.className = 'h-[120px] flex-shrink-0 overflow-y-auto custom-scrollbar p-1.5 border-b border-[#e6e2d8] flex flex-col bg-[#faf8f5]';
          if(Array.isArray(allTasks[dateKey]) && allTasks[dateKey].length > 0) {
              allTasks[dateKey].forEach((t, tIdx) => {
-                 const cat = categories.find(c => c.id === t.categoryId) || categories[0];
-                 const isCheckedClass = t.isChecked ? 'line-through opacity-50' : '';
-                 const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
-                 checklist.innerHTML += `
-                     <div class="flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full">
-                         <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer" onclick="toggleTaskFromWeekly('${dateKey}', ${tIdx}, event)">
-                         <span class="${isCheckedClass} break-words whitespace-normal flex-1" style="color: ${colorStyle}">${t.text}</span>
-                     </div>
-                 `;
+                 const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const isCheckedClass = t.isChecked ? 'line-through opacity-50' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+                 checklist.innerHTML += `<div class="flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full"><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer" onclick="toggleTaskFromWeekly('${dateKey}', ${tIdx}, event)"><span class="${isCheckedClass} break-words whitespace-normal flex-1" style="color: ${colorStyle}">${t.text}</span></div>`;
              });
-         } else {
-             checklist.innerHTML = `<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>`;
-         }
+         } else { checklist.innerHTML = `<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>`; }
          col.appendChild(checklist);
          
-         const body = document.createElement('div');
-         body.className = 'w-full flex-shrink-0 box-border flex flex-col bg-white';
-         
-         const gridData = dailyRecords[dateKey]?.grid || [];
-         const labels = dailyRecords[dateKey]?.labels || {}; 
+         const body = document.createElement('div'); body.className = 'w-full flex-shrink-0 box-border flex flex-col bg-white';
+         const gridData = dailyRecords[dateKey]?.grid || []; const labels = dailyRecords[dateKey]?.labels || {}; 
 
          for(let h = 5; h < 29; h++) {
-             const row = document.createElement('div');
-             row.className = `flex w-full border-b border-[#e6e2d8] relative box-border`;
-             row.style.height = `${slotHeight}px`; 
-             
-             const bgContainer = document.createElement('div');
-             bgContainer.className = 'absolute inset-0 flex flex-row w-full h-full pointer-events-none z-0';
-             for(let m = 0; m < 6; m++) {
-                 const minBlock = document.createElement('div');
-                 minBlock.className = 'flex-1 h-full box-border';
-                 if (m < 5) minBlock.classList.add('border-r', 'border-dashed', 'border-[#e2e8f0]');
-                 bgContainer.appendChild(minBlock);
-             }
+             const row = document.createElement('div'); row.className = `flex w-full border-b border-[#e6e2d8] relative box-border`; row.style.height = `${slotHeight}px`; 
+             const bgContainer = document.createElement('div'); bgContainer.className = 'absolute inset-0 flex flex-row w-full h-full pointer-events-none z-0';
+             for(let m = 0; m < 6; m++) { const minBlock = document.createElement('div'); minBlock.className = 'flex-1 h-full box-border'; if (m < 5) minBlock.classList.add('border-r', 'border-dashed', 'border-[#e2e8f0]'); bgContainer.appendChild(minBlock); }
              row.appendChild(bgContainer);
+             const cellContainer = document.createElement('div'); cellContainer.className = 'absolute inset-0 flex flex-row w-full h-full z-10 opacity-80';
              
-             const cellContainer = document.createElement('div');
-             cellContainer.className = 'absolute inset-0 flex flex-row w-full h-full z-10 opacity-80';
-             
-             let currentSegment = null;
-             let segments = [];
-
+             let currentSegment = null; let segments = [];
              for(let m = 0; m < 6; m++) {
-                 const idx = (h - 5) * 6 + m;
-                 const color = gridData ? gridData[idx] : null;
-                 const cell = document.createElement('div');
-                 cell.className = 'flex-1 h-full box-border';
-                 
-                 if (color) {
-                     cell.style.backgroundColor = hexToRgba(color, 0.3); 
-                     if (!currentSegment || currentSegment.color !== color) {
-                         if (currentSegment) segments.push(currentSegment);
-                         currentSegment = { start: m, end: m, color: color, idxs: [idx] };
-                     } else {
-                         currentSegment.end = m;
-                         currentSegment.idxs.push(idx);
-                     }
-                 } else {
-                     if (currentSegment) {
-                         segments.push(currentSegment);
-                         currentSegment = null;
-                     }
-                 }
+                 const idx = (h - 5) * 6 + m; const color = gridData ? gridData[idx] : null; const cell = document.createElement('div'); cell.className = 'flex-1 h-full box-border';
+                 if (color) { cell.style.backgroundColor = hexToRgba(color, 0.3); if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
                  cellContainer.appendChild(cell);
              }
              if (currentSegment) segments.push(currentSegment); 
 
              segments.forEach(seg => {
-                 let segText = '';
-                 seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
-                 
+                 let segText = ''; seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
                  if(segText) {
-                     const overlay = document.createElement('div');
-                     overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-20 w-full';
-                     const leftPercent = (seg.start / 6) * 100;
-                     const widthPercent = ((seg.end - seg.start + 1) / 6) * 100;
-                     overlay.style.left = `${leftPercent}%`;
-                     overlay.style.width = `${widthPercent}%`;
-                     
-                     overlay.innerHTML = `
-                         <div class="absolute w-full h-[1.5px] z-0 opacity-70" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div>
-                         <div class="absolute w-full flex justify-between items-center text-[8px] font-black z-0 px-0.5 opacity-70" style="color: ${seg.color}">
-                            <span>◀</span><span>▶</span>
-                         </div>
-                         <div class="relative bg-white/90 px-1.5 py-[2px] rounded-[3px] shadow-sm text-[9px] font-extrabold text-black z-10 border-[1.5px] border-black max-w-[90%] truncate leading-none" style="color: ${seg.color}; border-color: ${seg.color}">
-                             ${segText}
-                         </div>
-                     `;
+                     const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-20 w-full';
+                     const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100;
+                     overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
+                     overlay.innerHTML = `<div class="absolute w-full h-[1.5px] z-0 opacity-70" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[8px] font-black z-0 px-0.5 opacity-70" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-white/90 px-1.5 py-[2px] rounded-[3px] shadow-sm text-[9px] font-extrabold text-black z-10 border-[1.5px] border-black max-w-[90%] truncate leading-none" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
                      row.appendChild(overlay);
                  }
              });
-
-             row.appendChild(cellContainer);
-             body.appendChild(row);
+             row.appendChild(cellContainer); body.appendChild(row);
          }
-         col.appendChild(body);
-         gridContainer.appendChild(col);
+         col.appendChild(body); gridContainer.appendChild(col);
       }
-
       $('weeklyPlannerModal').classList.remove('hidden');
     }
 
-    function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); }
+    function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); isHabitEditMode = false; const btn = $('habitEditBtn'); if(btn) btn.textContent = '- 삭제'; }
+    window.toggleHabitEdit = function() { isHabitEditMode = !isHabitEditMode; const btn = $('habitEditBtn'); if(btn) btn.textContent = isHabitEditMode ? '완료' : '- 삭제'; renderHabits(); };
+    window.deleteHabit = function(index) { if(weeklyHabits[window.currentWeekKey]) { weeklyHabits[window.currentWeekKey].splice(index, 1); saveWeeklySpecifics(); renderHabits(); } };
 
     function renderHabits() {
-        const list = $('habitList');
-        if(!list) return;
-        list.innerHTML = '';
-        const habits = weeklyHabits[currentWeekKey] || [];
+        const list = $('habitList'); if(!list) return; list.innerHTML = ''; const habits = weeklyHabits[window.currentWeekKey] || [];
         habits.forEach((h, i) => {
-            const row = document.createElement('div');
-            row.className = 'flex items-center gap-1 mb-1.5';
-            row.innerHTML = `
-                <input type="text" value="${h.text}" onchange="updateHabitText(${i}, this.value)" placeholder="목표 입력..." class="w-[45%] text-[10px] font-bold border-b border-gray-100 hover:border-gray-300 focus:border-blue-400 outline-none bg-transparent px-1 transition-colors">
-                <div class="w-[55%] flex justify-between px-1">
-                    ${h.tracker.map((val, dIdx) => {
-                        let content = '', border = 'border-gray-200 text-transparent';
-                        if(val === 1) { content = 'O'; border = 'border-red-300 text-red-400 bg-red-50'; }
-                        if(val === 2) { content = 'X'; border = 'border-red-300 text-red-400 bg-gray-50'; }
-                        return `<div onclick="toggleHabit(${i}, ${dIdx})" class="w-[18px] h-[18px] rounded-full border ${border} flex items-center justify-center text-[10px] font-extrabold cursor-pointer select-none leading-none transition-colors">${content}</div>`;
-                    }).join('')}
-                </div>
-            `;
+            const row = document.createElement('div'); row.className = 'flex items-center gap-1 mb-1.5';
+            const deleteBtnHtml = isHabitEditMode ? `<button onclick="deleteHabit(${i})" class="w-3.5 h-3.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 hover:bg-red-600 shadow-sm transition">×</button>` : '';
+            row.innerHTML = `<div class="w-[45%] flex items-center gap-1.5 pl-1">${deleteBtnHtml}<input type="text" value="${h.text}" onchange="updateHabitText(${i}, this.value)" placeholder="목표 입력..." class="w-full text-[10px] font-bold border-b border-gray-100 hover:border-gray-300 focus:border-blue-400 outline-none bg-transparent transition-colors"></div><div class="w-[55%] flex justify-between px-1">${h.tracker.map((val, dIdx) => { let content = '', border = 'border-gray-200 text-transparent'; if(val === 1) { content = 'O'; border = 'border-red-300 text-red-400 bg-red-50'; } if(val === 2) { content = 'X'; border = 'border-red-300 text-red-400 bg-gray-50'; } return `<div onclick="toggleHabit(${i}, ${dIdx})" class="w-[18px] h-[18px] rounded-full border ${border} flex items-center justify-center text-[10px] font-extrabold cursor-pointer select-none leading-none transition-colors">${content}</div>`; }).join('')}</div>`;
             list.appendChild(row);
         });
     }
 
     // --- 확장 메모 관련 로직 시작 ---
-    function renderExtMemoButtons() {
-        for(let i=0; i<4; i++) {
-            const btn = $('extMemoBtn' + i);
-            if(btn && extendedMemos[i]) {
-                btn.textContent = extendedMemos[i].title || `메모 ${i+1}`;
-            }
-        }
-    }
+    function renderExtMemoButtons() { for(let i=0; i<4; i++) { const btn = $('extMemoBtn' + i); if(btn && extendedMemos[i]) { btn.textContent = extendedMemos[i].title || `메모 ${i+1}`; } } }
+    function openExtendedMemo(index) { currentExtMemoIndex = index; $('extMemoTitle').value = extendedMemos[index].title || ''; $('extMemoContent').value = extendedMemos[index].content || ''; $('extendedMemoModal').classList.remove('hidden'); }
+    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; }
+    function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
+    function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
 
-    function openExtendedMemo(index) {
-        currentExtMemoIndex = index;
-        $('extMemoTitle').value = extendedMemos[index].title || '';
-        $('extMemoContent').value = extendedMemos[index].content || '';
-        $('extendedMemoModal').classList.remove('hidden');
-    }
-
-    function closeExtendedMemo() {
-        $('extendedMemoModal').classList.add('hidden');
-        currentExtMemoIndex = null;
-    }
-
-    // 💡 제목 자동 저장 및 버튼 이름 변경 함수
-    function updateExtMemoTitle(val) {
-        if (currentExtMemoIndex !== null) {
-            extendedMemos[currentExtMemoIndex].title = val;
-            setLocal('ianExtendedMemos', extendedMemos);
-            const btn = $('extMemoBtn' + currentExtMemoIndex);
-            if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`;
-        }
-    }
-
-    // 💡 내용 자동 저장 함수
-    function updateExtMemoContent(val) {
-        if (currentExtMemoIndex !== null) {
-            extendedMemos[currentExtMemoIndex].content = val;
-            setLocal('ianExtendedMemos', extendedMemos);
-        }
-    }
-    // --- 확장 메모 관련 로직 끝 ---
-
-    function toggleTbColorEdit() {
-        isTbColorEditMode = !isTbColorEditMode;
-        $('tbEditColorBtn').textContent = isTbColorEditMode ? '완료' : '수정';
-        renderTbColors();
-    }
-
+    function toggleTbColorEdit() { isTbColorEditMode = !isTbColorEditMode; $('tbEditColorBtn').textContent = isTbColorEditMode ? '완료' : '수정'; renderTbColors(); }
     function renderTbColors() {
-        const colorContainer = $('tbColorContainer');
-        const blockColor = colorContainer.dataset.selectedColor; 
-        colorContainer.innerHTML = '';
-
+        const colorContainer = $('tbColorContainer'); const blockColor = colorContainer.dataset.selectedColor; colorContainer.innerHTML = '';
         trackerColors.forEach(tc => {
-            const cWrapper = document.createElement('div');
-            cWrapper.className = 'relative flex-shrink-0';
-
-            const c = document.createElement('div');
-            c.className = `w-6 h-6 rounded-full cursor-pointer border-2 transition-all ${blockColor === tc.color && !isTbColorEditMode ? 'border-black shadow-md' : 'border-transparent'}`;
-            c.style.backgroundColor = tc.color;
-
+            const cWrapper = document.createElement('div'); cWrapper.className = 'relative flex-shrink-0';
+            const c = document.createElement('div'); c.className = `w-6 h-6 rounded-full cursor-pointer border-2 transition-all ${blockColor === tc.color && !isTbColorEditMode ? 'border-black shadow-md' : 'border-transparent'}`; c.style.backgroundColor = tc.color;
             if (isTbColorEditMode) {
-                const delBtn = document.createElement('div');
-                delBtn.className = 'absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold cursor-pointer z-50 shadow-sm';
-                delBtn.innerHTML = '×';
-                delBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    if (trackerColors.length > 1) {
-                        trackerColors = trackerColors.filter(x => x.id !== tc.id);
-                        saveTrackerColors();
-                        if (colorContainer.dataset.selectedColor === tc.color) colorContainer.dataset.selectedColor = trackerColors[0].color;
-                        renderTbColors();
-                    } else {
-                        alert("최소 1개의 컬러는 유지해야 합니다.");
-                    }
-                };
+                const delBtn = document.createElement('div'); delBtn.className = 'absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold cursor-pointer z-50 shadow-sm'; delBtn.innerHTML = '×';
+                delBtn.onclick = (e) => { e.stopPropagation(); if (trackerColors.length > 1) { trackerColors = trackerColors.filter(x => x.id !== tc.id); saveTrackerColors(); if (colorContainer.dataset.selectedColor === tc.color) colorContainer.dataset.selectedColor = trackerColors[0].color; renderTbColors(); } else { alert("최소 1개의 컬러는 유지해야 합니다."); } };
                 cWrapper.appendChild(delBtn);
-
-                const picker = document.createElement('input');
-                picker.type = 'color';
-                picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0';
-                picker.value = tc.color;
+                const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.value = tc.color;
                 picker.onchange = (e) => {
-                    const oldColor = tc.color;
-                    const newColor = e.target.value;
-                    tc.color = newColor;
-
-                    if (colorContainer.dataset.selectedColor === oldColor) colorContainer.dataset.selectedColor = newColor;
-
-                    for (let dKey in dailyRecords) {
-                        const grid = dailyRecords[dKey].grid;
-                        for(let i=0; i<grid.length; i++) { if (grid[i] === oldColor) grid[i] = newColor; }
-                        if (dailyRecords[dKey].labels) {
-                            for (let key in dailyRecords[dKey].labels) {
-                                if (dailyRecords[dKey].labels[key].color === oldColor) dailyRecords[dKey].labels[key].color = newColor;
-                            }
-                        }
-                    }
-                    
-                    savePlannerData();
-                    saveTrackerColors();
-                    if(currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey);
-                    renderTbColors();
+                    const oldColor = tc.color; const newColor = e.target.value; tc.color = newColor; if (colorContainer.dataset.selectedColor === oldColor) colorContainer.dataset.selectedColor = newColor;
+                    for (let dKey in dailyRecords) { const grid = dailyRecords[dKey].grid; for(let i=0; i<grid.length; i++) { if (grid[i] === oldColor) grid[i] = newColor; } if (dailyRecords[dKey].labels) { for (let key in dailyRecords[dKey].labels) { if (dailyRecords[dKey].labels[key].color === oldColor) dailyRecords[dKey].labels[key].color = newColor; } } }
+                    savePlannerData(); saveTrackerColors(); if(currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); renderTbColors();
                 };
-                cWrapper.appendChild(picker);
-                c.onclick = () => picker.click();
-            } else {
-                c.onclick = () => {
-                    colorContainer.dataset.selectedColor = tc.color;
-                    renderTbColors(); 
-                };
-            }
-            cWrapper.appendChild(c);
-            colorContainer.appendChild(cWrapper);
+                cWrapper.appendChild(picker); c.onclick = () => picker.click();
+            } else { c.onclick = () => { colorContainer.dataset.selectedColor = tc.color; renderTbColors(); }; }
+            cWrapper.appendChild(c); colorContainer.appendChild(cWrapper);
         });
-
         if (isTbColorEditMode) {
-            const addBtn = document.createElement('div');
-            addBtn.className = 'w-6 h-6 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-100 text-gray-500 text-sm font-bold flex-shrink-0';
-            addBtn.innerHTML = '+';
-            addBtn.onclick = () => {
-                trackerColors.push({ id: 'tc' + Date.now(), color: '#94a3b8' });
-                saveTrackerColors();
-                renderTbColors();
-            };
+            const addBtn = document.createElement('div'); addBtn.className = 'w-6 h-6 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-100 text-gray-500 text-sm font-bold flex-shrink-0'; addBtn.innerHTML = '+';
+            addBtn.onclick = () => { trackerColors.push({ id: 'tc' + Date.now(), color: '#94a3b8' }); saveTrackerColors(); renderTbColors(); };
             colorContainer.appendChild(addBtn);
         }
     }
@@ -1227,184 +962,71 @@
     function saveTrackerColors() { setLocal('ianTrackerColors', trackerColors); }
 
     function openTimeBlockModal(idx, dateKey) {
-        tbCurrentIdx = idx;
-        currentPlannerDateKey = dateKey;
-        const data = dailyRecords[dateKey];
-        const blockColor = data.grid[idx];
-
-        let startIdx = idx;
-        if (blockColor) {
-            while (startIdx > 0 && data.grid[startIdx - 1] === blockColor) startIdx--;
-        }
-
-        if (!data.labels) data.labels = {};
-        $('tbLabelInput').value = data.labels[startIdx] ? data.labels[startIdx].text : '';
-
-        const colorContainer = $('tbColorContainer');
-        colorContainer.dataset.selectedColor = blockColor || trackerColors[0].color;
-        
-        isTbColorEditMode = false;
-        $('tbEditColorBtn').textContent = '수정';
-        renderTbColors();
-
-        $('timeBlockModal').classList.remove('hidden');
+        tbCurrentIdx = idx; currentPlannerDateKey = dateKey; const data = dailyRecords[dateKey]; const blockColor = data.grid[idx];
+        let startIdx = idx; if (blockColor) { while (startIdx > 0 && data.grid[startIdx - 1] === blockColor) startIdx--; }
+        if (!data.labels) data.labels = {}; $('tbLabelInput').value = data.labels[startIdx] ? data.labels[startIdx].text : '';
+        const colorContainer = $('tbColorContainer'); colorContainer.dataset.selectedColor = blockColor || trackerColors[0].color;
+        isTbColorEditMode = false; $('tbEditColorBtn').textContent = '수정'; renderTbColors(); $('timeBlockModal').classList.remove('hidden');
     }
 
     $('tbSaveBtn').onclick = () => {
-        const newText = $('tbLabelInput').value.trim();
-        const newColor = $('tbColorContainer').dataset.selectedColor;
-        const data = dailyRecords[currentPlannerDateKey];
-
-        const oldColor = data.grid[tbCurrentIdx];
-        let start = tbCurrentIdx, end = tbCurrentIdx;
-        
-        if (oldColor) {
-            while(start > 0 && data.grid[start - 1] === oldColor) start--;
-            while(end < 143 && data.grid[end + 1] === oldColor) end++;
-        }
-
-        for(let i = start; i <= end; i++) {
-            data.grid[i] = newColor;
-            if(data.labels) delete data.labels[i]; 
-        }
-
-        if (newText) {
-            if (!data.labels) data.labels = {};
-            data.labels[start] = { text: newText, color: newColor };
-        }
-
-        savePlannerData();
-        $('timeBlockModal').classList.add('hidden');
-        renderTimeGrid(currentPlannerDateKey);
+        const newText = $('tbLabelInput').value.trim(); const newColor = $('tbColorContainer').dataset.selectedColor; const data = dailyRecords[currentPlannerDateKey];
+        const oldColor = data.grid[tbCurrentIdx]; let start = tbCurrentIdx, end = tbCurrentIdx;
+        if (oldColor) { while(start > 0 && data.grid[start - 1] === oldColor) start--; while(end < 143 && data.grid[end + 1] === oldColor) end++; }
+        for(let i = start; i <= end; i++) { data.grid[i] = newColor; if(data.labels) delete data.labels[i]; }
+        if (newText) { if (!data.labels) data.labels = {}; data.labels[start] = { text: newText, color: newColor }; }
+        savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey);
     };
 
     $('tbDeleteBtn').onclick = () => {
-        const data = dailyRecords[currentPlannerDateKey];
-        const oldColor = data.grid[tbCurrentIdx];
-        let start = tbCurrentIdx, end = tbCurrentIdx;
-        if (oldColor) {
-            while(start > 0 && data.grid[start - 1] === oldColor) start--;
-            while(end < 143 && data.grid[end + 1] === oldColor) end++;
-        }
-
-        for(let i = start; i <= end; i++) {
-            data.grid[i] = null;
-            if (data.labels && data.labels[i]) delete data.labels[i];
-        }
-        savePlannerData();
-        $('timeBlockModal').classList.add('hidden');
-        renderTimeGrid(currentPlannerDateKey);
+        const data = dailyRecords[currentPlannerDateKey]; const oldColor = data.grid[tbCurrentIdx]; let start = tbCurrentIdx, end = tbCurrentIdx;
+        if (oldColor) { while(start > 0 && data.grid[start - 1] === oldColor) start--; while(end < 143 && data.grid[end + 1] === oldColor) end++; }
+        for(let i = start; i <= end; i++) { data.grid[i] = null; if (data.labels && data.labels[i]) delete data.labels[i]; }
+        savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey);
     }
 
     function renderCalendar() {
-      const calendar = $('calendar');
-      if (!calendar) return;
-      calendar.innerHTML = '';
-      
-      const year = displayDate.getFullYear(), month = displayDate.getMonth();
-      $('monthYear').textContent = `${year}년 ${month + 1}월`;
-      
-      const firstDay = new Date(year, month, 1).getDay();
-      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const calendar = $('calendar'); if (!calendar) return; calendar.innerHTML = '';
+      const year = displayDate.getFullYear(), month = displayDate.getMonth(); $('monthYear').textContent = `${year}년 ${month + 1}월`;
+      const firstDay = new Date(year, month, 1).getDay(); const today = new Date(); today.setHours(0, 0, 0, 0);
       const filteredMulti = multiTasks.filter(t => selectedFilters.has('all') || selectedFilters.has(t.categoryId));
-      
       const slots = [];
-      filteredMulti.sort((a, b) => new Date(a.start) - new Date(b.start)).forEach(t => {
-        let slot = slots.findIndex(s => new Date(t.start) > new Date(s));
-        if (slot === -1) { slot = slots.length; slots.push(t.end); }
-        else slots[slot] = t.end;
-        t.slot = slot;
-      });
+      filteredMulti.sort((a, b) => new Date(a.start) - new Date(b.start)).forEach(t => { let slot = slots.findIndex(s => new Date(t.start) > new Date(s)); if (slot === -1) { slot = slots.length; slots.push(t.end); } else slots[slot] = t.end; t.slot = slot; });
 
       for (let i = 0; i < 42; i++) {
-        const d = new Date(year, month, i - firstDay + 1);
-        const key = getDateKey(d);
-        
+        const d = new Date(year, month, i - firstDay + 1); const key = getDateKey(d);
         if (i % 7 === 0) {
-            const wStart = new Date(year, month, i - firstDay + 1);
-            const wEnd = new Date(year, month, i - firstDay + 7);
+            const wStart = new Date(year, month, i - firstDay + 1); const wEnd = new Date(year, month, i - firstDay + 7);
             const weekBtn = document.createElement('div');
             weekBtn.className = 'bg-[#e5e7eb] hover:bg-[#d1d5db] cursor-pointer flex items-center justify-center transition-colors group border-b border-gray-100 min-h-[120px] h-full w-full relative z-[200] pointer-events-auto';
             weekBtn.innerHTML = `<div class="rotate-[-90deg] text-[10px] font-bold text-gray-500 tracking-widest opacity-60 group-hover:opacity-100 transition-opacity absolute pointer-events-none whitespace-nowrap">WEEK</div>`;
-            
-            const openPlannerHandler = (e) => {
-                e.preventDefault(); e.stopPropagation();
-                openWeeklyPlanner(wStart, wEnd);
-            };
-            weekBtn.onmousedown = openPlannerHandler;
-            weekBtn.onclick = openPlannerHandler;
-            weekBtn.addEventListener('touchstart', openPlannerHandler, {passive: false});
-            
+            const openPlannerHandler = (e) => { e.preventDefault(); e.stopPropagation(); openWeeklyPlanner(wStart, wEnd); };
+            weekBtn.onmousedown = openPlannerHandler; weekBtn.onclick = openPlannerHandler; weekBtn.addEventListener('touchstart', openPlannerHandler, {passive: false});
             calendar.appendChild(weekBtn);
         }
-
-        const cell = document.createElement('div');
-        cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300';
-        cell.setAttribute('data-date', key);
-        
-        const isCurrentMonth = d.getMonth() === month;
-        if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
-        
+        const cell = document.createElement('div'); cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300'; cell.setAttribute('data-date', key);
+        const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
         cell.onclick = (e) => { if (window.innerWidth <= 768 && !e.target.closest('.todo-item') && !e.target.closest('.multi-task')) openDetailModal(key, d); };
-        
-        cell.onmousedown = (e) => {
-          if (window.innerWidth > 768 && !e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.resize-handle') && !e.target.closest('.date-trigger')) {
-            isSelecting = true; 
-            selectStartKey = key; 
-            selectEndKey = key; 
-            highlightSelection(key, key);
-          }
-        };
-        
+        cell.onmousedown = (e) => { if (window.innerWidth > 768 && !e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.resize-handle') && !e.target.closest('.date-trigger')) { isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); } };
         cell.onmouseenter = () => { if (window.innerWidth > 768 && isSelecting) { selectEndKey = key; highlightSelection(selectStartKey, key); } };
-        cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); };
-        cell.ondrop = (e) => handleDrop(e, key);
+        cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key);
         cell.ondblclick = (e) => { if (window.innerWidth > 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
 
-        const isToday = d.getTime() === today.getTime();
-        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+        const isToday = d.getTime() === today.getTime(); const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+        const dateWrap = document.createElement('div'); dateWrap.className = 'w-full'; const dateNum = document.createElement('div');
+        let textColor = isWeekend ? 'text-red-500' : 'text-gray-700'; if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
+        let bgClass = 'bg-transparent'; if (isToday) bgClass = 'today-highlight'; else if (isCurrentMonth) bgClass = 'other-day-highlight';
+        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`; dateNum.textContent = d.getDate();
+        dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); }; dateWrap.appendChild(dateNum); cell.appendChild(dateWrap);
         
-        const dateWrap = document.createElement('div');
-        dateWrap.className = 'w-full';
-        
-        const dateNum = document.createElement('div');
-        
-        let textColor = isWeekend ? 'text-red-500' : 'text-gray-700';
-        if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
-        
-        let bgClass = 'bg-transparent';
-        if (isToday) bgClass = 'today-highlight';
-        else if (isCurrentMonth) bgClass = 'other-day-highlight';
-        
-        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`;
-        dateNum.textContent = d.getDate();
-        dateNum.onclick = (e) => {
-           e.stopPropagation();
-           openPlanner(key, d);
-        };
-        dateWrap.appendChild(dateNum);
-        cell.appendChild(dateWrap);
-        
-        const todoContainer = document.createElement('div');
-        todoContainer.className = "mt-1 flex flex-col gap-0.5 overflow-hidden todo-list-container flex-1 px-1";
-        
+        const todoContainer = document.createElement('div'); todoContainer.className = "mt-1 flex flex-col gap-0.5 overflow-hidden todo-list-container flex-1 px-1";
         if (Array.isArray(allTasks[key])) {
           allTasks[key].forEach((t, idx) => {
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
-              const cat = categories.find(c => c.id === t.categoryId) || categories[0];
-              const item = document.createElement('div');
-              item.draggable = (window.innerWidth > 768);
-              item.className = 'todo-item text-[12px] truncate px-1 rounded flex items-center gap-1.5';
-              
-              const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : '';
-              const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
-              
+              const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const item = document.createElement('div'); item.draggable = (window.innerWidth > 768); item.className = 'todo-item text-[12px] truncate px-1 rounded flex items-center gap-1.5';
+              const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
               item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="${isCheckedClass} font-medium leading-none" style="color: ${colorStyle}">${t.text}</span>`;
-              
-              item.ondragstart = () => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; };
-              item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); };
-              item.onclick = (e) => { e.stopPropagation(); if (e.target.tagName !== 'INPUT') openModal('editSingle', { dateKey: key, index: idx, ...t }); };
-              
+              item.ondragstart = () => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; }; item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; item.onclick = (e) => { e.stopPropagation(); if (e.target.tagName !== 'INPUT') openModal('editSingle', { dateKey: key, index: idx, ...t }); };
               todoContainer.appendChild(item);
             }
           });
@@ -1414,398 +1036,122 @@
         let maxSlotInCell = -1;
         filteredMulti.forEach(t => {
           if (isDateBetween(d, t.start, t.end)) {
-            maxSlotInCell = Math.max(maxSlotInCell, t.slot);
-
-            const cat = categories.find(c => c.id === t.categoryId) || categories[0];
-            const bar = document.createElement('div');
-            bar.className = 'absolute h-6 left-0 right-0 multi-task flex items-center justify-center pointer-events-none';
-            bar.style.bottom = `${t.slot * 25 + 4}px`;
-            
-            const isStartOrSunday = (key === t.start || d.getDay() === 0);
-            bar.style.zIndex = isStartOrSunday ? '50' : '10';
-            
+            maxSlotInCell = Math.max(maxSlotInCell, t.slot); const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const bar = document.createElement('div'); bar.className = 'absolute h-6 left-0 right-0 multi-task flex items-center justify-center pointer-events-none'; bar.style.bottom = `${t.slot * 25 + 4}px`;
+            const isStartOrSunday = (key === t.start || d.getDay() === 0); bar.style.zIndex = isStartOrSunday ? '50' : '10';
             let innerHTML = `<div class="relative w-full h-full flex items-center justify-center">`;
             if (key === t.start && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onmousedown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'start')"></div>`;
             innerHTML += `<div class="h-[1.5px] opacity-50 absolute" style="background-color: ${cat.color}; left: ${key === t.start ? '8px' : '0'}; right: ${key === t.end ? '8px' : '0'};"></div>`;
             if (key === t.end && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onmousedown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'end')"></div>`;
-            
-            if (isStartOrSunday) {
-                innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-2 py-0.5 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)};" draggable="${window.innerWidth > 768}" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[11px] md:text-[12px] pt-px text-black font-medium leading-none">${t.text}</span></div>`;
-            }
-            innerHTML += `</div>`;
-            
-            bar.innerHTML = innerHTML;
-            bar.onclick = (e) => { e.stopPropagation(); if (!isResizing) openModal('editMulti', t); };
-            cell.appendChild(bar);
+            if (isStartOrSunday) { innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-2 py-0.5 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)};" draggable="${window.innerWidth > 768}" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[11px] md:text-[12px] pt-px text-black font-medium leading-none">${t.text}</span></div>`; }
+            innerHTML += `</div>`; bar.innerHTML = innerHTML; bar.onclick = (e) => { e.stopPropagation(); if (!isResizing) openModal('editMulti', t); }; cell.appendChild(bar);
           }
         });
-
-        cell.style.paddingBottom = maxSlotInCell >= 0 ? `${(maxSlotInCell + 1) * 25 + 8}px` : '4px';
-        calendar.appendChild(cell);
+        cell.style.paddingBottom = maxSlotInCell >= 0 ? `${(maxSlotInCell + 1) * 25 + 8}px` : '4px'; calendar.appendChild(cell);
       }
     }
 
     function renderDashboard() {
-      const now = new Date(); now.setHours(0, 0, 0, 0);
-      const tK = getDateKey(now);
-      $('todayDateStr').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일`;
-      
-      const daysToSaturday = 6 - now.getDay();
-      const saturday = new Date(now);
-      saturday.setDate(now.getDate() + daysToSaturday);
-      $('weekDateStr').textContent = `~ ${saturday.getMonth() + 1}월 ${saturday.getDate()}일 토요일까지`;
-      
-      const tL = $('todayTasksList'), wL = $('weekTasksList');
-      tL.innerHTML = ''; wL.innerHTML = '';
-      
-      if (Array.isArray(allTasks[tK])) {
-        allTasks[tK].forEach((t, i) => { 
-          if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) tL.appendChild(createDashItem(t, tK, i)); 
-        });
-      }
-      
-      for (let i = 1; i <= daysToSaturday; i++) {
-        let d = new Date(now); d.setDate(now.getDate() + i);
-        let k = getDateKey(d);
-        if (Array.isArray(allTasks[k])) {
-          allTasks[k].forEach((t, idx) => { 
-            if (!t.isChecked && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) wL.appendChild(createDashItem(t, k, idx)); 
-          });
-        }
-      }
+      const now = new Date(); now.setHours(0, 0, 0, 0); const tK = getDateKey(now); $('todayDateStr').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일`;
+      const daysToSaturday = 6 - now.getDay(); const saturday = new Date(now); saturday.setDate(now.getDate() + daysToSaturday); $('weekDateStr').textContent = `~ ${saturday.getMonth() + 1}월 ${saturday.getDate()}일 토요일까지`;
+      const tL = $('todayTasksList'), wL = $('weekTasksList'); tL.innerHTML = ''; wL.innerHTML = '';
+      if (Array.isArray(allTasks[tK])) { allTasks[tK].forEach((t, i) => { if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) tL.appendChild(createDashItem(t, tK, i)); }); }
+      for (let i = 1; i <= daysToSaturday; i++) { let d = new Date(now); d.setDate(now.getDate() + i); let k = getDateKey(d); if (Array.isArray(allTasks[k])) { allTasks[k].forEach((t, idx) => { if (!t.isChecked && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) wL.appendChild(createDashItem(t, k, idx)); }); } }
     }
 
     function createDashItem(t, key, idx) {
-      const cat = categories.find(c => c.id === t.categoryId) || categories[0];
-      const div = document.createElement('div');
-      div.draggable = true; div.className = "dashboard-item bg-white rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0";
-      div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
-      
-      const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black';
-      const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
-      
+      const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.draggable = true; div.className = "dashboard-item bg-white rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0"; div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
+      const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black'; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
       div.innerHTML = `<div class="drag-handle-dash">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg text-[13px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>`;
-      
-      div.ondragstart = (e) => { 
-          draggedTaskInfo = { type: 'single', dateKey: key, index: idx };
-          e.dataTransfer.setData('dash-key', key); 
-          e.dataTransfer.setData('dash-idx', idx); 
-      };
-      div.querySelector('input').onclick = (e) => { e.stopPropagation(); allTasks[key][idx].isChecked = e.target.checked; saveAndRefresh(); };
-      div.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) openModal('editSingle', { dateKey: key, index: idx, ...t }); };
-      
-      return div;
+      div.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('dash-key', key); e.dataTransfer.setData('dash-idx', idx); };
+      div.querySelector('input').onclick = (e) => { e.stopPropagation(); allTasks[key][idx].isChecked = e.target.checked; saveAndRefresh(); }; div.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) openModal('editSingle', { dateKey: key, index: idx, ...t }); }; return div;
     }
 
     function handleDashOver(e) { e.preventDefault(); }
-    function handleDashDrop(e, type) {
-      e.preventDefault();
-      const sK = e.dataTransfer.getData('dash-key'), sI = parseInt(e.dataTransfer.getData('dash-idx'));
-      const target = e.target.closest('.dashboard-item');
-      if (target) {
-        const dK = target.getAttribute('data-key'), dI = parseInt(target.getAttribute('data-idx'));
-        if (sK === dK) {
-          const temp = allTasks[sK].splice(sI, 1)[0];
-          allTasks[sK].splice(dI, 0, temp);
-          saveAndRefresh();
-        }
-      }
-    }
+    function handleDashDrop(e, type) { e.preventDefault(); const sK = e.dataTransfer.getData('dash-key'), sI = parseInt(e.dataTransfer.getData('dash-idx')); const target = e.target.closest('.dashboard-item'); if (target) { const dK = target.getAttribute('data-key'), dI = parseInt(target.getAttribute('data-idx')); if (sK === dK) { const temp = allTasks[sK].splice(sI, 1)[0]; allTasks[sK].splice(dI, 0, temp); saveAndRefresh(); } } }
 
     function buildCategoryUI() {
-      const container = $('categoryContainer');
-      if (!container) return;
-      container.innerHTML = '';
-      
+      const container = $('categoryContainer'); if (!container) return; container.innerHTML = '';
       categories.forEach(cat => {
-        const item = document.createElement('div');
-        item.className = 'color-item flex flex-col items-center gap-1 w-[60px] relative group';
-        
-        const circle = document.createElement('div');
-        circle.className = `color-circle ${selectedCategoryId === cat.id ? 'selected' : ''}`;
-        circle.style.backgroundColor = cat.color;
-        
-        const delBtn = document.createElement('div');
-        delBtn.className = 'delete-cat-btn';
-        delBtn.innerHTML = '×';
-        delBtn.style.display = isEditMode ? 'flex' : 'none';
-        
-        delBtn.onclick = (e) => {
-          e.stopPropagation();
-          if (categories.length > 1) { 
-            categories = categories.filter(c => c.id !== cat.id); 
-            saveCategories(); 
-            buildCategoryUI(); 
-          } else {
-            alert("최소 1개의 카테고리는 유지해야 합니다.");
-          }
-        };
-        
-        const picker = document.createElement('input');
-        picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0';
-        picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
-        
+        const item = document.createElement('div'); item.className = 'color-item flex flex-col items-center gap-1 w-[60px] relative group';
+        const circle = document.createElement('div'); circle.className = `color-circle ${selectedCategoryId === cat.id ? 'selected' : ''}`; circle.style.backgroundColor = cat.color;
+        const delBtn = document.createElement('div'); delBtn.className = 'delete-cat-btn'; delBtn.innerHTML = '×'; delBtn.style.display = isEditMode ? 'flex' : 'none';
+        delBtn.onclick = (e) => { e.stopPropagation(); if (categories.length > 1) { categories = categories.filter(c => c.id !== cat.id); saveCategories(); buildCategoryUI(); } else { alert("최소 1개의 카테고리는 유지해야 합니다."); } };
+        const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
         circle.onclick = () => { if (isEditMode) picker.click(); else { selectedCategoryId = cat.id; buildCategoryUI(); } };
-        
-        const nameInput = document.createElement('input');
-        nameInput.className = 'category-name'; nameInput.value = cat.name; nameInput.readOnly = !isEditMode;
-        nameInput.onchange = (e) => { cat.name = e.target.value; saveCategories(); renderCalendar(); };
-        
-        circle.appendChild(picker); circle.appendChild(delBtn);
-        item.appendChild(circle); item.appendChild(nameInput);
-        container.appendChild(item);
+        const nameInput = document.createElement('input'); nameInput.className = 'category-name'; nameInput.value = cat.name; nameInput.readOnly = !isEditMode; nameInput.onchange = (e) => { cat.name = e.target.value; saveCategories(); renderCalendar(); };
+        circle.appendChild(picker); circle.appendChild(delBtn); item.appendChild(circle); item.appendChild(nameInput); container.appendChild(item);
       });
     }
 
-    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits })))); alert("데이터 복사 완료!"); }
-    
-    function importData() { 
-      const c = prompt("코드를 붙여넣으세요."); 
-      if (!c) return; 
-      try { 
-        const d = JSON.parse(decodeURIComponent(atob(c))); 
-        if(d.allTasks) setLocal('ianSchedulerTasks', d.allTasks); 
-        if(d.multiTasks) setLocal('ianMultiTasks', d.multiTasks); 
-        if(d.categories) setLocal('ianCategories', d.categories); 
-        if(d.trackerColors) setLocal('ianTrackerColors', d.trackerColors);
-        if(d.memo) localStorage.setItem('ianMemo', d.memo); 
-        if(d.dailyRecords) setLocal('ianDailyRecords', d.dailyRecords); 
-        if(d.inboxTasks) setLocal('ianInboxTasks', d.inboxTasks);
-        if(d.weeklyMemos) setLocal('ianWeeklyMemos', d.weeklyMemos);
-        if(d.weeklyHabits) setLocal('ianWeeklyHabits', d.weeklyHabits);
-        window.location.reload(); 
-      } catch (e) { alert("오류!"); } 
-    }
-    
+    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos })))); alert("데이터 복사 완료!"); }
+    function importData() { const c = prompt("코드를 붙여넣으세요."); if (!c) return; try { const d = JSON.parse(decodeURIComponent(atob(c))); if(d.allTasks) setLocal('ianSchedulerTasks', d.allTasks); if(d.multiTasks) setLocal('ianMultiTasks', d.multiTasks); if(d.categories) setLocal('ianCategories', d.categories); if(d.trackerColors) setLocal('ianTrackerColors', d.trackerColors); if(d.memo) localStorage.setItem('ianMemo', d.memo); if(d.dailyRecords) setLocal('ianDailyRecords', d.dailyRecords); if(d.inboxTasks) setLocal('ianInboxTasks', d.inboxTasks); if(d.weeklyMemos) setLocal('ianWeeklyMemos', d.weeklyMemos); if(d.weeklyHabits) setLocal('ianWeeklyHabits', d.weeklyHabits); if(d.extendedMemos) setLocal('ianExtendedMemos', d.extendedMemos); window.location.reload(); } catch (e) { alert("오류!"); } }
     function addNewCategory() { categories.push({ id: 'cat' + Date.now(), color: '#94a3b8', name: '새 카테고리' }); saveCategories(); buildCategoryUI(); }
-    
-    function toggleCategoryEdit() { 
-      isEditMode = !isEditMode; 
-      buildCategoryUI(); 
-      $('toggleEditBtn').textContent = isEditMode ? '완료' : '변경'; 
-    }
-    
+    function toggleCategoryEdit() { isEditMode = !isEditMode; buildCategoryUI(); $('toggleEditBtn').textContent = isEditMode ? '완료' : '변경'; }
     function saveCategories() { setLocal('ianCategories', categories); renderFilterBar(); }
     
     function renderFilterBar() {
-      const bar = $('filterBar');
-      bar.innerHTML = `<button onclick="toggleFilter('all')" class="filter-btn ${selectedFilters.has('all') ? 'active' : ''}" style="color:#000; background:#eee">전체보기</button>`;
-      categories.forEach(cat => {
-        const btn = document.createElement('button');
-        btn.onclick = () => toggleFilter(cat.id);
-        btn.className = `filter-btn ${selectedFilters.has(cat.id) ? 'active' : ''}`;
-        btn.style.color = cat.color; btn.style.backgroundColor = hexToRgba(cat.color, 0.12);
-        btn.textContent = cat.name;
-        bar.appendChild(btn);
-      });
+      const bar = $('filterBar'); bar.innerHTML = `<button onclick="toggleFilter('all')" class="filter-btn ${selectedFilters.has('all') ? 'active' : ''}" style="color:#000; background:#eee">전체보기</button>`;
+      categories.forEach(cat => { const btn = document.createElement('button'); btn.onclick = () => toggleFilter(cat.id); btn.className = `filter-btn ${selectedFilters.has(cat.id) ? 'active' : ''}`; btn.style.color = cat.color; btn.style.backgroundColor = hexToRgba(cat.color, 0.12); btn.textContent = cat.name; bar.appendChild(btn); });
     }
-
-    function toggleFilter(id) {
-      if (id === 'all') { selectedFilters.clear(); selectedFilters.add('all'); }
-      else { selectedFilters.delete('all'); selectedFilters.has(id) ? selectedFilters.delete(id) : selectedFilters.add(id); if (selectedFilters.size === 0) selectedFilters.add('all'); }
-      renderFilterBar(); renderCalendar(); renderDashboard();
-    }
-
+    function toggleFilter(id) { if (id === 'all') { selectedFilters.clear(); selectedFilters.add('all'); } else { selectedFilters.delete('all'); selectedFilters.has(id) ? selectedFilters.delete(id) : selectedFilters.add(id); if (selectedFilters.size === 0) selectedFilters.add('all'); } renderFilterBar(); renderCalendar(); renderDashboard(); }
     function saveAndRefresh() { setLocal('ianSchedulerTasks', allTasks); setLocal('ianMultiTasks', multiTasks); renderCalendar(); renderDashboard(); }
-    
-    function openModal(mode, data) { 
-      currentMode = mode; 
-      editData = data; 
-      
-      if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none';
-      else $('modalDeleteBtn').style.display = 'block';
-      
-      if (data && data.categoryId) selectedCategoryId = data.categoryId;
-      else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1';
-      
-      $('eventModal').classList.remove('hidden'); 
-      $('modalInput').value = (data && data.text) ? data.text : ''; 
-      buildCategoryUI(); 
-    }
-    
+    function openModal(mode, data) { currentMode = mode; editData = data; if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; $('eventModal').classList.remove('hidden'); $('modalInput').value = (data && data.text) ? data.text : ''; buildCategoryUI(); }
     function closeModal() { $('eventModal').classList.add('hidden'); }
-    
     function openDetailModal(key, date) {
-      const m = $('mobileDetailModal'), l = $('detailList');
-      $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 일정`;
-      l.innerHTML = ''; m.classList.remove('hidden');
-      
-      (allTasks[key] || []).forEach((t, i) => {
-        const cat = categories.find(c => c.id === t.categoryId) || categories[0];
-        const div = document.createElement('div');
-        div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl";
-        div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`;
-        div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); };
-        div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } };
-        l.appendChild(div);
-      });
+      const m = $('mobileDetailModal'), l = $('detailList'); $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 일정`; l.innerHTML = ''; m.classList.remove('hidden');
+      (allTasks[key] || []).forEach((t, i) => { const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"; div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`; div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); }; div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } }; l.appendChild(div); });
       $('detailAddBtn').onclick = () => { closeDetailModal(); openModal('createSingle', { dateKey: key }); };
     }
-
     function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); }
 
     $('modalSaveBtn').onclick = () => {
       const txt = $('modalInput').value.trim() || '새 일정';
-      if (currentMode === 'createSingle') {
-        if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
-        allTasks[editData.dateKey].push({ text: txt, categoryId: selectedCategoryId, isChecked: false });
-      } else if (currentMode === 'editSingle') {
-        allTasks[editData.dateKey][editData.index] = { text: txt, categoryId: selectedCategoryId, isChecked: editData.isChecked };
-      } else if (currentMode === 'createMulti') {
-        multiTasks.push({ id: Date.now(), start: pendingStart, end: pendingEnd, text: txt, categoryId: selectedCategoryId });
-      } else if (currentMode === 'editMulti') {
-        const t = multiTasks.find(x => x.id === editData.id);
-        t.text = txt; t.categoryId = selectedCategoryId;
-      } else if (currentMode === 'editInbox') {
-        inboxTasks[editData.index] = { text: txt, categoryId: selectedCategoryId, isChecked: editData.isChecked };
-        setLocal('ianInboxTasks', inboxTasks);
-        renderInbox();
-      }
-      
-      if (currentMode !== 'editInbox') saveAndRefresh(); 
-      closeModal();
-      
-      if(currentPlannerDateKey) {
-          activeBrushColor = null; 
-          renderPlannerTasks(currentPlannerDateKey);
-      }
+      if (currentMode === 'createSingle') { if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = []; allTasks[editData.dateKey].push({ text: txt, categoryId: selectedCategoryId, isChecked: false }); } 
+      else if (currentMode === 'editSingle') { allTasks[editData.dateKey][editData.index] = { text: txt, categoryId: selectedCategoryId, isChecked: editData.isChecked }; } 
+      else if (currentMode === 'createMulti') { multiTasks.push({ id: Date.now(), start: pendingStart, end: pendingEnd, text: txt, categoryId: selectedCategoryId }); } 
+      else if (currentMode === 'editMulti') { const t = multiTasks.find(x => x.id === editData.id); t.text = txt; t.categoryId = selectedCategoryId; } 
+      else if (currentMode === 'editInbox') { inboxTasks[editData.index] = { text: txt, categoryId: selectedCategoryId, isChecked: editData.isChecked }; setLocal('ianInboxTasks', inboxTasks); renderInbox(); }
+      if (currentMode !== 'editInbox') saveAndRefresh(); closeModal(); if(currentPlannerDateKey) { activeBrushColor = null; renderPlannerTasks(currentPlannerDateKey); }
     };
 
     $('modalDeleteBtn').onclick = () => {
       if (currentMode.includes('Multi')) multiTasks = multiTasks.filter(x => x.id !== editData.id);
-      else if (currentMode === 'editInbox') {
-          inboxTasks.splice(editData.index, 1);
-          setLocal('ianInboxTasks', inboxTasks);
-          renderInbox();
-      } else allTasks[editData.dateKey].splice(editData.index, 1);
-      
-      if (currentMode !== 'editInbox') saveAndRefresh(); 
-      closeModal();
-      
-      if(currentPlannerDateKey) {
-          activeBrushColor = null; 
-          renderPlannerTasks(currentPlannerDateKey);
-      }
+      else if (currentMode === 'editInbox') { inboxTasks.splice(editData.index, 1); setLocal('ianInboxTasks', inboxTasks); renderInbox(); } 
+      else allTasks[editData.dateKey].splice(editData.index, 1);
+      if (currentMode !== 'editInbox') saveAndRefresh(); closeModal(); if(currentPlannerDateKey) { activeBrushColor = null; renderPlannerTasks(currentPlannerDateKey); }
     };
 
     function startMultiDrag(e, id) { e.stopPropagation(); draggedTaskInfo = { type: 'multi', id: id }; }
     function startResize(e, id, edge) { e.preventDefault(); e.stopPropagation(); isResizing = true; resizingTaskId = id; resizingEdge = edge; }
-    
-    function highlightSelection(s, e) {
-      if (!s || !e) return;
-      let [st, et] = [new Date(s).getTime(), new Date(e).getTime()];
-      if (st > et) [st, et] = [et, st];
-      document.querySelectorAll('.group-cell').forEach(cell => {
-        const d = new Date(cell.getAttribute('data-date')).getTime();
-        cell.classList.toggle('selected-range', d >= st && d <= et);
-      });
-    }
+    function highlightSelection(s, e) { if (!s || !e) return; let [st, et] = [new Date(s).getTime(), new Date(e).getTime()]; if (st > et) [st, et] = [et, st]; document.querySelectorAll('.group-cell').forEach(cell => { const d = new Date(cell.getAttribute('data-date')).getTime(); cell.classList.toggle('selected-range', d >= st && d <= et); }); }
     
     function handleDrop(e, targetDate) {
-      e.preventDefault();
-      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-      if (!draggedTaskInfo) return;
-      
-      if (draggedTaskInfo.type === 'inbox') {
-        const task = inboxTasks.splice(draggedTaskInfo.index, 1)[0];
-        if (!allTasks[targetDate]) allTasks[targetDate] = [];
-        allTasks[targetDate].push(task);
-        setLocal('ianInboxTasks', inboxTasks);
-        saveAndRefresh();
-        renderInbox();
-      } else if (draggedTaskInfo.type === 'single') {
-        const { dateKey: src, index } = draggedTaskInfo;
-        const task = allTasks[src].splice(index, 1)[0];
-        if (!allTasks[targetDate]) allTasks[targetDate] = [];
-        allTasks[targetDate].push(task);
-        saveAndRefresh();
-      } else if (draggedTaskInfo.type === 'multi') {
-        const task = multiTasks.find(t => String(t.id) === String(draggedTaskInfo.id));
-        const diff = new Date(targetDate).getTime() - new Date(task.start).getTime();
-        const newEnd = new Date(new Date(task.end).getTime() + diff);
-        task.start = targetDate;
-        task.end = getDateKey(newEnd);
-        saveAndRefresh();
-      }
+      e.preventDefault(); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); if (!draggedTaskInfo) return;
+      if (draggedTaskInfo.type === 'inbox') { const task = inboxTasks.splice(draggedTaskInfo.index, 1)[0]; if (!allTasks[targetDate]) allTasks[targetDate] = []; allTasks[targetDate].push(task); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox(); } 
+      else if (draggedTaskInfo.type === 'single') { const { dateKey: src, index } = draggedTaskInfo; const task = allTasks[src].splice(index, 1)[0]; if (!allTasks[targetDate]) allTasks[targetDate] = []; allTasks[targetDate].push(task); saveAndRefresh(); } 
+      else if (draggedTaskInfo.type === 'multi') { const task = multiTasks.find(t => String(t.id) === String(draggedTaskInfo.id)); const diff = new Date(targetDate).getTime() - new Date(task.start).getTime(); const newEnd = new Date(new Date(task.end).getTime() + diff); task.start = targetDate; task.end = getDateKey(newEnd); saveAndRefresh(); }
       draggedTaskInfo = null;
     }
     
     function handleInboxDrop(e) {
-      e.preventDefault();
-      if (!draggedTaskInfo) return;
-
-      if (draggedTaskInfo.type === 'single') {
-        const { dateKey: src, index } = draggedTaskInfo;
-        const task = allTasks[src].splice(index, 1)[0];
-        inboxTasks.push(task);
-        setLocal('ianInboxTasks', inboxTasks);
-        saveAndRefresh();
-        renderInbox();
-      } else if (draggedTaskInfo.type === 'multi') {
-        const taskIdx = multiTasks.findIndex(t => String(t.id) === String(draggedTaskInfo.id));
-        if (taskIdx > -1) {
-          const task = multiTasks.splice(taskIdx, 1)[0];
-          inboxTasks.push({ text: task.text, categoryId: task.categoryId, isChecked: false });
-          setLocal('ianInboxTasks', inboxTasks);
-          saveAndRefresh();
-          renderInbox();
-        }
-      }
+      e.preventDefault(); if (!draggedTaskInfo) return;
+      if (draggedTaskInfo.type === 'single') { const { dateKey: src, index } = draggedTaskInfo; const task = allTasks[src].splice(index, 1)[0]; inboxTasks.push(task); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox(); } 
+      else if (draggedTaskInfo.type === 'multi') { const taskIdx = multiTasks.findIndex(t => String(t.id) === String(draggedTaskInfo.id)); if (taskIdx > -1) { const task = multiTasks.splice(taskIdx, 1)[0]; inboxTasks.push({ text: task.text, categoryId: task.categoryId, isChecked: false }); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox(); } }
       draggedTaskInfo = null;
     }
 
-    function isDateBetween(d, s, e) {
-      const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime();
-      return ct >= st && ct <= et;
-    }
+    function isDateBetween(d, s, e) { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; }
 
     window.onload = () => { 
         try {
-            renderFilterBar(); 
-            renderCalendar(); 
-            renderDashboard(); 
-            renderInbox(); 
-            updateTUI(); 
-            buildCategoryUI(); 
-            updateRecordDisplay();
-            renderExtMemoButtons();
-
-            const memoArea = $('memoArea');
-            if(memoArea) {
-                memoArea.value = localStorage.getItem('ianMemo') || '';
-                memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); };
-            }
-
-            const prevBtn = $('prevBtn');
-            if(prevBtn) prevBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
-            
-            const nextBtn = $('nextBtn');
-            if(nextBtn) nextBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
-
-            const extMemoTitle = $('extMemoTitle');
-            if(extMemoTitle) {
-                extMemoTitle.addEventListener('input', (e) => {
-                    if (currentExtMemoIndex !== null) {
-                        extendedMemos[currentExtMemoIndex].title = e.target.value;
-                        setLocal('ianExtendedMemos', extendedMemos);
-                        const btn = $('extMemoBtn' + currentExtMemoIndex);
-                        if(btn) btn.textContent = e.target.value || `메모 ${currentExtMemoIndex+1}`;
-                    }
-                });
-            }
-
-            const extMemoContent = $('extMemoContent');
-            if(extMemoContent) {
-                extMemoContent.addEventListener('input', (e) => {
-                    if (currentExtMemoIndex !== null) {
-                        extendedMemos[currentExtMemoIndex].content = e.target.value;
-                        setLocal('ianExtendedMemos', extendedMemos);
-                    }
-                });
-            }
-        } catch(err) {
-            console.error("초기화 중 에러 발생:", err);
-        }
+            renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
+            const memoArea = $('memoArea'); if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); }; }
+            const prevBtn = $('prevBtn'); if(prevBtn) prevBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
+            const nextBtn = $('nextBtn'); if(nextBtn) nextBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
+            const extMemoTitle = $('extMemoTitle'); if(extMemoTitle) { extMemoTitle.addEventListener('input', (e) => { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = e.target.value; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = e.target.value || `메모 ${currentExtMemoIndex+1}`; } }); }
+            const extMemoContent = $('extMemoContent'); if(extMemoContent) { extMemoContent.addEventListener('input', (e) => { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = e.target.value; setLocal('ianExtendedMemos', extendedMemos); } }); }
+            const inboxInput = $('inboxInput'); if(inboxInput) { inboxInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { const txt = this.value.trim(); if (txt) { inboxTasks.push({ text: txt, categoryId: selectedCategoryId || categories[0].id, isChecked: false }); setLocal('ianInboxTasks', inboxTasks); renderInbox(); this.value = ''; } } }); }
+        } catch(err) { console.error("초기화 중 에러 발생:", err); }
     };
   </script>
 </body>
