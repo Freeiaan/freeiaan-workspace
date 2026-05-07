@@ -6,6 +6,7 @@
   <title>Task Scheduler by freeiaan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
   <style>
     /* 폰트 안티앨리어싱 추가로 흐릿함 개선 */
     body { 
@@ -22,7 +23,10 @@
     .todo-checkbox { appearance: none; width: 15px !important; height: 15px !important; border: 1.5px solid #d1d5db; border-radius: 4px; cursor: pointer; background-color: white; flex-shrink: 0; margin: 0 !important; }
     .todo-checkbox:checked { background-color: #9ca3af; border-color: #9ca3af; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E"); background-size: 100% 100%; }
     
-    .timer-font { font-family: 'Courier New', Courier, monospace; font-weight: bold; }
+    /* 디지털 시계 폰트 및 원 안의 폰트 적용 */
+    .timer-font { font-family: 'Digital-7 Mono', monospace; font-weight: normal; letter-spacing: -2px; }
+    .timer-dial-font { font-family: 'Pretendard', sans-serif !important; font-weight: 500; }
+    
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; overflow-x: auto; white-space: nowrap; }
 
@@ -32,8 +36,8 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 10px; }
     .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #d1d5db; }
 
-    #memoArea { resize: none; line-height: 1.6; outline: none; overflow-y: auto; font-weight: 400; color: #000; }
-    #timerDial { cursor: crosshair; touch-action: none; overflow: hidden; border-radius: 9999px; }
+    #memoArea, #weeklySpecificMemo { line-height: 1.6; outline: none; overflow-y: auto; font-weight: 400; color: #000; }
+    #timerDial { cursor: crosshair; touch-action: none; overflow: hidden; border-radius: 9999px; background-color: #ffffff; /* 원 배경색 흰색 */ }
     
     .multi-task { z-index: 50; pointer-events: auto; position: absolute; left: 0; right: 0; }
     .todo-list-container { position: relative; z-index: 20; pointer-events: none; }
@@ -115,7 +119,7 @@
             <h3 class="font-bold text-orange-800 text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-orange-400 rounded-sm"></span> 메모장</h3>
             <span class="text-[9px] text-orange-400 font-bold uppercase">Auto Save</span>
           </div>
-          <textarea id="memoArea" class="flex-1 w-full bg-transparent text-[13px] font-bold custom-scrollbar pr-1.5"></textarea>
+          <textarea id="memoArea" class="flex-1 w-full bg-transparent text-[13px] font-bold custom-scrollbar resize-none outline-none pr-1.5"></textarea>
         </div>
       </div>
 
@@ -132,35 +136,45 @@
         </div>
       </header>
 
-      <div id="calendarArea" class="rounded-xl border border-gray-200 overflow-hidden bg-gray-200 gap-px grid grid-cols-7 relative">
+      <div id="calendarArea" class="rounded-xl border border-gray-200 overflow-hidden bg-gray-200 gap-px relative" style="display: grid; grid-template-columns: 24px repeat(7, minmax(0, 1fr));">
+        <div class="day-header bg-gray-100 border-b border-gray-200"></div>
         <div class="day-header day-header-sun">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header day-header-sat">토</div>
         <div id="calendar" class="contents"></div>
       </div>
     </div>
 
     <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)]">
-      <h2 class="text-base font-bold text-black mb-4 flex-shrink-0">타이머</h2>
+      
+      <div class="flex justify-between w-full items-center mb-4 flex-shrink-0">
+        <h2 class="text-base font-bold text-black">타이머</h2>
+        <div id="recordDisplayGlobal" class="text-[10px] font-bold text-gray-500 flex gap-1.5"></div>
+      </div>
       
       <div id="timerClickArea" class="w-40 h-40 md:w-52 md:h-52 flex-shrink-0 bg-[#ede8e1] rounded-[2rem] p-3 md:p-4 shadow-lg relative flex justify-center items-center mb-5">
-        <div id="timerDial" class="w-full h-full bg-[#1b4332] rounded-full relative flex justify-center items-center shadow-inner cursor-crosshair">
+        <div id="timerDial" class="w-full h-full relative flex justify-center items-center shadow-inner cursor-crosshair">
           <div id="pieSlice" class="absolute inset-0 transition-all origin-center"></div>
           
-          <div class="absolute top-1.5 md:top-2 left-1/2 -translate-x-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">0</div>
-          <div class="absolute right-1.5 md:right-2 top-1/2 -translate-y-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">15</div>
-          <div class="absolute bottom-1.5 md:bottom-2 left-1/2 -translate-x-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">30</div>
-          <div class="absolute left-1.5 md:left-2 top-1/2 -translate-y-1/2 text-[#ede8e1] text-[10px] md:text-xs font-bold opacity-60 pointer-events-none z-10 select-none">45</div>
+          <div class="absolute top-1.5 md:top-2 left-1/2 -translate-x-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">0</div>
+          <div class="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">15</div>
+          <div class="absolute bottom-1.5 md:bottom-2 left-1/2 -translate-x-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">30</div>
+          <div class="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">45</div>
           
           <div class="w-2.5 h-2.5 md:w-3 md:h-3 bg-[#ede8e1] rounded-full shadow-md z-20 absolute pointer-events-none"></div>
         </div>
       </div>
       
-      <div id="digitalTime" class="text-2xl md:text-3xl timer-font flex-shrink-0 text-black mb-5 tracking-widest">00:00:00</div>
+      <div id="digitalTime" class="text-4xl md:text-5xl timer-font flex-shrink-0 text-black mb-5 tracking-tighter">00:00:00</div>
       
-      <div class="flex w-full gap-2 mb-3 flex-shrink-0">
-        <button id="startBtn" onclick="startTimer()" class="flex-1 bg-[#22741C] text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-base hover:bg-[#1b5e16]">시작</button>
-        <button id="pauseBtn" onclick="pauseTimer()" class="flex-1 bg-gray-500 text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-base hover:bg-gray-600">일시정지</button>
+      <div class="flex w-full gap-1.5 mb-3 flex-shrink-0">
+        <button id="startBtn" onclick="startTimer()" class="flex-[2] bg-[#22741C] text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-[13px] hover:bg-[#1b5e16]">시작</button>
+        <button id="pauseBtn" onclick="pauseTimer()" class="flex-1 bg-gray-500 text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-[13px] hover:bg-gray-600 px-1">정지</button>
+        <button id="recordBtn" onclick="recordTimer()" class="flex-1 bg-blue-500 text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-[13px] hover:bg-blue-600 px-1">기록</button>
       </div>
-      <button onclick="resetTimer()" class="text-gray-500 hover:text-black flex-shrink-0 text-[10px] font-bold transition mb-3">초기화</button>
+      
+      <div class="flex gap-4 mb-3 items-center justify-center">
+        <button onclick="resetTimer()" class="text-gray-500 hover:text-black flex-shrink-0 text-[10px] font-bold transition">초기화</button>
+        <button onclick="hardResetTimer()" class="text-red-400 hover:text-red-600 flex-shrink-0 text-[10px] font-bold transition">완전 초기화</button>
+      </div>
       
       <hr class="w-full border-gray-200 my-4 flex-shrink-0">
       <div class="w-full flex justify-between items-center mb-2 flex-shrink-0">
@@ -184,8 +198,11 @@
       </header>
       
       <div class="flex-1 overflow-hidden flex flex-col md:flex-row p-4 md:p-8 gap-8">
-         <div class="w-full md:w-1/2 flex flex-col h-full">
-            <h3 class="font-bold text-sm mb-1 text-gray-800 tracking-wide">TIME TRACKER</h3>
+         <div class="w-full md:w-1/2 flex flex-col h-full relative">
+            <div class="flex justify-between items-end mb-1">
+                <h3 class="font-bold text-sm text-gray-800 tracking-wide">TIME TRACKER</h3>
+                <div id="modalRecordDisplay" class="text-[11px] font-bold text-[#22741C]"></div>
+            </div>
             <p class="text-[10px] text-gray-400 mb-3">(빈 칸을 드래그하면 색이 칠해지고, 칠해진 칸을 다시 드래그하면 지워집니다)</p>
             <div class="flex text-[10px] text-gray-400 mb-1 pl-10 border-b border-[#e6e2d8] pb-1">
                <div class="flex-1 text-center font-semibold">10</div>
@@ -209,6 +226,68 @@
                <textarea id="plannerNote" class="flex-1 bg-transparent border-t border-[#e6e2d8] pt-4 resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar pr-2" placeholder="오늘 하루는 어땠나요? 자유롭게 기록해보세요..."></textarea>
             </div>
          </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="weeklyPlannerModal" class="hidden fixed inset-0 z-[400] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-2 md:p-6" onclick="if(event.target === this) closeWeeklyPlanner()">
+    <div class="bg-[#faf8f5] w-full max-w-6xl h-[90vh] md:h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
+      <header class="p-6 md:p-8 flex justify-between items-end border-b border-[#e6e2d8] flex-shrink-0">
+         <div>
+           <h2 class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Weekly Record</h2>
+           <p id="weeklySubtitle" class="text-xs font-bold text-gray-500 mt-2 uppercase tracking-widest"></p>
+         </div>
+         <button onclick="closeWeeklyPlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+      </header>
+      
+      <div class="flex-1 overflow-hidden flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
+         
+         <div class="flex-1 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
+             <div class="flex justify-between items-end bg-[#f8fafc] px-4 py-2 border-b border-[#e6e2d8]">
+                 <h3 class="font-bold text-[13px] text-gray-800 tracking-wide">WEEKLY TIME TRACKER</h3>
+                 <span class="text-[9px] text-gray-400">* 체크리스트 클릭 시 자동 동기화되며, 일간 트래커 데이터가 요일별로 요약 표시됩니다.</span>
+             </div>
+             
+             <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
+               <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
+                 <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border" style="height: 160px; background-color: #f8fafc;"></div>
+                 <div id="weeklyTimeLabels" class="relative flex flex-col w-full pb-4"></div>
+               </div>
+               <div id="weeklyGridContainer" class="flex flex-1 bg-white w-full"></div>
+             </div>
+         </div>
+
+         <div class="w-full md:w-64 flex flex-col gap-4 flex-shrink-0">
+            <div class="flex-1 bg-[#fffbeb] rounded-xl p-4 border border-orange-100 flex flex-col shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-xs font-bold text-orange-800 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-orange-400 rounded-sm"></span> 이번 주 메모</h4>
+                    <span class="text-[8px] text-orange-400 font-bold uppercase">개별저장됨</span>
+                </div>
+                <textarea id="weeklySpecificMemo" class="flex-1 w-full bg-transparent text-[12px] font-medium custom-scrollbar resize-none outline-none pr-1" placeholder="주간 목표나 자유로운 메모를 적어보세요..."></textarea>
+            </div>
+            
+            <div class="bg-white rounded-xl p-4 border border-gray-200 flex flex-col shadow-sm min-h-[260px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="text-xs font-bold text-gray-800 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-blue-400 rounded-sm"></span> 해빗 트래커</h4>
+                    <button onclick="window.addHabit()" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold transition">+ 추가</button>
+                </div>
+                
+                <div class="flex text-[10px] font-bold text-gray-400 mb-2 border-b border-gray-100 pb-1">
+                    <div class="w-[45%] pl-1">Objective</div>
+                    <div class="w-[55%] flex justify-between px-1">
+                        <div class="w-4 text-center text-red-400">S</div>
+                        <div class="w-4 text-center">M</div>
+                        <div class="w-4 text-center">T</div>
+                        <div class="w-4 text-center">W</div>
+                        <div class="w-4 text-center">T</div>
+                        <div class="w-4 text-center">F</div>
+                        <div class="w-4 text-center text-blue-400">S</div>
+                    </div>
+                </div>
+                <div id="habitList" class="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 flex-1 pb-2"></div>
+            </div>
+         </div>
+
       </div>
     </div>
   </div>
@@ -265,7 +344,6 @@
   </div>
 
   <script>
-    // --- 1. 유틸리티 & 헬퍼 함수 ---
     const $ = id => document.getElementById(id);
     const getDateKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
     const hexToRgba = (hex, a) => {
@@ -276,7 +354,6 @@
     const getLocal = (key, fallback) => JSON.parse(localStorage.getItem(key)) || fallback;
     const setLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
-    // --- 2. 전역 상태 관리 ---
     const defaultCats = [
       { id: 'cat1', color: '#000000', name: '기본' },
       { id: 'cat2', color: '#ef4444', name: '유튜브' },
@@ -299,6 +376,9 @@
     let multiTasks = getLocal('ianMultiTasks', []).filter(t => t && t.start && t.end);
     let dailyRecords = getLocal('ianDailyRecords', {}); 
     let inboxTasks = getLocal('ianInboxTasks', []);
+    
+    let weeklyMemos = getLocal('ianWeeklyMemos', {});
+    let weeklyHabits = getLocal('ianWeeklyHabits', {});
 
     let selectedFilters = new Set(['all']), displayDate = new Date();
     let isEditMode = false, isResizing = false, resizingTaskId = null, resizingEdge = null;
@@ -315,9 +395,9 @@
     let tbCurrentIdx = -1;
     let isTbColorEditMode = false;
 
-    // --- 3. 타이머 로직 (스톱워치 모드 추가) ---
     let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0;
-    let timerMode = 'idle'; // 'idle', 'timer', 'stopwatch'
+    let timerMode = 'idle';
+    let sessionElapsed = 0;
 
     const tDial = $('timerDial'), pSlice = $('pieSlice');
     
@@ -325,7 +405,7 @@
       const h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60;
       $('digitalTime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       const angle = ((timeLeft % 3600) / 3600) * 360;
-      pSlice.style.background = timeLeft <= 0 ? 'none' : `conic-gradient(from 0deg, rgba(163, 197, 179, 0.7) ${angle}deg, transparent ${angle}deg)`;
+      pSlice.style.background = timeLeft <= 0 ? 'none' : `conic-gradient(from 0deg, #1b4332 ${angle}deg, transparent ${angle}deg)`;
     }
     
     function getAngle(e) {
@@ -339,7 +419,7 @@
     tDial.onmousedown = (e) => {
       if (isR) return;
       isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e);
-      timerMode = 'idle'; // 다이얼을 돌리면 모드 초기화 (타이머 모드 준비)
+      timerMode = 'idle'; 
     };
 
     window.addEventListener('mousemove', (e) => {
@@ -389,27 +469,18 @@
 
     function startTimer() {
       if (isR) return;
-
-      // 현재 모드 판별
-      if (timerMode === 'idle') {
-          // 시간이 0이면 스톱워치(카운트업), 0보다 크면 타이머(카운트다운)
-          timerMode = timeLeft === 0 ? 'stopwatch' : 'timer';
-      }
-
+      if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer';
       isR = true;
       $('startBtn').textContent = '진행중';
       $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]');
 
       tInt = setInterval(() => {
-        if (timerMode === 'stopwatch') {
-            timeLeft++;
-        } else {
-            timeLeft--;
-        }
+        if (timerMode === 'stopwatch') timeLeft++;
+        else timeLeft--;
+        sessionElapsed++; 
         updateTUI();
         
-        // 타이머 모드일 때 시간이 다 되면 종료
-        if (timerMode === 'timer' && timeLeft <= 0) resetTimer();
+        if (timerMode === 'timer' && timeLeft <= 0) recordTimer();
       }, 1000);
     }
 
@@ -423,16 +494,68 @@
     
     function resetTimer() {
       clearInterval(tInt); 
-      isR = false; 
-      timeLeft = 0; 
-      tLaps = 0; 
-      timerMode = 'idle';
+      isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0;
       updateTUI(); 
       $('startBtn').textContent = '시작';
       $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]');
     }
 
-    // --- 할 일 보관함 (Inbox) 로직 ---
+    function recordTimer() {
+        if (sessionElapsed <= 0) return;
+        const todayKey = getDateKey(new Date());
+
+        if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
+        if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 };
+
+        let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer';
+        if (timerMode === 'idle') type = 'timer'; 
+        
+        dailyRecords[todayKey].recorded[type] += sessionElapsed;
+        
+        savePlannerData();
+        updateRecordDisplay();
+        resetTimer();
+        
+        if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey);
+    }
+
+    function hardResetTimer() {
+        if(confirm("오늘 하루 동안 기록된 총 누적 시간(스톱워치+타이머)이 모두 0으로 삭제됩니다. 정말 완전히 초기화할까요?")) {
+            const todayKey = getDateKey(new Date());
+            if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
+            dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 };
+            
+            savePlannerData();
+            updateRecordDisplay();
+            resetTimer(); 
+            
+            if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey);
+        }
+    }
+
+    function formatSecs(sec) {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function updateRecordDisplay() {
+        const todayKey = getDateKey(new Date());
+        const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 };
+        $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`;
+    }
+
+    function updateModalRecordDisplay(dateKey) {
+        const dRec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 };
+        const total = dRec.stopwatch + dRec.timer;
+        const target = $('modalRecordDisplay');
+        if (target) {
+            if (total > 0) target.innerHTML = `총 기록 시간: ${formatSecs(total)} <span class="text-gray-400 text-[10px] ml-1 font-normal">(⏱️ ${formatSecs(dRec.stopwatch)} / ⏳ ${formatSecs(dRec.timer)})</span>`;
+            else target.innerHTML = '';
+        }
+    }
+
     $('inboxInput').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
           const txt = this.value.trim();
@@ -485,20 +608,18 @@
       });
     }
 
-    // --- 4. 데일리 플래너 (타임트래커 & 메모) 로직 ---
     function openPlanner(dateKey, dateObj) {
       currentPlannerDateKey = dateKey;
       $('plannerTitle').textContent = `Day ${dateObj.getDate()}`;
       $('plannerSubtitle').textContent = `${dateObj.getFullYear()} . ${String(dateObj.getMonth() + 1).padStart(2, '0')} . ${String(dateObj.getDate()).padStart(2, '0')}`;
       
-      if(!dailyRecords[dateKey]) {
-        dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; 
-      }
+      if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; 
       if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
       
       $('plannerNote').value = dailyRecords[dateKey].note;
       activeBrushColor = null; 
       
+      updateModalRecordDisplay(dateKey);
       renderPlannerTasks(dateKey);
       renderTimeGrid(dateKey);
       
@@ -510,9 +631,7 @@
       currentPlannerDateKey = null;
     }
 
-    function savePlannerData() {
-      setLocal('ianDailyRecords', dailyRecords);
-    }
+    function savePlannerData() { setLocal('ianDailyRecords', dailyRecords); }
 
     $('plannerNote').oninput = (e) => {
       if (currentPlannerDateKey) {
@@ -581,10 +700,8 @@
         };
         
         textWrapper.appendChild(textSpan);
-
         item.appendChild(circle);
         item.appendChild(textWrapper);
-
         item.onclick = () => selectBrush(cat.color, item);
         list.appendChild(item);
       });
@@ -652,9 +769,7 @@
           cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell';
           if (m === 5) cell.classList.remove('border-dashed'); 
           
-          if (color) {
-             cell.style.backgroundColor = hexToRgba(color, 0.3); 
-          }
+          if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
 
           cell.onmousedown = (e) => { 
             e.preventDefault(); 
@@ -676,11 +791,8 @@
 
           cell.onmouseup = () => {
              if (!dragHasMoved) {
-                 if (data[idx]) {
-                     openTimeBlockModal(idx, dateKey); 
-                 } else {
-                     applyBrushToCell(idx, cell); 
-                 }
+                 if (data[idx]) openTimeBlockModal(idx, dateKey); 
+                 else applyBrushToCell(idx, cell); 
              }
           };
           
@@ -691,9 +803,7 @@
 
         segments.forEach(seg => {
            let segText = '';
-           seg.idxs.forEach(i => {
-               if(labels[i]) segText = labels[i].text;
-           });
+           seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
            
            if(segText) {
                const overlay = document.createElement('div');
@@ -726,17 +836,229 @@
 
       if(dragAction === 'erase') {
         dailyRecords[currentPlannerDateKey].grid[idx] = null;
-        if(dailyRecords[currentPlannerDateKey].labels) {
-            delete dailyRecords[currentPlannerDateKey].labels[idx]; 
-        }
+        if(dailyRecords[currentPlannerDateKey].labels) delete dailyRecords[currentPlannerDateKey].labels[idx]; 
         cellElement.style.backgroundColor = 'transparent';
       } else {
-        let brush = activeBrushColor;
-        if (!brush) brush = trackerColors[0].color; 
+        let brush = activeBrushColor || trackerColors[0].color; 
         dailyRecords[currentPlannerDateKey].grid[idx] = brush;
         cellElement.style.backgroundColor = hexToRgba(brush, 0.3);
       }
       savePlannerData();
+    }
+
+    function saveWeeklySpecifics() {
+        setLocal('ianWeeklyMemos', weeklyMemos);
+        setLocal('ianWeeklyHabits', weeklyHabits);
+    }
+    
+    window.toggleTaskFromWeekly = function(dateKey, index, event) {
+        allTasks[dateKey][index].isChecked = event.target.checked;
+        saveAndRefresh();
+        
+        const span = event.target.nextElementSibling;
+        if (event.target.checked) span.classList.add('line-through', 'opacity-50');
+        else span.classList.remove('line-through', 'opacity-50');
+    };
+
+    function openWeeklyPlanner(startDate, endDate) {
+      window.currentWeekKey = getDateKey(startDate);
+
+      $('weeklySubtitle').textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')} - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}`;
+      
+      $('weeklySpecificMemo').value = weeklyMemos[currentWeekKey] || '';
+      renderHabits();
+
+      const slotHeight = 20;
+
+      const timeLabels = $('weeklyTimeLabels');
+      timeLabels.innerHTML = '';
+      for(let h = 5; h < 29; h++) {
+         const div = document.createElement('div');
+         div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`;
+         div.style.height = `${slotHeight}px`;
+         div.textContent = `${h % 24}:00`;
+         timeLabels.appendChild(div);
+      }
+
+      const gridContainer = $('weeklyGridContainer');
+      gridContainer.innerHTML = '';
+      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      
+      for(let i=0; i<7; i++) {
+         const currentDay = new Date(startDate);
+         currentDay.setDate(startDate.getDate() + i);
+         const dateKey = getDateKey(currentDay);
+         
+         const col = document.createElement('div');
+         col.className = 'flex-1 min-w-[100px] flex-shrink-0 border-r border-[#e6e2d8] last:border-r-0 flex flex-col relative w-full';
+         
+         const isToday = getDateKey(new Date()) === dateKey;
+         const isWeekend = (i === 0 || i === 6); 
+         const header = document.createElement('div');
+         const textColor = isToday ? 'text-white' : (isWeekend ? 'text-red-500' : 'text-gray-700');
+         
+         header.className = `h-10 flex-shrink-0 border-b border-[#e6e2d8] flex flex-col items-center justify-center text-[11px] font-bold sticky top-0 z-20 box-border ${isToday ? 'bg-[#1b4332]' : 'bg-[#f8fafc]'} ${textColor}`;
+         
+         const rec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 };
+         const totalSec = rec.stopwatch + rec.timer;
+         let totalStr = '';
+         if (totalSec > 0) {
+             const h = Math.floor(totalSec / 3600);
+             const m = Math.floor((totalSec % 3600) / 60);
+             totalStr = `<div class="${isToday ? 'text-green-200' : 'text-[#22741C]'} text-[9px] font-extrabold mt-0.5 tracking-tighter leading-none">${h}h ${m}m</div>`;
+         }
+         header.innerHTML = `<span>${dayNames[i]} <span class="text-[9px] ${isToday ? 'opacity-90' : 'text-gray-400'}">${currentDay.getDate()}</span></span>${totalStr}`;
+         col.appendChild(header);
+
+         const checklist = document.createElement('div');
+         checklist.className = 'h-[120px] flex-shrink-0 overflow-y-auto custom-scrollbar p-1.5 border-b border-[#e6e2d8] flex flex-col bg-[#faf8f5]';
+         if(allTasks[dateKey] && allTasks[dateKey].length > 0) {
+             allTasks[dateKey].forEach((t, tIdx) => {
+                 const cat = categories.find(c => c.id === t.categoryId) || categories[0];
+                 const isCheckedClass = t.isChecked ? 'line-through opacity-50' : '';
+                 const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+                 checklist.innerHTML += `
+                     <div class="flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full">
+                         <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer" onclick="toggleTaskFromWeekly('${dateKey}', ${tIdx}, event)">
+                         <span class="${isCheckedClass} break-words whitespace-normal flex-1" style="color: ${colorStyle}">${t.text}</span>
+                     </div>
+                 `;
+             });
+         } else {
+             checklist.innerHTML = `<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>`;
+         }
+         col.appendChild(checklist);
+         
+         const body = document.createElement('div');
+         body.className = 'w-full flex-shrink-0 box-border flex flex-col bg-white';
+         
+         const gridData = dailyRecords[dateKey]?.grid || [];
+         const labels = dailyRecords[dateKey]?.labels || {}; 
+
+         for(let h = 5; h < 29; h++) {
+             const row = document.createElement('div');
+             row.className = `flex w-full border-b border-[#e6e2d8] relative box-border`;
+             row.style.height = `${slotHeight}px`; 
+             
+             const bgContainer = document.createElement('div');
+             bgContainer.className = 'absolute inset-0 flex flex-row w-full h-full pointer-events-none z-0';
+             for(let m = 0; m < 6; m++) {
+                 const minBlock = document.createElement('div');
+                 minBlock.className = 'flex-1 h-full box-border';
+                 if (m < 5) minBlock.classList.add('border-r', 'border-dashed', 'border-[#e2e8f0]');
+                 bgContainer.appendChild(minBlock);
+             }
+             row.appendChild(bgContainer);
+             
+             const cellContainer = document.createElement('div');
+             cellContainer.className = 'absolute inset-0 flex flex-row w-full h-full z-10 opacity-80';
+             
+             let currentSegment = null;
+             let segments = [];
+
+             for(let m = 0; m < 6; m++) {
+                 const idx = (h - 5) * 6 + m;
+                 const color = gridData ? gridData[idx] : null;
+                 const cell = document.createElement('div');
+                 cell.className = 'flex-1 h-full box-border';
+                 
+                 if (color) {
+                     cell.style.backgroundColor = color;
+                     if (!currentSegment || currentSegment.color !== color) {
+                         if (currentSegment) segments.push(currentSegment);
+                         currentSegment = { start: m, end: m, color: color, idxs: [idx] };
+                     } else {
+                         currentSegment.end = m;
+                         currentSegment.idxs.push(idx);
+                     }
+                 } else {
+                     if (currentSegment) {
+                         segments.push(currentSegment);
+                         currentSegment = null;
+                     }
+                 }
+                 cellContainer.appendChild(cell);
+             }
+             if (currentSegment) segments.push(currentSegment); 
+
+             segments.forEach(seg => {
+                 let segText = '';
+                 seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
+                 
+                 if(segText) {
+                     const overlay = document.createElement('div');
+                     overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-20';
+                     const leftPercent = (seg.start / 6) * 100;
+                     const widthPercent = ((seg.end - seg.start + 1) / 6) * 100;
+                     overlay.style.left = `${leftPercent}%`;
+                     overlay.style.width = `${widthPercent}%`;
+                     
+                     overlay.innerHTML = `
+                         <div class="relative bg-white/90 px-1 py-[2px] rounded-sm shadow-[0_1px_2px_rgba(0,0,0,0.1)] text-[9px] font-extrabold z-10 border max-w-[95%] truncate leading-none" style="color: ${seg.color}; border-color: ${seg.color}">
+                             ${segText}
+                         </div>
+                     `;
+                     row.appendChild(overlay);
+                 }
+             });
+
+             row.appendChild(cellContainer);
+             body.appendChild(row);
+         }
+         col.appendChild(body);
+         gridContainer.appendChild(col);
+      }
+
+      $('weeklyPlannerModal').classList.remove('hidden');
+    }
+
+    function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); }
+
+    $('weeklySpecificMemo').oninput = (e) => {
+        weeklyMemos[currentWeekKey] = e.target.value;
+        saveWeeklySpecifics();
+    };
+
+    window.addHabit = function() {
+        if (!weeklyHabits[currentWeekKey]) weeklyHabits[currentWeekKey] = [];
+        weeklyHabits[currentWeekKey].push({ text: '', tracker: [0,0,0,0,0,0,0] });
+        saveWeeklySpecifics();
+        renderHabits();
+    };
+
+    window.updateHabitText = function(index, value) {
+        weeklyHabits[currentWeekKey][index].text = value;
+        saveWeeklySpecifics();
+    };
+
+    window.toggleHabit = function(hIndex, dIndex) {
+        let val = weeklyHabits[currentWeekKey][hIndex].tracker[dIndex];
+        val = (val + 1) % 3;
+        weeklyHabits[currentWeekKey][hIndex].tracker[dIndex] = val;
+        saveWeeklySpecifics();
+        renderHabits();
+    };
+
+    function renderHabits() {
+        const list = $('habitList');
+        list.innerHTML = '';
+        const habits = weeklyHabits[currentWeekKey] || [];
+        habits.forEach((h, i) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-1 mb-1.5';
+            row.innerHTML = `
+                <input type="text" value="${h.text}" onchange="updateHabitText(${i}, this.value)" placeholder="목표 입력..." class="w-[45%] text-[10px] font-bold border-b border-gray-100 hover:border-gray-300 focus:border-blue-400 outline-none bg-transparent px-1 transition-colors">
+                <div class="w-[55%] flex justify-between px-1">
+                    ${h.tracker.map((val, dIdx) => {
+                        let content = '', border = 'border-gray-200 text-transparent';
+                        if(val === 1) { content = 'O'; border = 'border-red-300 text-red-400 bg-red-50'; }
+                        if(val === 2) { content = 'X'; border = 'border-red-300 text-red-400 bg-gray-50'; }
+                        return `<div onclick="toggleHabit(${i}, ${dIdx})" class="w-[18px] h-[18px] rounded-full border ${border} flex items-center justify-center text-[10px] font-extrabold cursor-pointer select-none leading-none transition-colors">${content}</div>`;
+                    }).join('')}
+                </div>
+            `;
+            list.appendChild(row);
+        });
     }
 
     function toggleTbColorEdit() {
@@ -767,9 +1089,7 @@
                     if (trackerColors.length > 1) {
                         trackerColors = trackerColors.filter(x => x.id !== tc.id);
                         saveTrackerColors();
-                        if (colorContainer.dataset.selectedColor === tc.color) {
-                            colorContainer.dataset.selectedColor = trackerColors[0].color;
-                        }
+                        if (colorContainer.dataset.selectedColor === tc.color) colorContainer.dataset.selectedColor = trackerColors[0].color;
                         renderTbColors();
                     } else {
                         alert("최소 1개의 컬러는 유지해야 합니다.");
@@ -786,20 +1106,14 @@
                     const newColor = e.target.value;
                     tc.color = newColor;
 
-                    if (colorContainer.dataset.selectedColor === oldColor) {
-                        colorContainer.dataset.selectedColor = newColor;
-                    }
+                    if (colorContainer.dataset.selectedColor === oldColor) colorContainer.dataset.selectedColor = newColor;
 
                     for (let dKey in dailyRecords) {
                         const grid = dailyRecords[dKey].grid;
-                        for(let i=0; i<grid.length; i++) {
-                            if (grid[i] === oldColor) grid[i] = newColor;
-                        }
+                        for(let i=0; i<grid.length; i++) { if (grid[i] === oldColor) grid[i] = newColor; }
                         if (dailyRecords[dKey].labels) {
                             for (let key in dailyRecords[dKey].labels) {
-                                if (dailyRecords[dKey].labels[key].color === oldColor) {
-                                    dailyRecords[dKey].labels[key].color = newColor;
-                                }
+                                if (dailyRecords[dKey].labels[key].color === oldColor) dailyRecords[dKey].labels[key].color = newColor;
                             }
                         }
                     }
@@ -817,7 +1131,6 @@
                     renderTbColors(); 
                 };
             }
-
             cWrapper.appendChild(c);
             colorContainer.appendChild(cWrapper);
         });
@@ -835,9 +1148,7 @@
         }
     }
 
-    function saveTrackerColors() {
-        setLocal('ianTrackerColors', trackerColors);
-    }
+    function saveTrackerColors() { setLocal('ianTrackerColors', trackerColors); }
 
     function openTimeBlockModal(idx, dateKey) {
         tbCurrentIdx = idx;
@@ -847,9 +1158,7 @@
 
         let startIdx = idx;
         if (blockColor) {
-            while (startIdx > 0 && data.grid[startIdx - 1] === blockColor) {
-                startIdx--;
-            }
+            while (startIdx > 0 && data.grid[startIdx - 1] === blockColor) startIdx--;
         }
 
         if (!data.labels) data.labels = {};
@@ -911,7 +1220,6 @@
         renderTimeGrid(currentPlannerDateKey);
     }
 
-    // --- 5. 데이터 렌더링 (캘린더 & 대시보드) ---
     function renderCalendar() {
       const calendar = $('calendar');
       if (!calendar) return;
@@ -935,8 +1243,26 @@
       for (let i = 0; i < 42; i++) {
         const d = new Date(year, month, i - firstDay + 1);
         const key = getDateKey(d);
-        const cell = document.createElement('div');
         
+        if (i % 7 === 0) {
+            const wStart = new Date(year, month, i - firstDay + 1);
+            const wEnd = new Date(year, month, i - firstDay + 7);
+            const weekBtn = document.createElement('div');
+            weekBtn.className = 'bg-[#e5e7eb] hover:bg-[#d1d5db] cursor-pointer flex items-center justify-center transition-colors group border-b border-gray-100 min-h-[120px] h-full w-full relative z-[200] pointer-events-auto';
+            weekBtn.innerHTML = `<div class="rotate-[-90deg] text-[10px] font-bold text-gray-500 tracking-widest opacity-60 group-hover:opacity-100 transition-opacity absolute pointer-events-none whitespace-nowrap">WEEK</div>`;
+            
+            const openPlannerHandler = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                openWeeklyPlanner(wStart, wEnd);
+            };
+            weekBtn.onmousedown = openPlannerHandler;
+            weekBtn.onclick = openPlannerHandler;
+            weekBtn.addEventListener('touchstart', openPlannerHandler, {passive: false});
+            
+            calendar.appendChild(weekBtn);
+        }
+
+        const cell = document.createElement('div');
         cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300';
         cell.setAttribute('data-date', key);
         
@@ -1010,7 +1336,6 @@
         cell.appendChild(todoContainer);
         
         let maxSlotInCell = -1;
-
         filteredMulti.forEach(t => {
           if (isDateBetween(d, t.start, t.end)) {
             maxSlotInCell = Math.max(maxSlotInCell, t.slot);
@@ -1040,7 +1365,6 @@
         });
 
         cell.style.paddingBottom = maxSlotInCell >= 0 ? `${(maxSlotInCell + 1) * 25 + 8}px` : '4px';
-
         calendar.appendChild(cell);
       }
     }
@@ -1050,21 +1374,19 @@
       const tK = getDateKey(now);
       $('todayDateStr').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일`;
       
-      const sunday = new Date(now);
-      const daysToSunday = now.getDay() === 0 ? 0 : 7 - now.getDay();
-      sunday.setDate(now.getDate() + daysToSunday);
-      $('weekDateStr').textContent = `~ ${sunday.getMonth() + 1}월 ${sunday.getDate()}일까지`;
+      const daysToSaturday = 6 - now.getDay();
+      const saturday = new Date(now);
+      saturday.setDate(now.getDate() + daysToSaturday);
+      $('weekDateStr').textContent = `~ ${saturday.getMonth() + 1}월 ${saturday.getDate()}일 토요일까지`;
       
       const tL = $('todayTasksList'), wL = $('weekTasksList');
       tL.innerHTML = ''; wL.innerHTML = '';
       
       if (allTasks[tK]) allTasks[tK].forEach((t, i) => { 
-        if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
-          tL.appendChild(createDashItem(t, tK, i)); 
-        }
+        if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) tL.appendChild(createDashItem(t, tK, i)); 
       });
       
-      for (let i = 1; i <= daysToSunday; i++) {
+      for (let i = 1; i <= daysToSaturday; i++) {
         let d = new Date(now); d.setDate(now.getDate() + i);
         let k = getDateKey(d);
         if (allTasks[k]) allTasks[k].forEach((t, idx) => { 
@@ -1110,7 +1432,6 @@
       }
     }
 
-    // --- 6. 카테고리 관리 ---
     function buildCategoryUI() {
       const container = $('categoryContainer');
       if (!container) return;
@@ -1156,8 +1477,7 @@
       });
     }
 
-    // --- 7. 유틸리티 & 시스템 액션 ---
-    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks })))); alert("데이터 복사 완료!"); }
+    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits })))); alert("데이터 복사 완료!"); }
     
     function importData() { 
       const c = prompt("코드를 붙여넣으세요."); 
@@ -1171,6 +1491,8 @@
         localStorage.setItem('ianMemo', d.memo); 
         setLocal('ianDailyRecords', d.dailyRecords || {}); 
         setLocal('ianInboxTasks', d.inboxTasks || []);
+        if(d.weeklyMemos) setLocal('ianWeeklyMemos', d.weeklyMemos);
+        if(d.weeklyHabits) setLocal('ianWeeklyHabits', d.weeklyHabits);
         window.location.reload(); 
       } catch (e) { alert("오류!"); } 
     }
@@ -1210,17 +1532,11 @@
       currentMode = mode; 
       editData = data; 
       
-      if (mode.includes('create')) {
-          $('modalDeleteBtn').style.display = 'none';
-      } else {
-          $('modalDeleteBtn').style.display = 'block';
-      }
+      if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none';
+      else $('modalDeleteBtn').style.display = 'block';
       
-      if (data && data.categoryId) {
-          selectedCategoryId = data.categoryId;
-      } else {
-          selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1';
-      }
+      if (data && data.categoryId) selectedCategoryId = data.categoryId;
+      else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1';
       
       $('eventModal').classList.remove('hidden'); 
       $('modalInput').value = (data && data.text) ? data.text : ''; 
@@ -1276,15 +1592,12 @@
     };
 
     $('modalDeleteBtn').onclick = () => {
-      if (currentMode.includes('Multi')) {
-          multiTasks = multiTasks.filter(x => x.id !== editData.id);
-      } else if (currentMode === 'editInbox') {
+      if (currentMode.includes('Multi')) multiTasks = multiTasks.filter(x => x.id !== editData.id);
+      else if (currentMode === 'editInbox') {
           inboxTasks.splice(editData.index, 1);
           setLocal('ianInboxTasks', inboxTasks);
           renderInbox();
-      } else {
-          allTasks[editData.dateKey].splice(editData.index, 1);
-      }
+      } else allTasks[editData.dateKey].splice(editData.index, 1);
       
       if (currentMode !== 'editInbox') saveAndRefresh(); 
       closeModal();
@@ -1368,7 +1681,7 @@
 
     const memoArea = $('memoArea');
     memoArea.value = localStorage.getItem('ianMemo') || '';
-    memoArea.oninput = () => localStorage.setItem('ianMemo', memoArea.value);
+    memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); };
     
     $('prevBtn').onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
     $('nextBtn').onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
@@ -1380,6 +1693,7 @@
         renderInbox(); 
         updateTUI(); 
         buildCategoryUI(); 
+        updateRecordDisplay();
     };
   </script>
 </body>
