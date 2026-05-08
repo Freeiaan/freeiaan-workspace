@@ -187,6 +187,7 @@
       </div>
       
       <hr class="w-full border-gray-200 my-4 flex-shrink-0">
+      
       <div class="w-full flex justify-between items-center mb-2 flex-shrink-0">
         <h3 class="font-bold text-black text-sm flex items-center gap-2">
           <span class="w-1.5 h-4 bg-[#facc15] rounded-sm"></span> 할 일 보관함
@@ -199,42 +200,32 @@
 
   <div id="analyticsModal" class="hidden fixed inset-0 z-[900] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) closeAnalytics()">
     <div class="bg-white w-full max-w-4xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-gray-200">
-      
       <header class="p-6 md:px-8 md:pt-8 md:pb-4 flex flex-col border-b border-gray-100 bg-white flex-shrink-0">
          <div class="flex justify-between items-start w-full mb-5">
-           <div>
-             <h2 class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Achievement Report</h2>
-           </div>
+           <div><h2 class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Achievement Report</h2></div>
            <button onclick="closeAnalytics()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
          </div>
-         
          <div class="flex flex-col gap-3">
              <div class="flex items-center gap-3">
                  <button onclick="changeAnalyticsMonth(-1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">◀</button>
                  <span id="analyticsMonthLabel" class="text-sm font-extrabold text-gray-800 tracking-wide"></span>
                  <button onclick="changeAnalyticsMonth(1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">▶</button>
              </div>
-             <div id="analyticsTabs" class="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
-                 </div>
+             <div id="analyticsTabs" class="flex gap-2 overflow-x-auto custom-scrollbar pb-2"></div>
          </div>
       </header>
-      
       <div class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 flex flex-col gap-10 bg-gray-50/30">
           <section>
               <div class="flex justify-between items-end mb-6">
                   <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2" id="chartTitle"><span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 집중 시간 분석</h3>
                   <span id="totalFocusTime" class="text-sm font-extrabold text-[#22741C]"></span>
               </div>
-              <div id="focusChart" class="flex items-end gap-3 h-48 w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                  </div>
+              <div id="focusChart" class="flex items-end gap-3 h-48 w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"></div>
           </section>
-
           <section>
               <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6"><span class="w-1.5 h-5 bg-blue-500 rounded-sm"></span> 해빗 달성률 스코어</h3>
-              <div id="habitStatsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  </div>
+              <div id="habitStatsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
           </section>
-
           <div class="bg-[#e4f8c4] p-6 rounded-2xl border border-[#c4e8b0] flex flex-col items-center justify-center text-center">
               <span class="text-2xl mb-2">🔥</span>
               <p class="text-sm font-bold text-[#1b4332]" id="cheerMessage"></p>
@@ -264,7 +255,6 @@
          </div>
          <button onclick="closePlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
-      
       <div class="flex-1 overflow-hidden flex flex-col md:flex-row p-4 md:p-8 gap-8">
          <div class="w-full md:w-1/2 flex flex-col h-full relative">
             <div class="flex justify-between items-end mb-1">
@@ -273,12 +263,8 @@
             </div>
             <p class="text-[10px] text-gray-400 mb-3">(빈 칸을 드래그하면 색이 칠해지고, 칠해진 칸을 다시 드래그하면 지워집니다)</p>
             <div class="flex text-[10px] text-gray-400 mb-1 pl-10 border-b border-[#e6e2d8] pb-1">
-               <div class="flex-1 text-center font-semibold">10</div>
-               <div class="flex-1 text-center font-semibold">20</div>
-               <div class="flex-1 text-center font-semibold">30</div>
-               <div class="flex-1 text-center font-semibold">40</div>
-               <div class="flex-1 text-center font-semibold">50</div>
-               <div class="flex-1 text-center font-semibold">60</div>
+               <div class="flex-1 text-center font-semibold">10</div><div class="flex-1 text-center font-semibold">20</div><div class="flex-1 text-center font-semibold">30</div>
+               <div class="flex-1 text-center font-semibold">40</div><div class="flex-1 text-center font-semibold">50</div><div class="flex-1 text-center font-semibold">60</div>
             </div>
             <div id="timeGrid" class="flex-1 overflow-y-auto custom-scrollbar pr-2 select-none border-l border-[#e6e2d8] relative pt-6"></div>
          </div>
@@ -306,14 +292,12 @@
          </div>
          <button onclick="closeWeeklyPlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
-      
       <div class="flex-1 overflow-hidden flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
          <div class="flex-1 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
              <div class="flex justify-between items-end bg-[#f8fafc] px-4 py-2 border-b border-[#e6e2d8]">
                  <h3 class="font-bold text-[13px] text-gray-800 tracking-wide">WEEKLY TIME TRACKER</h3>
                  <span class="text-[9px] text-gray-400">* 체크리스트 클릭 시 자동 동기화되며, 일간 트래커 데이터가 요일별로 요약 표시됩니다.</span>
              </div>
-             
              <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
                <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
                  <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border" style="height: 160px; background-color: #f8fafc;"></div>
@@ -322,7 +306,6 @@
                <div id="weeklyGridContainer" class="flex flex-1 bg-white w-full"></div>
              </div>
          </div>
-
          <div class="w-full md:w-64 flex flex-col gap-4 flex-shrink-0">
             <div class="h-60 bg-[#fffbeb] rounded-xl p-4 border border-orange-100 flex flex-col shadow-sm">
                 <div class="flex justify-between items-center mb-2">
@@ -331,7 +314,6 @@
                 </div>
                 <textarea id="weeklySpecificMemo" class="flex-1 w-full bg-transparent text-[12px] font-medium custom-scrollbar resize-none outline-none pr-1" placeholder="주간 목표를 적어보세요..."></textarea>
             </div>
-            
             <div class="flex-1 bg-white rounded-xl p-4 border border-gray-200 flex flex-col shadow-sm min-h-[260px]">
                 <div class="flex justify-between items-center mb-3">
                     <h4 class="text-xs font-bold text-gray-800 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-blue-400 rounded-sm"></span> 해빗 트래커</h4>
@@ -357,7 +339,13 @@
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[320px] p-6">
       <h3 class="text-lg font-bold mb-4">타임 블록 설정</h3>
       <input type="text" id="tbLabelInput" placeholder="일정 내용을 입력하세요" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl mb-4 text-sm font-bold">
-      <div id="tbColorContainer" class="flex gap-2 flex-wrap items-center mb-5 min-h-[30px]"></div>
+      <div class="mb-5">
+         <div class="flex justify-between items-center mb-2">
+             <span class="text-xs font-bold text-gray-500">색상 변경</span>
+             <button id="tbEditColorBtn" onclick="toggleTbColorEdit()" class="text-[10px] bg-gray-100 border px-3 py-1 rounded-lg text-gray-600 font-bold hover:bg-gray-200 transition">수정</button>
+         </div>
+         <div id="tbColorContainer" class="flex gap-2 flex-wrap items-center min-h-[30px]"></div>
+      </div>
       <div class="flex justify-between items-center pt-2">
          <button id="tbDeleteBtn" class="text-red-500 font-extrabold text-xs hover:underline">삭제</button>
          <div class="flex gap-2">
@@ -441,226 +429,87 @@
     let activeBrushColor = null, isPainting = false, dragHasMoved = false, dragStartIdx = -1, dragAction = 'paint';
     let tbCurrentIdx = -1, isTbColorEditMode = false;
 
-    // 💡 Analytics 관련 상태 변수
     let analyticsDate = new Date();
     let analyticsMode = 'month'; 
     let analyticsSelectedWeekKey = null;
 
-    // 💡 타이머 백그라운드 멈춤 방지를 위한 절대 시간 변수
     let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0, timerMode = 'idle', sessionElapsed = 0;
     let timerLastTick = 0; 
-
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
-    // ---------------- 💡 성취 리포트 (Analytics) 대시보드 로직 ----------------
-    function openAnalytics() {
-        analyticsDate = new Date(); 
-        analyticsMode = 'month'; 
-        $('analyticsModal').classList.remove('hidden');
-        renderAnalyticsTabs();
-    }
-
+    // 리포트 로직
+    function openAnalytics() { analyticsDate = new Date(); analyticsMode = 'month'; $('analyticsModal').classList.remove('hidden'); renderAnalyticsTabs(); }
     function closeAnalytics() { $('analyticsModal').classList.add('hidden'); }
+    window.changeAnalyticsMonth = function(dir) { analyticsDate.setMonth(analyticsDate.getMonth() + dir); analyticsMode = 'month'; renderAnalyticsTabs(); }
 
-    window.changeAnalyticsMonth = function(dir) {
-        analyticsDate.setMonth(analyticsDate.getMonth() + dir);
-        analyticsMode = 'month'; 
-        renderAnalyticsTabs();
-    }
-
-    // 일요일 기준 주차 나누기 적용!
     function getMonthWeeks(year, month) {
-        let weeks = [];
-        let current = new Date(year, month, 1);
-        
-        if (current.getDay() !== 0) {
-            current.setDate(current.getDate() + (7 - current.getDay()));
-        }
-        
+        let weeks = []; let current = new Date(year, month, 1);
+        if (current.getDay() !== 0) { current.setDate(current.getDate() + (7 - current.getDay())); }
         let weekNum = 1;
         while(current.getMonth() === month) {
-            let end = new Date(current);
-            end.setDate(end.getDate() + 6);
-            weeks.push({
-                weekNum: weekNum,
-                start: new Date(current),
-                end: new Date(end),
-                key: getDateKey(current),
-                label: `${weekNum}주차 ${String(current.getMonth()+1).padStart(2,'0')}.${String(current.getDate()).padStart(2,'0')}~${String(end.getMonth()+1).padStart(2,'0')}.${String(end.getDate()).padStart(2,'0')}`
-            });
-            weekNum++;
-            current.setDate(current.getDate() + 7);
+            let end = new Date(current); end.setDate(end.getDate() + 6);
+            weeks.push({ weekNum: weekNum, start: new Date(current), end: new Date(end), key: getDateKey(current), label: `${weekNum}주차 ${String(current.getMonth()+1).padStart(2,'0')}.${String(current.getDate()).padStart(2,'0')}~${String(end.getMonth()+1).padStart(2,'0')}.${String(end.getDate()).padStart(2,'0')}` });
+            weekNum++; current.setDate(current.getDate() + 7);
         }
         return weeks;
     }
 
     function renderAnalyticsTabs() {
-        const year = analyticsDate.getFullYear();
-        const month = analyticsDate.getMonth();
-        $('analyticsMonthLabel').textContent = `${year}년 ${month + 1}월`;
-
-        const weeks = getMonthWeeks(year, month);
-        const tabsContainer = $('analyticsTabs');
-        tabsContainer.innerHTML = '';
-
-        const btnAll = document.createElement('button');
-        btnAll.className = `px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-colors border ${analyticsMode === 'month' ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
-        btnAll.textContent = `${month + 1}월 전체`;
-        btnAll.onclick = () => { analyticsMode = 'month'; renderAnalyticsTabs(); renderAnalyticsContent(weeks); };
-        tabsContainer.appendChild(btnAll);
-
+        const year = analyticsDate.getFullYear(); const month = analyticsDate.getMonth(); $('analyticsMonthLabel').textContent = `${year}년 ${month + 1}월`;
+        const weeks = getMonthWeeks(year, month); const tabsContainer = $('analyticsTabs'); tabsContainer.innerHTML = '';
+        const btnAll = document.createElement('button'); btnAll.className = `px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-colors border ${analyticsMode === 'month' ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`; btnAll.textContent = `${month + 1}월 전체`; btnAll.onclick = () => { analyticsMode = 'month'; renderAnalyticsTabs(); renderAnalyticsContent(weeks); }; tabsContainer.appendChild(btnAll);
         weeks.forEach(w => {
-            const btn = document.createElement('button');
-            const isSelected = (analyticsMode === 'week' && analyticsSelectedWeekKey === w.key);
+            const btn = document.createElement('button'); const isSelected = (analyticsMode === 'week' && analyticsSelectedWeekKey === w.key);
             btn.className = `px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-colors border ${isSelected ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
-            btn.textContent = w.label;
-            btn.onclick = () => { analyticsMode = 'week'; analyticsSelectedWeekKey = w.key; renderAnalyticsTabs(); renderAnalyticsContent(weeks, w); };
-            tabsContainer.appendChild(btn);
+            btn.textContent = w.label; btn.onclick = () => { analyticsMode = 'week'; analyticsSelectedWeekKey = w.key; renderAnalyticsTabs(); renderAnalyticsContent(weeks, w); }; tabsContainer.appendChild(btn);
         });
-
-        if (analyticsMode === 'month') { renderAnalyticsContent(weeks); } 
-        else { const selWeek = weeks.find(w => w.key === analyticsSelectedWeekKey) || weeks[0]; if(selWeek) renderAnalyticsContent(weeks, selWeek); }
+        if (analyticsMode === 'month') { renderAnalyticsContent(weeks); } else { const selWeek = weeks.find(w => w.key === analyticsSelectedWeekKey) || weeks[0]; if(selWeek) renderAnalyticsContent(weeks, selWeek); }
     }
 
     function renderAnalyticsContent(allWeeks, selectedWeek = null) {
-        const focusChart = $('focusChart'); const habitGrid = $('habitStatsGrid');
-        focusChart.innerHTML = ''; habitGrid.innerHTML = '';
+        const focusChart = $('focusChart'); const habitGrid = $('habitStatsGrid'); focusChart.innerHTML = ''; habitGrid.innerHTML = '';
         let totalSec = 0, chartData = [], totalHabitBoxes = 0, successHabitCount = 0, habitsToDisplay = [];
-
         if (analyticsMode === 'month') {
             $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 월간 집중 시간 분석`;
             allWeeks.forEach(w => {
                 let weekTotal = 0;
-                for(let i=0; i<7; i++) {
-                    const d = new Date(w.start); d.setDate(d.getDate() + i);
-                    const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 };
-                    weekTotal += (rec.stopwatch + rec.timer);
-                }
+                for(let i=0; i<7; i++) { const d = new Date(w.start); d.setDate(d.getDate() + i); const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 }; weekTotal += (rec.stopwatch + rec.timer); }
                 totalSec += weekTotal; chartData.push({ label: `${w.weekNum}주차`, sec: weekTotal });
                 const wHabits = weeklyHabits[w.key] || [];
-                wHabits.forEach(h => {
-                    if(!h.text.trim()) return; 
-                    const count = h.tracker.filter(v => v === 1).length;
-                    successHabitCount += count; totalHabitBoxes += 7;
-                    let existing = habitsToDisplay.find(x => x.text === h.text);
-                    if(existing) { existing.count += count; existing.total += 7; } 
-                    else { habitsToDisplay.push({ text: h.text, count: count, total: 7 }); }
-                });
+                wHabits.forEach(h => { if(!h.text.trim()) return; const count = h.tracker.filter(v => v === 1).length; successHabitCount += count; totalHabitBoxes += 7; let existing = habitsToDisplay.find(x => x.text === h.text); if(existing) { existing.count += count; existing.total += 7; } else { habitsToDisplay.push({ text: h.text, count: count, total: 7 }); } });
             });
         } else if (analyticsMode === 'week' && selectedWeek) {
             $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 주간 집중 시간 분석`;
             const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-            for(let i=0; i<7; i++) {
-                const d = new Date(selectedWeek.start); d.setDate(d.getDate() + i);
-                const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 };
-                const dayTotal = rec.stopwatch + rec.timer; totalSec += dayTotal;
-                chartData.push({ label: dayNames[i], sec: dayTotal });
-            }
+            for(let i=0; i<7; i++) { const d = new Date(selectedWeek.start); d.setDate(d.getDate() + i); const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 }; const dayTotal = rec.stopwatch + rec.timer; totalSec += dayTotal; chartData.push({ label: dayNames[i], sec: dayTotal }); }
             const wHabits = weeklyHabits[selectedWeek.key] || [];
-            wHabits.forEach(h => {
-                if(!h.text.trim()) return;
-                const count = h.tracker.filter(v => v === 1).length;
-                successHabitCount += count; totalHabitBoxes += 7;
-                habitsToDisplay.push({ text: h.text, count: count, total: 7 });
-            });
+            wHabits.forEach(h => { if(!h.text.trim()) return; const count = h.tracker.filter(v => v === 1).length; successHabitCount += count; totalHabitBoxes += 7; habitsToDisplay.push({ text: h.text, count: count, total: 7 }); });
         }
-
         $('totalFocusTime').textContent = `총 집중: ${Math.floor(totalSec/3600)}h ${Math.floor((totalSec%3600)/60)}m`;
         const maxSec = Math.max(...chartData.map(d => d.sec), 3600); 
         chartData.forEach(d => {
-            const barWrap = document.createElement('div'); barWrap.className = 'flex-1 flex flex-col items-center gap-2';
-            const hPercent = (d.sec / maxSec) * 100;
-            let timeStr = `${Math.floor(d.sec/3600)}h`;
-            if(d.sec === 0) timeStr = '0'; else if (d.sec < 3600 || analyticsMode === 'week') timeStr = `${Math.floor(d.sec/60)}m`;
-            
-            barWrap.innerHTML = `
-                <div class="text-[12px] font-black text-[#1b4332] mb-1">${timeStr}</div>
-                <div class="w-full max-w-[40px] bg-[#e4f8c4] rounded-t-lg transition-all duration-500 relative group" style="height: ${hPercent}%">
-                    <div class="absolute inset-0 bg-[#22741C] opacity-0 group-hover:opacity-100 rounded-t-lg transition-opacity cursor-pointer" title="${Math.floor(d.sec/3600)}시간 ${Math.floor((d.sec%3600)/60)}분"></div>
-                </div>
-                <div class="text-[14px] font-extrabold text-gray-800 mt-2 whitespace-nowrap">${d.label}</div>
-            `;
-            focusChart.appendChild(barWrap);
+            const barWrap = document.createElement('div'); barWrap.className = 'flex-1 flex flex-col items-center gap-2'; const hPercent = (d.sec / maxSec) * 100;
+            let timeStr = `${Math.floor(d.sec/3600)}h`; if(d.sec === 0) timeStr = '0'; else if (d.sec < 3600 || analyticsMode === 'week') timeStr = `${Math.floor(d.sec/60)}m`;
+            barWrap.innerHTML = `<div class="text-[12px] font-black text-[#1b4332] mb-1">${timeStr}</div><div class="w-full max-w-[40px] bg-[#e4f8c4] rounded-t-lg transition-all duration-500 relative group" style="height: ${hPercent}%"><div class="absolute inset-0 bg-[#22741C] opacity-0 group-hover:opacity-100 rounded-t-lg transition-opacity cursor-pointer" title="${Math.floor(d.sec/3600)}시간 ${Math.floor((d.sec%3600)/60)}분"></div></div><div class="text-[14px] font-extrabold text-gray-800 mt-2 whitespace-nowrap">${d.label}</div>`; focusChart.appendChild(barWrap);
         });
-
-        if(habitsToDisplay.length === 0) {
-            habitGrid.innerHTML = '<div class="col-span-2 text-center text-gray-400 text-[12px] font-bold py-6">기록된 해빗 목표가 없습니다.</div>';
-        } else {
-            habitsToDisplay.forEach(h => {
-                const percent = Math.round((h.count / h.total) * 100);
-                const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center';
-                div.innerHTML = `
-                    <div class="flex flex-col overflow-hidden pr-2">
-                        <span class="text-[13px] font-bold text-gray-800 truncate">${h.text}</span>
-                        <span class="text-[10px] text-gray-400 mt-1">${analyticsMode==='month'?'월간':'주간'} ${h.total}일 중 ${h.count}일 성공</span>
-                    </div>
-                    <div class="text-xl font-black text-blue-500 flex-shrink-0">${percent}%</div>
-                `;
-                habitGrid.appendChild(div);
-            });
-        }
-
-        const totalPercent = totalHabitBoxes > 0 ? Math.round((successHabitCount / totalHabitBoxes) * 100) : 0;
-        const cheerMsg = $('cheerMessage');
-        if (totalPercent >= 80) cheerMsg.textContent = `달성률 ${totalPercent}%! 완벽한 기간이었네요! 스스로에게 선물을 줘보세요 🎁`;
-        else if (totalPercent >= 50) cheerMsg.textContent = `달성률 ${totalPercent}%! 충분히 잘하고 있어요. 조금만 더 힘내봐요! 👍`;
-        else cheerMsg.textContent = `기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
+        if(habitsToDisplay.length === 0) { habitGrid.innerHTML = '<div class="col-span-2 text-center text-gray-400 text-[12px] font-bold py-6">기록된 해빗 목표가 없습니다.</div>'; } else { habitsToDisplay.forEach(h => { const percent = Math.round((h.count / h.total) * 100); const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center'; div.innerHTML = `<div class="flex flex-col overflow-hidden pr-2"><span class="text-[13px] font-bold text-gray-800 truncate">${h.text}</span><span class="text-[10px] text-gray-400 mt-1">${analyticsMode==='month'?'월간':'주간'} ${h.total}일 중 ${h.count}일 성공</span></div><div class="text-xl font-black text-blue-500 flex-shrink-0">${percent}%</div>`; habitGrid.appendChild(div); }); }
+        const totalPercent = totalHabitBoxes > 0 ? Math.round((successHabitCount / totalHabitBoxes) * 100) : 0; const cheerMsg = $('cheerMessage');
+        if (totalPercent >= 80) cheerMsg.textContent = `달성률 ${totalPercent}%! 완벽한 기간이었네요! 스스로에게 선물을 줘보세요 🎁`; else if (totalPercent >= 50) cheerMsg.textContent = `달성률 ${totalPercent}%! 충분히 잘하고 있어요. 조금만 더 힘내봐요! 👍`; else cheerMsg.textContent = `기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
     }
-    // ----------------------------------------------------------------------------------
 
-    // ---------------- 💡 타이머 절대 시간 (백그라운드 멈춤 방지) 로직 ----------------
+    // 타이머 로직
     function updateTUI() {
-      const h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60;
-      $('digitalTime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      const angle = ((timeLeft % 3600) / 3600) * 360;
-      pSlice.style.background = timeLeft <= 0 ? 'none' : `conic-gradient(from 0deg, #1b4332 ${angle}deg, transparent ${angle}deg)`;
+      const h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60; $('digitalTime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      const angle = ((timeLeft % 3600) / 3600) * 360; pSlice.style.background = timeLeft <= 0 ? 'none' : `conic-gradient(from 0deg, #1b4332 ${angle}deg, transparent ${angle}deg)`;
     }
-
-    function getAngle(e) {
-      const r = tDial.getBoundingClientRect(); const x = (e.clientX || e.touches?.[0].clientX) - (r.left + r.width / 2); const y = (e.clientY || e.touches?.[0].clientY) - (r.top + r.height / 2);
-      let a = Math.atan2(y, x) * (180 / Math.PI) + 90; return a < 0 ? a + 360 : a;
-    }
-
+    function getAngle(e) { const r = tDial.getBoundingClientRect(); const x = (e.clientX || e.touches?.[0].clientX) - (r.left + r.width / 2); const y = (e.clientY || e.touches?.[0].clientY) - (r.top + r.height / 2); let a = Math.atan2(y, x) * (180 / Math.PI) + 90; return a < 0 ? a + 360 : a; }
     tDial.onmousedown = (e) => { if (isR) return; isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e); timerMode = 'idle'; };
-
-    window.addEventListener('mousemove', (e) => {
-      if (isDT) { let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
+    window.addEventListener('mousemove', (e) => { if (isDT) { let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
       if (isResizing) { const hC = document.elementFromPoint(e.clientX, e.clientY)?.closest('.group-cell'); if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizingTaskId)); if (t) { if (resizingEdge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizingEdge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } }
     });
-
-    window.addEventListener('mouseup', () => {
-      if (isPainting) { isPainting = false; if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); }
-      if (isDT) { isDT = false; }
-      if (isSelecting) { isSelecting = false; if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); }
-      if (isResizing) { isResizing = false; saveAndRefresh(); }
-    });
-
-    function startTimer() { 
-      if (isR) return; 
-      if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
-      isR = true; 
-      $('startBtn').textContent = '진행중'; 
-      $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); 
-      
-      timerLastTick = Date.now(); // 현실 시간 기록
-
-      tInt = setInterval(() => { 
-        const now = Date.now();
-        const deltaSec = Math.floor((now - timerLastTick) / 1000);
-
-        if (deltaSec > 0) {
-            if (timerMode === 'stopwatch') timeLeft += deltaSec; 
-            else timeLeft -= deltaSec; 
-            
-            sessionElapsed += deltaSec; 
-            timerLastTick += deltaSec * 1000;
-            
-            updateTUI(); 
-            if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); 
-        }
-      }, 500); 
-    }
-
+    window.addEventListener('mouseup', () => { if (isPainting) { isPainting = false; if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); } if (isDT) { isDT = false; } if (isSelecting) { isSelecting = false; if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); } if (isResizing) { isResizing = false; saveAndRefresh(); } });
+    function startTimer() { if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
+      tInt = setInterval(() => { const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); if (deltaSec > 0) { if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); } }, 500); }
     function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
     function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
     function recordTimer() { if (sessionElapsed <= 0) return; const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; dailyRecords[todayKey].recorded[type] += sessionElapsed; savePlannerData(); updateRecordDisplay(); resetTimer(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); }
@@ -678,34 +527,26 @@
         item.innerHTML = `<div class="drag-handle-dash text-gray-400">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg text-[12px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[12px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>`;
         item.ondragstart = (e) => { draggedTaskInfo = { type: 'inbox', index: idx }; e.dataTransfer.setData('text/plain', ''); };
         item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; setLocal('ianInboxTasks', inboxTasks); renderInbox(); };
-        item.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) { openModal('editInbox', { index: idx, ...t }); } };
-        list.appendChild(item);
+        item.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) { openModal('editInbox', { index: idx, ...t }); } }; list.appendChild(item);
       });
     }
 
     function openPlanner(dateKey, dateObj) {
-      currentPlannerDateKey = dateKey;
-      $('plannerTitle').textContent = `Day ${dateObj.getDate()}`; $('plannerSubtitle').textContent = `${dateObj.getFullYear()} . ${String(dateObj.getMonth() + 1).padStart(2, '0')} . ${String(dateObj.getDate()).padStart(2, '0')}`;
-      if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; 
-      if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
-      $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; 
-      updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey);
-      $('dailyPlannerModal').classList.remove('hidden');
+      currentPlannerDateKey = dateKey; $('plannerTitle').textContent = `Day ${dateObj.getDate()}`; $('plannerSubtitle').textContent = `${dateObj.getFullYear()} . ${String(dateObj.getMonth() + 1).padStart(2, '0')} . ${String(dateObj.getDate()).padStart(2, '0')}`;
+      if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
+      $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden');
     }
-
     function closePlanner() { $('dailyPlannerModal').classList.add('hidden'); currentPlannerDateKey = null; }
     function savePlannerData() { setLocal('ianDailyRecords', dailyRecords); }
 
     function renderPlannerTasks(dateKey) {
-      const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = [];
-      if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
+      const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = []; if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
       tasks.forEach((t, idx) => {
         const cat = categories.find(c => c.id === t.categoryId) || categories[0];
         const item = document.createElement('div'); item.className = 'flex items-center gap-3 py-1.5 px-2 rounded-xl cursor-pointer transition-all border-2 border-transparent hover:bg-white hover:shadow-sm brush-item';
         const isDoneClass = t.isChecked ? 'line-through opacity-60' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
         const circle = document.createElement('div'); circle.className = 'w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2'; circle.style.borderColor = colorStyle;
-        if (t.isChecked) { circle.style.backgroundColor = colorStyle; circle.innerHTML = `<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`; } 
-        else { circle.style.backgroundColor = 'white'; circle.innerHTML = ''; }
+        if (t.isChecked) { circle.style.backgroundColor = colorStyle; circle.innerHTML = `<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`; } else { circle.style.backgroundColor = 'white'; circle.innerHTML = ''; }
         circle.onclick = (e) => { e.stopPropagation(); t.isChecked = !t.isChecked; saveAndRefresh(); if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey); };
         const textWrapper = document.createElement('div'); textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; textWrapper.title = "클릭하여 일정 수정";
         const textSpan = document.createElement('span'); textSpan.className = `text-[14px] pt-px leading-none font-bold truncate block w-full ${isDoneClass} hover:underline`; textSpan.textContent = t.text; textSpan.style.color = colorStyle;
@@ -729,8 +570,7 @@
         let currentSegment = null; let segments = [];
         for(let m = 0; m < 6; m++) {
           const idx = (h - 5) * 6 + m; const color = data[idx];
-          if (color) { if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } 
-          else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
+          if (color) { if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
           const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
           cell.onmousedown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
@@ -768,10 +608,7 @@
     function openWeeklyPlanner(startDate, endDate) {
       window.currentWeekKey = getDateKey(startDate);
       $('weeklySubtitle').textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')} - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}`;
-      
-      const wMemoArea = $('weeklySpecificMemo');
-      if(wMemoArea) { wMemoArea.value = weeklyMemos[currentWeekKey] || ''; wMemoArea.oninput = (e) => { if(window.currentWeekKey) { weeklyMemos[window.currentWeekKey] = e.target.value; saveWeeklySpecifics(); } }; }
-      
+      const wMemoArea = $('weeklySpecificMemo'); if(wMemoArea) { wMemoArea.value = weeklyMemos[currentWeekKey] || ''; wMemoArea.oninput = (e) => { if(window.currentWeekKey) { weeklyMemos[window.currentWeekKey] = e.target.value; saveWeeklySpecifics(); } }; }
       renderHabits(); const slotHeight = 20; const timeLabels = $('weeklyTimeLabels'); timeLabels.innerHTML = '';
       for(let h = 5; h < 29; h++) { const div = document.createElement('div'); div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`; div.style.height = `${slotHeight}px`; div.textContent = `${h % 24}:00`; timeLabels.appendChild(div); }
       const gridContainer = $('weeklyGridContainer'); gridContainer.innerHTML = ''; const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -781,7 +618,6 @@
          const isToday = getDateKey(new Date()) === dateKey; const isWeekend = (i === 0 || i === 6); 
          const header = document.createElement('div'); const textColor = isToday ? 'text-white' : (isWeekend ? 'text-red-500' : 'text-gray-700');
          header.className = `h-10 flex-shrink-0 border-b border-[#e6e2d8] flex flex-col items-center justify-center text-[11px] font-bold sticky top-0 z-20 box-border ${isToday ? 'bg-[#1b4332]' : 'bg-[#f8fafc]'} ${textColor}`;
-         
          const rec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 }; const totalSec = rec.stopwatch + rec.timer; let totalStr = '';
          if (totalSec > 0) { const h = Math.floor(totalSec / 3600); const m = Math.floor((totalSec % 3600) / 60); totalStr = `<div class="${isToday ? 'text-green-200' : 'text-[#22741C]'} text-[9px] font-extrabold mt-0.5 tracking-tighter leading-none">${h}h ${m}m</div>`; }
          header.innerHTML = `<span>${dayNames[i]} <span class="text-[9px] ${isToday ? 'opacity-90' : 'text-gray-400'}">${currentDay.getDate()}</span></span>${totalStr}`; col.appendChild(header);
@@ -832,7 +668,6 @@
     function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); isHabitEditMode = false; const btn = $('habitEditBtn'); if(btn) btn.textContent = '- 삭제'; }
     window.toggleHabitEdit = function() { isHabitEditMode = !isHabitEditMode; const btn = $('habitEditBtn'); if(btn) btn.textContent = isHabitEditMode ? '완료' : '- 삭제'; renderHabits(); };
     window.deleteHabit = function(index) { if(weeklyHabits[window.currentWeekKey]) { weeklyHabits[window.currentWeekKey].splice(index, 1); saveWeeklySpecifics(); renderHabits(); } };
-
     function renderHabits() {
         const list = $('habitList'); if(!list) return; list.innerHTML = ''; const habits = weeklyHabits[window.currentWeekKey] || [];
         habits.forEach((h, i) => {
@@ -843,13 +678,11 @@
         });
     }
 
-    // --- 확장 메모 관련 로직 시작 ---
     function renderExtMemoButtons() { for(let i=0; i<4; i++) { const btn = $('extMemoBtn' + i); if(btn && extendedMemos[i]) { btn.textContent = extendedMemos[i].title || `메모 ${i+1}`; } } }
     function openExtendedMemo(index) { currentExtMemoIndex = index; $('extMemoTitle').value = extendedMemos[index].title || ''; $('extMemoContent').value = extendedMemos[index].content || ''; $('extendedMemoModal').classList.remove('hidden'); }
     function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
-    // --- 확장 메모 관련 로직 끝 ---
 
     function toggleTbColorEdit() { isTbColorEditMode = !isTbColorEditMode; $('tbEditColorBtn').textContent = isTbColorEditMode ? '완료' : '수정'; renderTbColors(); }
     function renderTbColors() {
@@ -873,11 +706,9 @@
         });
         if (isTbColorEditMode) {
             const addBtn = document.createElement('div'); addBtn.className = 'w-6 h-6 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-100 text-gray-500 text-sm font-bold flex-shrink-0'; addBtn.innerHTML = '+';
-            addBtn.onclick = () => { trackerColors.push({ id: 'tc' + Date.now(), color: '#94a3b8' }); saveTrackerColors(); renderTbColors(); };
-            colorContainer.appendChild(addBtn);
+            addBtn.onclick = () => { trackerColors.push({ id: 'tc' + Date.now(), color: '#94a3b8' }); saveTrackerColors(); renderTbColors(); }; colorContainer.appendChild(addBtn);
         }
     }
-
     function saveTrackerColors() { setLocal('ianTrackerColors', trackerColors); }
 
     function openTimeBlockModal(idx, dateKey) {
@@ -916,27 +747,19 @@
         const d = new Date(year, month, i - firstDay + 1); const key = getDateKey(d);
         if (i % 7 === 0) {
             const wStart = new Date(year, month, i - firstDay + 1); const wEnd = new Date(year, month, i - firstDay + 7);
-            const weekBtn = document.createElement('div');
-            weekBtn.className = 'bg-[#e5e7eb] hover:bg-[#d1d5db] cursor-pointer flex items-center justify-center transition-colors group border-b border-gray-100 min-h-[120px] h-full w-full relative z-[200] pointer-events-auto';
-            weekBtn.innerHTML = `<div class="rotate-[-90deg] text-[10px] font-bold text-gray-500 tracking-widest opacity-60 group-hover:opacity-100 transition-opacity absolute pointer-events-none whitespace-nowrap">WEEK</div>`;
-            const openPlannerHandler = (e) => { e.preventDefault(); e.stopPropagation(); openWeeklyPlanner(wStart, wEnd); };
-            weekBtn.onmousedown = openPlannerHandler; weekBtn.onclick = openPlannerHandler; weekBtn.addEventListener('touchstart', openPlannerHandler, {passive: false});
-            calendar.appendChild(weekBtn);
+            const weekBtn = document.createElement('div'); weekBtn.className = 'bg-[#e5e7eb] hover:bg-[#d1d5db] cursor-pointer flex items-center justify-center transition-colors group border-b border-gray-100 min-h-[120px] h-full w-full relative z-[200] pointer-events-auto'; weekBtn.innerHTML = `<div class="rotate-[-90deg] text-[10px] font-bold text-gray-500 tracking-widest opacity-60 group-hover:opacity-100 transition-opacity absolute pointer-events-none whitespace-nowrap">WEEK</div>`;
+            const openPlannerHandler = (e) => { e.preventDefault(); e.stopPropagation(); openWeeklyPlanner(wStart, wEnd); }; weekBtn.onmousedown = openPlannerHandler; weekBtn.onclick = openPlannerHandler; weekBtn.addEventListener('touchstart', openPlannerHandler, {passive: false}); calendar.appendChild(weekBtn);
         }
         const cell = document.createElement('div'); cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300'; cell.setAttribute('data-date', key);
         const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
         cell.onclick = (e) => { if (window.innerWidth <= 768 && !e.target.closest('.todo-item') && !e.target.closest('.multi-task')) openDetailModal(key, d); };
         cell.onmousedown = (e) => { if (window.innerWidth > 768 && !e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.resize-handle') && !e.target.closest('.date-trigger')) { isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); } };
-        cell.onmouseenter = () => { if (window.innerWidth > 768 && isSelecting) { selectEndKey = key; highlightSelection(selectStartKey, key); } };
-        cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key);
-        cell.ondblclick = (e) => { if (window.innerWidth > 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
-
+        cell.onmouseenter = () => { if (window.innerWidth > 768 && isSelecting) { selectEndKey = key; highlightSelection(selectStartKey, key); } }; cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); cell.ondblclick = (e) => { if (window.innerWidth > 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         const isToday = d.getTime() === today.getTime(); const isWeekend = d.getDay() === 0 || d.getDay() === 6;
         const dateWrap = document.createElement('div'); dateWrap.className = 'w-full'; const dateNum = document.createElement('div');
         let textColor = isWeekend ? 'text-red-500' : 'text-gray-700'; if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
         let bgClass = 'bg-transparent'; if (isToday) bgClass = 'today-highlight'; else if (isCurrentMonth) bgClass = 'other-day-highlight';
-        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`; dateNum.textContent = d.getDate();
-        dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); }; dateWrap.appendChild(dateNum); cell.appendChild(dateWrap);
+        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`; dateNum.textContent = d.getDate(); dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); }; dateWrap.appendChild(dateNum); cell.appendChild(dateWrap);
         
         const todoContainer = document.createElement('div'); todoContainer.className = "mt-1 flex flex-col gap-0.5 overflow-hidden todo-list-container flex-1 px-1";
         if (Array.isArray(allTasks[key])) {
@@ -945,8 +768,7 @@
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const item = document.createElement('div'); item.draggable = (window.innerWidth > 768); item.className = 'todo-item text-[12px] truncate px-1 rounded flex items-center gap-1.5';
               const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
               item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="${isCheckedClass} font-medium leading-none" style="color: ${colorStyle}">${t.text}</span>`;
-              item.ondragstart = () => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; }; item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; item.onclick = (e) => { e.stopPropagation(); if (e.target.tagName !== 'INPUT') openModal('editSingle', { dateKey: key, index: idx, ...t }); };
-              todoContainer.appendChild(item);
+              item.ondragstart = () => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; }; item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; item.onclick = (e) => { e.stopPropagation(); if (e.target.tagName !== 'INPUT') openModal('editSingle', { dateKey: key, index: idx, ...t }); }; todoContainer.appendChild(item);
             }
           });
         }
@@ -1007,20 +829,12 @@
     function addNewCategory() { categories.push({ id: 'cat' + Date.now(), color: '#94a3b8', name: '새 카테고리' }); saveCategories(); buildCategoryUI(); }
     function toggleCategoryEdit() { isEditMode = !isEditMode; buildCategoryUI(); $('toggleEditBtn').textContent = isEditMode ? '완료' : '변경'; }
     function saveCategories() { setLocal('ianCategories', categories); renderFilterBar(); }
-    
-    function renderFilterBar() {
-      const bar = $('filterBar'); bar.innerHTML = `<button onclick="toggleFilter('all')" class="filter-btn ${selectedFilters.has('all') ? 'active' : ''}" style="color:#000; background:#eee">전체보기</button>`;
-      categories.forEach(cat => { const btn = document.createElement('button'); btn.onclick = () => toggleFilter(cat.id); btn.className = `filter-btn ${selectedFilters.has(cat.id) ? 'active' : ''}`; btn.style.color = cat.color; btn.style.backgroundColor = hexToRgba(cat.color, 0.12); btn.textContent = cat.name; bar.appendChild(btn); });
-    }
+    function renderFilterBar() { const bar = $('filterBar'); bar.innerHTML = `<button onclick="toggleFilter('all')" class="filter-btn ${selectedFilters.has('all') ? 'active' : ''}" style="color:#000; background:#eee">전체보기</button>`; categories.forEach(cat => { const btn = document.createElement('button'); btn.onclick = () => toggleFilter(cat.id); btn.className = `filter-btn ${selectedFilters.has(cat.id) ? 'active' : ''}`; btn.style.color = cat.color; btn.style.backgroundColor = hexToRgba(cat.color, 0.12); btn.textContent = cat.name; bar.appendChild(btn); }); }
     function toggleFilter(id) { if (id === 'all') { selectedFilters.clear(); selectedFilters.add('all'); } else { selectedFilters.delete('all'); selectedFilters.has(id) ? selectedFilters.delete(id) : selectedFilters.add(id); if (selectedFilters.size === 0) selectedFilters.add('all'); } renderFilterBar(); renderCalendar(); renderDashboard(); }
     function saveAndRefresh() { setLocal('ianSchedulerTasks', allTasks); setLocal('ianMultiTasks', multiTasks); renderCalendar(); renderDashboard(); }
     function openModal(mode, data) { currentMode = mode; editData = data; if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; $('eventModal').classList.remove('hidden'); $('modalInput').value = (data && data.text) ? data.text : ''; buildCategoryUI(); }
     function closeModal() { $('eventModal').classList.add('hidden'); }
-    function openDetailModal(key, date) {
-      const m = $('mobileDetailModal'), l = $('detailList'); $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 일정`; l.innerHTML = ''; m.classList.remove('hidden');
-      (allTasks[key] || []).forEach((t, i) => { const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"; div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`; div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); }; div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } }; l.appendChild(div); });
-      $('detailAddBtn').onclick = () => { closeDetailModal(); openModal('createSingle', { dateKey: key }); };
-    }
+    function openDetailModal(key, date) { const m = $('mobileDetailModal'), l = $('detailList'); $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 일정`; l.innerHTML = ''; m.classList.remove('hidden'); (allTasks[key] || []).forEach((t, i) => { const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"; div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`; div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); }; div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } }; l.appendChild(div); }); $('detailAddBtn').onclick = () => { closeDetailModal(); openModal('createSingle', { dateKey: key }); }; }
     function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); }
 
     $('modalSaveBtn').onclick = () => {
@@ -1066,55 +880,16 @@
             renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
             
             const memoArea = $('memoArea'); 
-            if(memoArea) { 
-                memoArea.value = localStorage.getItem('ianMemo') || ''; 
-                memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); }; 
-            }
-            
-            const prevBtn = $('prevBtn'); 
-            if(prevBtn) prevBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
-            
-            const nextBtn = $('nextBtn'); 
-            if(nextBtn) nextBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
-            
+            if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); }; }
+            const prevBtn = $('prevBtn'); if(prevBtn) prevBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
+            const nextBtn = $('nextBtn'); if(nextBtn) nextBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
             const extMemoTitle = $('extMemoTitle'); 
-            if(extMemoTitle) { 
-                extMemoTitle.addEventListener('input', (e) => { 
-                    if (currentExtMemoIndex !== null) { 
-                        extendedMemos[currentExtMemoIndex].title = e.target.value; 
-                        setLocal('ianExtendedMemos', extendedMemos); 
-                        const btn = $('extMemoBtn' + currentExtMemoIndex); 
-                        if(btn) btn.textContent = e.target.value || `메모 ${currentExtMemoIndex+1}`; 
-                    } 
-                }); 
-            }
-            
+            if(extMemoTitle) { extMemoTitle.addEventListener('input', (e) => { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = e.target.value; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = e.target.value || `메모 ${currentExtMemoIndex+1}`; } }); }
             const extMemoContent = $('extMemoContent'); 
-            if(extMemoContent) { 
-                extMemoContent.addEventListener('input', (e) => { 
-                    if (currentExtMemoIndex !== null) { 
-                        extendedMemos[currentExtMemoIndex].content = e.target.value; 
-                        setLocal('ianExtendedMemos', extendedMemos); 
-                    } 
-                }); 
-            }
-            
+            if(extMemoContent) { extMemoContent.addEventListener('input', (e) => { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = e.target.value; setLocal('ianExtendedMemos', extendedMemos); } }); }
             const inboxInput = $('inboxInput'); 
-            if(inboxInput) { 
-                inboxInput.addEventListener('keypress', function(e) { 
-                  if (e.key === 'Enter') { 
-                      const txt = this.value.trim(); 
-                      if (txt) { 
-                          inboxTasks.push({ text: txt, categoryId: selectedCategoryId || categories[0].id, isChecked: false }); 
-                          setLocal('ianInboxTasks', inboxTasks); 
-                          renderInbox(); 
-                          this.value = ''; 
-                      } 
-                  } 
-                }); 
-            }
+            if(inboxInput) { inboxInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { const txt = this.value.trim(); if (txt) { inboxTasks.push({ text: txt, categoryId: selectedCategoryId || categories[0].id, isChecked: false }); setLocal('ianInboxTasks', inboxTasks); renderInbox(); this.value = ''; } } }); }
 
-            // 💡 데일리 플래너(모달) 내 TASK 입력창 엔터 이벤트 복구 완료!
             const plannerNewTaskInput = $('plannerNewTaskInput');
             if(plannerNewTaskInput) {
                 plannerNewTaskInput.addEventListener('keypress', function(e) {
@@ -1124,14 +899,11 @@
                         if (txt && dateKey) {
                             if (!allTasks[dateKey]) allTasks[dateKey] = [];
                             allTasks[dateKey].push({ text: txt, categoryId: 'cat1', isChecked: false });
-                            saveAndRefresh(); 
-                            renderPlannerTasks(dateKey); 
-                            this.value = ''; 
+                            saveAndRefresh(); renderPlannerTasks(dateKey); this.value = ''; 
                         }
                     }
                 });
             }
-
         } catch(err) { console.error("초기화 중 에러 발생:", err); }
     };
   </script>
