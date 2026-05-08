@@ -4,97 +4,89 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Task Scheduler by freeiaan</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
   <style>
-    /* 폰트 안티앨리어싱 추가로 흐릿함 개선 */
-    body { 
-      font-family: 'Pretendard', sans-serif !important; 
-      color: #000; 
-      -webkit-tap-highlight-color: transparent; 
-      -webkit-font-smoothing: antialiased; 
-      -moz-osx-font-smoothing: grayscale; 
-    }
+    body { font-family: 'Pretendard', sans-serif !important; color: #000; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     .drag-over { background-color: #f0fdf4 !important; }
     .selected-range { background-color: #f3f4f6 !important; border: 1px dashed #9ca3af !important; }
-    
-    /* 체크박스 사이즈 고정 */
     .todo-checkbox { appearance: none; width: 15px !important; height: 15px !important; border: 1.5px solid #d1d5db; border-radius: 4px; cursor: pointer; background-color: white; flex-shrink: 0; margin: 0 !important; }
     .todo-checkbox:checked { background-color: #9ca3af; border-color: #9ca3af; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E"); background-size: 100% 100%; }
-    
-    /* 디지털 시계 폰트 및 원 안의 폰트 적용 */
     .timer-font { font-family: 'Digital-7 Mono', monospace; font-weight: normal; letter-spacing: -2px; }
-    .timer-dial-font { font-family: 'Pretendard', sans-serif !important; font-weight: 500; } /* 굵기 500 적용 */
-    
+    .timer-dial-font { font-family: 'Pretendard', sans-serif !important; font-weight: 500; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; overflow-x: auto; white-space: nowrap; }
-
-    /* 커스텀 스크롤바 */
     .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 10px; }
     .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #d1d5db; }
-
     #memoArea, #weeklySpecificMemo, #extMemoContent { line-height: 1.6; outline: none; overflow-y: auto; font-weight: 400; color: #000; }
-    #timerDial { cursor: crosshair; touch-action: none; overflow: hidden; border-radius: 9999px; background-color: #ffffff; /* 원 배경색 흰색 */ }
-    
+    #timerDial { cursor: crosshair; touch-action: none; overflow: hidden; border-radius: 9999px; background-color: #ffffff; }
     .multi-task { z-index: 50; pointer-events: auto; position: absolute; left: 0; right: 0; }
     .todo-list-container { position: relative; z-index: 20; pointer-events: none; }
     .todo-item { cursor: pointer !important; font-weight: 600; position: relative; z-index: 30; pointer-events: auto; color: #000; }
-    
     .resize-handle { width: 16px; height: 100%; position: absolute; top: 0; cursor: col-resize !important; z-index: 100; background: transparent; }
     .resize-handle-start { left: -4px; }
     .resize-handle-end { right: -4px; }
-    
-    /* 날짜 헤더 배경색 */
     .date-block { margin: 0 !important; padding: 4px 6px !important; width: 100% !important; box-sizing: border-box !important; display: block !important; cursor: pointer; transition: background-color 0.2s; border-radius: 0 !important; }
     .today-highlight { background-color: #1b4332 !important; color: #ffffff !important; }
     .other-day-highlight { background-color: rgba(196, 252, 228, 0.3) !important; }
     .other-day-highlight:hover { background-color: rgba(196, 252, 228, 0.5) !important; }
-    
-    /* 긴 일정 텍스트 컨테이너 */
     .multi-task-text-container { position: absolute; left: 30px; z-index: 60; background-color: #ffffff; border-radius: 0.375rem; overflow: visible; border: 1px solid rgba(0,0,0,0.1); white-space: nowrap; max-width: none; min-width: max-content; }
     .multi-task-color-overlay { position: absolute; inset: 0; opacity: 0.2; pointer-events: none; }
-
     .day-header { background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000; }
     .day-header-sun, .day-header-sat { color: #ef4444 !important; }
     .filter-btn { padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; transition: all 0.2s; border: 1px solid transparent; flex-shrink: 0; }
-
     .dashboard-item { transition: all 0.1s; position: relative; color: #000; padding: 6px 8px !important; display: flex; align-items: center; gap: 8px; }
     .drag-handle-dash { cursor: grab; color: #9ca3af; font-size: 16px; user-select: none; display: flex; align-items: center; }
-    
     .cat-badge-bg { padding: 2px 5px; border-radius: 4px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
-
     .color-circle { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); position: relative; }
     .color-circle.selected { outline: 4px solid #000; outline-offset: 2px; }
-    
-    .delete-cat-btn { 
-      position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; 
-      background-color: #ef4444; color: white; border-radius: 50%; font-size: 12px; 
-      display: none; align-items: center; justify-content: center; border: 2px solid white; 
-      z-index: 50; font-weight: 900; cursor: pointer; line-height: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
+    .delete-cat-btn { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background-color: #ef4444; color: white; border-radius: 50%; font-size: 12px; display: none; align-items: center; justify-content: center; border: 2px solid white; z-index: 50; font-weight: 900; cursor: pointer; line-height: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .category-name { width: 100%; text-align: center; border: none; background: transparent; font-size: 12px; font-weight: 700; color: #000; outline: none; margin-top: 8px !important; padding: 0 !important; }
     .edit-mode .category-name { border-bottom: 2px solid #000; }
-
-    /* 타임트래커용 CSS */
     .time-cell { transition: background-color 0.1s; }
     .time-cell:hover { background-color: rgba(0,0,0,0.05); }
-
     @media (max-width: 768px) { .group-cell { min-height: 100px !important; } }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen p-2 md:p-8 flex justify-center items-start relative">
-  <div class="w-full max-w-[1400px] flex flex-col xl:flex-row gap-4 md:gap-6 items-start mx-auto">
-    
+<body class="bg-slate-50 min-h-screen relative">
+
+  <div id="loadingScreen" class="fixed inset-0 z-[2000] bg-white flex flex-col items-center justify-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#22741C] mb-4"></div>
+      <p class="text-gray-500 font-bold text-sm">데이터를 동기화 중입니다...</p>
+  </div>
+
+  <div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4">
+      <div class="bg-white p-10 rounded-3xl shadow-xl border border-gray-200 flex flex-col items-center max-w-md w-full text-center">
+          <h1 class="text-3xl font-serif italic font-extrabold text-black tracking-tight mb-2">Scheduler</h1>
+          <p class="text-sm font-bold text-gray-500 mb-8 uppercase tracking-widest">by freeiaan</p>
+          <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-xl px-6 py-4 shadow-sm hover:bg-gray-50 transition font-bold text-gray-700">
+              <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Google 계정으로 시작하기
+          </button>
+      </div>
+  </div>
+
+  <div id="mainApp" class="hidden w-full max-w-[1400px] flex flex-col xl:flex-row gap-4 md:gap-6 items-start mx-auto p-2 md:p-8">
     <div class="w-full xl:flex-1 bg-white rounded-2xl md:rounded-3xl shadow-md border border-gray-200 px-3 py-4 md:px-8 md:py-8 select-none relative z-10">
       
-      <div class="flex justify-end gap-2 mb-4">
-        <button onclick="openAnalytics()" class="text-[10px] font-bold bg-[#1b4332] text-white border border-[#1b4332] px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#22741C] transition">📊 성취 리포트</button>
-        <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 내보내기</button>
-        <button onclick="importData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📥 가져오기</button>
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-2">
+            <span id="userProfileName" class="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg"></span>
+            <button onclick="logout()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition px-2">로그아웃</button>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="openAnalytics()" class="text-[10px] font-bold bg-[#1b4332] text-white border border-[#1b4332] px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#22741C] transition">📊 성취 리포트</button>
+            <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 수동 백업</button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 mb-6">
@@ -120,7 +112,7 @@
         <div class="bg-[#fffbeb] rounded-xl border border-orange-100 p-4 shadow-sm flex flex-col h-44 md:h-56 relative">
           <div class="flex justify-between items-center mb-2 flex-shrink-0">
             <h3 class="font-bold text-orange-800 text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-orange-400 rounded-sm"></span> 메모장</h3>
-            <span class="text-[9px] text-orange-400 font-bold uppercase">Auto Save</span>
+            <span class="text-[9px] text-blue-500 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>Cloud Sync</span>
           </div>
           <textarea id="memoArea" class="flex-1 w-full bg-transparent text-[13px] font-bold custom-scrollbar resize-none outline-none pr-1.5 mb-2"></textarea>
           
@@ -154,44 +146,33 @@
     </div>
 
     <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)]">
-      
       <div class="flex justify-between w-full items-center mb-4 flex-shrink-0">
         <h2 class="text-base font-bold text-black">타이머</h2>
         <div id="recordDisplayGlobal" class="text-[10px] font-bold text-gray-500 flex gap-1.5"></div>
       </div>
-      
       <div id="timerClickArea" class="w-40 h-40 md:w-52 md:h-52 flex-shrink-0 bg-[#ede8e1] rounded-[2rem] p-3 md:p-4 shadow-lg relative flex justify-center items-center mb-5">
         <div id="timerDial" class="w-full h-full relative flex justify-center items-center shadow-inner cursor-crosshair">
           <div id="pieSlice" class="absolute inset-0 transition-all origin-center"></div>
-          
           <div class="absolute top-1.5 md:top-2 left-1/2 -translate-x-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">0</div>
           <div class="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">15</div>
           <div class="absolute bottom-1.5 md:bottom-2 left-1/2 -translate-x-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">30</div>
           <div class="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 text-[#1b4332] text-[10px] md:text-[12px] pointer-events-none z-10 select-none timer-dial-font tracking-widest mt-1">45</div>
-          
           <div class="w-2.5 h-2.5 md:w-3 md:h-3 bg-[#ede8e1] rounded-full shadow-md z-20 absolute pointer-events-none"></div>
         </div>
       </div>
-      
       <div id="digitalTime" class="text-4xl md:text-5xl timer-font flex-shrink-0 text-black mb-5 tracking-tighter">00:00:00</div>
-      
       <div class="flex w-full gap-1.5 mb-3 flex-shrink-0">
         <button id="startBtn" onclick="startTimer()" class="flex-[2] bg-[#22741C] text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-[13px] hover:bg-[#1b5e16]">시작</button>
         <button id="pauseBtn" onclick="pauseTimer()" class="flex-1 bg-gray-500 text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-[13px] hover:bg-gray-600 px-1">정지</button>
         <button id="recordBtn" onclick="recordTimer()" class="flex-1 bg-blue-500 text-white font-bold py-2.5 md:py-3 rounded-xl shadow-md transition text-[13px] hover:bg-blue-600 px-1">기록</button>
       </div>
-      
       <div class="flex gap-4 mb-3 items-center justify-center">
         <button onclick="resetTimer()" class="text-gray-500 hover:text-black flex-shrink-0 text-[10px] font-bold transition">초기화</button>
         <button onclick="hardResetTimer()" class="text-red-400 hover:text-red-600 flex-shrink-0 text-[10px] font-bold transition">완전 초기화</button>
       </div>
-      
       <hr class="w-full border-gray-200 my-4 flex-shrink-0">
-      
       <div class="w-full flex justify-between items-center mb-2 flex-shrink-0">
-        <h3 class="font-bold text-black text-sm flex items-center gap-2">
-          <span class="w-1.5 h-4 bg-[#facc15] rounded-sm"></span> 할 일 보관함
-        </h3>
+        <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-[#facc15] rounded-sm"></span> 할 일 보관함</h3>
       </div>
       <input type="text" id="inboxInput" placeholder="+ 할 일 추가 (Enter)" class="w-full text-[11px] font-bold px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#facc15] mb-2 transition flex-shrink-0 text-black">
       <div id="inboxList" class="w-full flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 min-h-[120px] pr-1 pb-1" ondragover="event.preventDefault()" ondrop="handleInboxDrop(event)"></div>
@@ -276,7 +257,7 @@
             </div>
             <div class="flex-1 flex flex-col">
                <h3 class="font-bold text-sm mb-2 text-gray-800 tracking-wide">NOTES</h3>
-               <textarea id="plannerNote" class="flex-1 bg-transparent border-t border-[#e6e2d8] pt-4 resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar" placeholder="기록해보세요..."></textarea>
+               <textarea id="plannerNote" oninput="savePlannerData()" class="flex-1 bg-transparent border-t border-[#e6e2d8] pt-4 resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar" placeholder="기록해보세요..."></textarea>
             </div>
          </div>
       </div>
@@ -338,7 +319,7 @@
   <div id="timeBlockModal" class="hidden fixed inset-0 z-[500] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[320px] p-6">
       <h3 class="text-lg font-bold mb-4">타임 블록 설정</h3>
-      <input type="text" id="tbLabelInput" placeholder="일정 내용을 입력하세요" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl mb-4 text-sm font-bold">
+      <input type="text" id="tbLabelInput" placeholder="일정 내용을 입력하세요" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl mb-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#22741C]">
       <div class="mb-5">
          <div class="flex justify-between items-center mb-2">
              <span class="text-xs font-bold text-gray-500">색상 변경</span>
@@ -350,7 +331,7 @@
          <button id="tbDeleteBtn" class="text-red-500 font-extrabold text-xs hover:underline">삭제</button>
          <div class="flex gap-2">
             <button onclick="$('timeBlockModal').classList.add('hidden')" class="text-gray-600 font-extrabold text-xs px-3 py-2">취소</button>
-            <button id="tbSaveBtn" class="bg-[#22741C] text-white px-5 py-2 rounded-xl font-extrabold text-xs shadow-md">저장</button>
+            <button id="tbSaveBtn" class="bg-[#22741C] text-white px-5 py-2 rounded-xl font-extrabold text-xs shadow-md hover:bg-[#1b5e16]">저장</button>
          </div>
       </div>
     </div>
@@ -387,6 +368,52 @@
   </div>
 
   <script>
+    // 🔥 Firebase 환경 설정 및 초기화
+    const firebaseConfig = {
+      apiKey: "AIzaSyCox_I7nCXxYOF0AvfwG2i_-oSl5Gbu8Tk",
+      authDomain: "freeiaan-scheduler.firebaseapp.com",
+      projectId: "freeiaan-scheduler",
+      storageBucket: "freeiaan-scheduler.firebasestorage.app",
+      messagingSenderId: "107829056869",
+      appId: "1:107829056869:web:52d689e607b332882ebd8c"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let currentUser = null;
+
+    // 🔥 구글 로그인 로직
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(error => {
+            console.error("로그인 에러:", error);
+            alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+        });
+    }
+
+    function logout() {
+        if(confirm("로그아웃 하시겠습니까?")) {
+            auth.signOut();
+            resetTimer(); // 타이머 초기화
+        }
+    }
+
+    // 🔥 로그인 상태 감지기 (메인 흐름 제어)
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            $('userProfileName').textContent = user.displayName ? `${user.displayName} 님` : '이안님';
+            $('loginScreen').classList.add('hidden');
+            $('mainApp').classList.remove('hidden');
+            loadFromCloud(); // 로그인 성공 시 클라우드에서 데이터 가져오기
+        } else {
+            currentUser = null;
+            $('loadingScreen').classList.add('hidden');
+            $('loginScreen').classList.remove('hidden');
+            $('mainApp').classList.add('hidden');
+        }
+    });
+
     const $ = id => document.getElementById(id);
     const getDateKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
     const hexToRgba = (hex, a) => {
@@ -395,20 +422,17 @@
       return `rgba(${r},${g},${b},${a})`;
     };
 
-    const getLocal = (key, fallback) => { try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : fallback; } catch(e) { return fallback; } };
-    const setLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-
     const defaultCats = [
-      { id: 'cat1', color: '#000000', name: '기본' },
-      { id: 'cat2', color: '#ef4444', name: '유튜브' },
-      { id: 'cat3', color: '#1c64f2', name: '편집' },
-      { id: 'cat4', color: '#facc15', name: '마켓' },
-      { id: 'cat5', color: '#22c55e', name: '공부' }
+      { id: 'cat1', color: '#000000', name: '기본' }, { id: 'cat2', color: '#ef4444', name: '유튜브' },
+      { id: 'cat3', color: '#1c64f2', name: '편집' }, { id: 'cat4', color: '#facc15', name: '마켓' }, { id: 'cat5', color: '#22c55e', name: '공부' }
     ];
     const defaultTrackerColors = [
       { id: 'tc1', color: '#000000' }, { id: 'tc2', color: '#ef4444' }, { id: 'tc3', color: '#3b82f6' }, { id: 'tc4', color: '#facc15' }, { id: 'tc5', color: '#4ade80' }
     ];
 
+    // 기존 데이터 로컬에서 불러오기 (혹은 기본값)
+    const getLocal = (key, fallback) => { try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : fallback; } catch(e) { return fallback; } };
+    
     let categories = getLocal('ianCategories', defaultCats);
     let trackerColors = getLocal('ianTrackerColors', defaultTrackerColors);
     let allTasks = getLocal('ianSchedulerTasks', {});
@@ -420,6 +444,80 @@
     let weeklyHabits = getLocal('ianWeeklyHabits', {});
     let extendedMemos = getLocal('ianExtendedMemos', [{title:'메모 1', content:''},{title:'메모 2', content:''},{title:'메모 3', content:''},{title:'메모 4', content:''}]);
     
+    // 🔥 클라우드 동기화 로직 (1.5초 지연 저장)
+    let syncTimeout = null;
+    function syncToCloud() {
+        if (!currentUser) return;
+        clearTimeout(syncTimeout);
+        syncTimeout = setTimeout(() => {
+            const dataToSave = {
+                categories, trackerColors, allTasks, multiTasks, dailyRecords,
+                inboxTasks, weeklyMemos, weeklyHabits, extendedMemos,
+                memo: $('memoArea') ? $('memoArea').value : ''
+            };
+            db.collection('users').doc(currentUser.uid).set(dataToSave)
+              .then(() => console.log('☁️ 클라우드에 안전하게 저장되었습니다!'))
+              .catch(e => console.error('☁️ 저장 실패:', e));
+        }, 1500);
+    }
+
+    // 기존 setLocal 함수를 클라우드 동기화로 업그레이드!
+    function setLocal(key, data) {
+        localStorage.setItem(key, JSON.stringify(data));
+        syncToCloud(); // 로컬에 저장할 때 서버에도 무조건 저장!
+    }
+
+    // 🔥 서버에서 데이터 불러오기
+    function loadFromCloud() {
+        $('loadingScreen').classList.remove('hidden');
+        db.collection('users').doc(currentUser.uid).get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                if(data.categories) categories = data.categories;
+                if(data.trackerColors) trackerColors = data.trackerColors;
+                if(data.allTasks) allTasks = data.allTasks;
+                if(data.multiTasks) multiTasks = data.multiTasks;
+                if(data.dailyRecords) dailyRecords = data.dailyRecords;
+                if(data.inboxTasks) inboxTasks = data.inboxTasks;
+                if(data.weeklyMemos) weeklyMemos = data.weeklyMemos;
+                if(data.weeklyHabits) weeklyHabits = data.weeklyHabits;
+                if(data.extendedMemos) extendedMemos = data.extendedMemos;
+                if(data.memo !== undefined) localStorage.setItem('ianMemo', data.memo);
+                
+                // 불러온 데이터로 내 브라우저 로컬 저장소 덮어쓰기
+                localStorage.setItem('ianCategories', JSON.stringify(categories));
+                localStorage.setItem('ianTrackerColors', JSON.stringify(trackerColors));
+                localStorage.setItem('ianSchedulerTasks', JSON.stringify(allTasks));
+                localStorage.setItem('ianMultiTasks', JSON.stringify(multiTasks));
+                localStorage.setItem('ianDailyRecords', JSON.stringify(dailyRecords));
+                localStorage.setItem('ianInboxTasks', JSON.stringify(inboxTasks));
+                localStorage.setItem('ianWeeklyMemos', JSON.stringify(weeklyMemos));
+                localStorage.setItem('ianWeeklyHabits', JSON.stringify(weeklyHabits));
+                localStorage.setItem('ianExtendedMemos', JSON.stringify(extendedMemos));
+            } else {
+                // 이안님이 처음 로그인하셨다면, 현재 로컬에 있던 데이터를 클라우드에 백업해줌!
+                syncToCloud();
+            }
+            initAppRenders(); // 화면 그리기
+            $('loadingScreen').classList.add('hidden');
+        }).catch(err => {
+            console.error("데이터 로딩 에러:", err);
+            initAppRenders(); // 에러 나면 일단 로컬 데이터로라도 화면 띄움
+            $('loadingScreen').classList.add('hidden');
+        });
+    }
+
+    // 화면 렌더링 함수들을 한 곳에 모음
+    function initAppRenders() {
+        renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
+        updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
+        const memoArea = $('memoArea'); 
+        if(memoArea) { 
+            memoArea.value = localStorage.getItem('ianMemo') || ''; 
+            memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; 
+        }
+    }
+
     let currentWeekKey = null, currentExtMemoIndex = null, currentPlannerDateKey = null, isHabitEditMode = false;
     let selectedFilters = new Set(['all']), displayDate = new Date();
     let isEditMode = false, isResizing = false, resizingTaskId = null, resizingEdge = null;
@@ -437,7 +535,6 @@
     let timerLastTick = 0; 
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
-    // 리포트 로직
     function openAnalytics() { analyticsDate = new Date(); analyticsMode = 'month'; $('analyticsModal').classList.remove('hidden'); renderAnalyticsTabs(); }
     function closeAnalytics() { $('analyticsModal').classList.add('hidden'); }
     window.changeAnalyticsMonth = function(dir) { analyticsDate.setMonth(analyticsDate.getMonth() + dir); analyticsMode = 'month'; renderAnalyticsTabs(); }
@@ -537,7 +634,10 @@
       $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden');
     }
     function closePlanner() { $('dailyPlannerModal').classList.add('hidden'); currentPlannerDateKey = null; }
-    function savePlannerData() { setLocal('ianDailyRecords', dailyRecords); }
+    function savePlannerData() { 
+      if(currentPlannerDateKey) dailyRecords[currentPlannerDateKey].note = $('plannerNote').value;
+      setLocal('ianDailyRecords', dailyRecords); 
+    }
 
     function renderPlannerTasks(dateKey) {
       const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = []; if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
@@ -824,8 +924,10 @@
       });
     }
 
-    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos })))); alert("데이터 복사 완료!"); }
-    function importData() { const c = prompt("코드를 붙여넣으세요."); if (!c) return; try { const d = JSON.parse(decodeURIComponent(atob(c))); if(d.allTasks) setLocal('ianSchedulerTasks', d.allTasks); if(d.multiTasks) setLocal('ianMultiTasks', d.multiTasks); if(d.categories) setLocal('ianCategories', d.categories); if(d.trackerColors) setLocal('ianTrackerColors', d.trackerColors); if(d.memo) localStorage.setItem('ianMemo', d.memo); if(d.dailyRecords) setLocal('ianDailyRecords', d.dailyRecords); if(d.inboxTasks) setLocal('ianInboxTasks', d.inboxTasks); if(d.weeklyMemos) setLocal('ianWeeklyMemos', d.weeklyMemos); if(d.weeklyHabits) setLocal('ianWeeklyHabits', d.weeklyHabits); if(d.extendedMemos) setLocal('ianExtendedMemos', d.extendedMemos); window.location.reload(); } catch (e) { alert("오류!"); } }
+    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos })))); alert("데이터 백업이 완료되었습니다. (클립보드에 복사됨)"); }
+    function importData() { const c = prompt("백업 코드를 붙여넣으세요."); if (!c) return; try { const d = JSON.parse(decodeURIComponent(atob(c))); if(d.allTasks) allTasks = d.allTasks; if(d.multiTasks) multiTasks = d.multiTasks; if(d.categories) categories = d.categories; if(d.trackerColors) trackerColors = d.trackerColors; if(d.memo) localStorage.setItem('ianMemo', d.memo); if(d.dailyRecords) dailyRecords = d.dailyRecords; if(d.inboxTasks) inboxTasks = d.inboxTasks; if(d.weeklyMemos) weeklyMemos = d.weeklyMemos; if(d.weeklyHabits) weeklyHabits = d.weeklyHabits; if(d.extendedMemos) extendedMemos = d.extendedMemos; saveAllToLocal(); syncToCloud(); window.location.reload(); } catch (e) { alert("오류가 발생했습니다."); } }
+    function saveAllToLocal() { localStorage.setItem('ianCategories', JSON.stringify(categories)); localStorage.setItem('ianTrackerColors', JSON.stringify(trackerColors)); localStorage.setItem('ianSchedulerTasks', JSON.stringify(allTasks)); localStorage.setItem('ianMultiTasks', JSON.stringify(multiTasks)); localStorage.setItem('ianDailyRecords', JSON.stringify(dailyRecords)); localStorage.setItem('ianInboxTasks', JSON.stringify(inboxTasks)); localStorage.setItem('ianWeeklyMemos', JSON.stringify(weeklyMemos)); localStorage.setItem('ianWeeklyHabits', JSON.stringify(weeklyHabits)); localStorage.setItem('ianExtendedMemos', JSON.stringify(extendedMemos)); }
+    
     function addNewCategory() { categories.push({ id: 'cat' + Date.now(), color: '#94a3b8', name: '새 카테고리' }); saveCategories(); buildCategoryUI(); }
     function toggleCategoryEdit() { isEditMode = !isEditMode; buildCategoryUI(); $('toggleEditBtn').textContent = isEditMode ? '완료' : '변경'; }
     function saveCategories() { setLocal('ianCategories', categories); renderFilterBar(); }
@@ -877,10 +979,6 @@
 
     window.onload = () => { 
         try {
-            renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
-            
-            const memoArea = $('memoArea'); 
-            if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); }; }
             const prevBtn = $('prevBtn'); if(prevBtn) prevBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
             const nextBtn = $('nextBtn'); if(nextBtn) nextBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
             const extMemoTitle = $('extMemoTitle'); 
