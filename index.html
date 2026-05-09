@@ -15,6 +15,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
+  <!-- 터치 드래그 통역사 -->
   <script src="https://bernardo-castilho.github.io/DragDropTouch/DragDropTouch.js"></script>
 
   <style>
@@ -36,9 +37,12 @@
     .multi-task { z-index: 50; pointer-events: auto; position: absolute; left: 0; right: 0; }
     .todo-list-container { position: relative; z-index: 20; pointer-events: none; }
     .todo-item { cursor: pointer !important; font-weight: 600; position: relative; z-index: 30; pointer-events: auto; color: #000; }
-    .resize-handle { width: 16px; height: 100%; position: absolute; top: 0; cursor: col-resize !important; z-index: 100; background: transparent; touch-action: none; }
-    .resize-handle-start { left: -4px; }
-    .resize-handle-end { right: -4px; }
+    
+    /* 🔥 해결 1: 화살표 터치 영역 3배 확장 (16px -> 40px) 및 흔들림 방지 */
+    .resize-handle { width: 40px; height: 100%; position: absolute; top: 0; cursor: col-resize !important; z-index: 100; background: transparent; touch-action: none; }
+    .resize-handle-start { left: -20px; }
+    .resize-handle-end { right: -20px; }
+    
     .date-block { margin: 0 !important; padding: 4px 6px !important; width: 100% !important; box-sizing: border-box !important; display: block !important; cursor: pointer; transition: background-color 0.2s; border-radius: 0 !important; }
     .today-highlight { background-color: #1b4332 !important; color: #ffffff !important; }
     .other-day-highlight { background-color: rgba(196, 252, 228, 0.3) !important; }
@@ -386,7 +390,6 @@
     const db = firebase.firestore();
     let currentUser = null;
 
-    // 🔥 구글 로그인 로직
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(error => {
@@ -398,18 +401,17 @@
     function logout() {
         if(confirm("로그아웃 하시겠습니까?")) {
             auth.signOut();
-            resetTimer(); // 타이머 초기화
+            resetTimer(); 
         }
     }
 
-    // 🔥 로그인 상태 감지기 (메인 흐름 제어)
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
             $('userProfileName').textContent = user.displayName ? `${user.displayName} 님` : '이안님';
             $('loginScreen').classList.add('hidden');
             $('mainApp').classList.remove('hidden');
-            loadFromCloud(); // 로그인 성공 시 클라우드에서 데이터 가져오기
+            loadFromCloud(); 
         } else {
             currentUser = null;
             $('loadingScreen').classList.add('hidden');
@@ -434,7 +436,6 @@
       { id: 'tc1', color: '#000000' }, { id: 'tc2', color: '#ef4444' }, { id: 'tc3', color: '#3b82f6' }, { id: 'tc4', color: '#facc15' }, { id: 'tc5', color: '#4ade80' }
     ];
 
-    // 기존 데이터 로컬에서 불러오기 (혹은 기본값)
     const getLocal = (key, fallback) => { try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : fallback; } catch(e) { return fallback; } };
     
     let categories = getLocal('ianCategories', defaultCats);
@@ -448,7 +449,6 @@
     let weeklyHabits = getLocal('ianWeeklyHabits', {});
     let extendedMemos = getLocal('ianExtendedMemos', [{title:'메모 1', content:''},{title:'메모 2', content:''},{title:'메모 3', content:''},{title:'메모 4', content:''}]);
     
-    // 🔥 클라우드 동기화 로직 (1.5초 지연 저장)
     let syncTimeout = null;
     function syncToCloud() {
         if (!currentUser) return;
@@ -465,13 +465,11 @@
         }, 1500);
     }
 
-    // 기존 setLocal 함수를 클라우드 동기화로 업그레이드!
     function setLocal(key, data) {
         localStorage.setItem(key, JSON.stringify(data));
-        syncToCloud(); // 로컬에 저장할 때 서버에도 무조건 저장!
+        syncToCloud(); 
     }
 
-    // 🔥 서버에서 데이터 불러오기
     function loadFromCloud() {
         $('loadingScreen').classList.remove('hidden');
         db.collection('users').doc(currentUser.uid).get().then(doc => {
@@ -488,7 +486,6 @@
                 if(data.extendedMemos) extendedMemos = data.extendedMemos;
                 if(data.memo !== undefined) localStorage.setItem('ianMemo', data.memo);
                 
-                // 불러온 데이터로 내 브라우저 로컬 저장소 덮어쓰기
                 localStorage.setItem('ianCategories', JSON.stringify(categories));
                 localStorage.setItem('ianTrackerColors', JSON.stringify(trackerColors));
                 localStorage.setItem('ianSchedulerTasks', JSON.stringify(allTasks));
@@ -499,19 +496,17 @@
                 localStorage.setItem('ianWeeklyHabits', JSON.stringify(weeklyHabits));
                 localStorage.setItem('ianExtendedMemos', JSON.stringify(extendedMemos));
             } else {
-                // 이안님이 처음 로그인하셨다면, 현재 로컬에 있던 데이터를 클라우드에 백업해줌!
                 syncToCloud();
             }
-            initAppRenders(); // 화면 그리기
+            initAppRenders(); 
             $('loadingScreen').classList.add('hidden');
         }).catch(err => {
             console.error("데이터 로딩 에러:", err);
-            initAppRenders(); // 에러 나면 일단 로컬 데이터로라도 화면 띄움
+            initAppRenders(); 
             $('loadingScreen').classList.add('hidden');
         });
     }
 
-    // 화면 렌더링 함수들을 한 곳에 모음
     function initAppRenders() {
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
         updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
@@ -524,7 +519,7 @@
 
     let currentWeekKey = null, currentExtMemoIndex = null, currentPlannerDateKey = null, isHabitEditMode = false;
     let selectedFilters = new Set(['all']), displayDate = new Date();
-    let isEditMode = false, isResizing = false, resizingTaskId = null, resizingEdge = null;
+    let isEditMode = false, isResizing = false, resizeData = null;
     let draggedTaskInfo = null, isSelecting = false, selectStartKey = null, selectEndKey = null;
     let pendingStart = null, pendingEnd = null, selectedCategoryId = 'cat1';
     let currentMode = '', editData = null;
@@ -598,17 +593,106 @@
         if (totalPercent >= 80) cheerMsg.textContent = `달성률 ${totalPercent}%! 완벽한 기간이었네요! 스스로에게 선물을 줘보세요 🎁`; else if (totalPercent >= 50) cheerMsg.textContent = `달성률 ${totalPercent}%! 충분히 잘하고 있어요. 조금만 더 힘내봐요! 👍`; else cheerMsg.textContent = `기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
     }
 
-    // 타이머 로직
     function updateTUI() {
       const h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60; $('digitalTime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       const angle = ((timeLeft % 3600) / 3600) * 360; pSlice.style.background = timeLeft <= 0 ? 'none' : `conic-gradient(from 0deg, #1b4332 ${angle}deg, transparent ${angle}deg)`;
     }
-    function getAngle(e) { const r = tDial.getBoundingClientRect(); const x = (e.clientX || e.touches?.[0].clientX) - (r.left + r.width / 2); const y = (e.clientY || e.touches?.[0].clientY) - (r.top + r.height / 2); let a = Math.atan2(y, x) * (180 / Math.PI) + 90; return a < 0 ? a + 360 : a; }
-    tDial.onmousedown = (e) => { if (isR) return; isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e); timerMode = 'idle'; };
-    window.addEventListener('pointermove', (e) => { if (isDT) { let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
-      if (isResizing) { const hC = document.elementFromPoint(e.clientX, e.clientY)?.closest('.group-cell'); if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizingTaskId)); if (t) { if (resizingEdge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizingEdge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } }
+    
+    function getAngle(e) { 
+        const r = tDial.getBoundingClientRect(); 
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - (r.left + r.width / 2); 
+        const y = clientY - (r.top + r.height / 2); 
+        let a = Math.atan2(y, x) * (180 / Math.PI) + 90; 
+        return a < 0 ? a + 360 : a; 
+    }
+    
+    tDial.onpointerdown = (e) => { 
+        if (isR) return; 
+        e.preventDefault(); 
+        isDT = true; 
+        tLaps = Math.floor(timeLeft / 3600); 
+        lastA = getAngle(e); 
+        timerMode = 'idle'; 
+    };
+
+    // 🔥 해결 2 & 3: 터치 드래그 + 스크롤 잠금 + 일정 길이 조절 마스터 통합 로직
+    window.addEventListener('pointermove', (e) => { 
+        if (isDT) { 
+            e.preventDefault();
+            let a = getAngle(e); 
+            if (lastA > 270 && a < 90) tLaps++; 
+            else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); 
+            lastA = a; 
+            const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); 
+            timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); 
+            updateTUI(); 
+        }
+        
+        if (isResizing && resizeData) { 
+            e.preventDefault(); // 스크롤 강제 잠금
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const target = document.elementFromPoint(clientX, clientY);
+            const hC = target?.closest('.group-cell'); 
+            if (hC) { 
+                const hD = hC.getAttribute('data-date'); 
+                const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); 
+                if (t) { 
+                    if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; 
+                    else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; 
+                    renderCalendar(); 
+                } 
+            } 
+        }
+
+        if (isSelecting) {
+            e.preventDefault(); // 스크롤 강제 잠금
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const target = document.elementFromPoint(clientX, clientY);
+            const hC = target?.closest('.group-cell');
+            if (hC) {
+                const key = hC.getAttribute('data-date');
+                if (key !== selectEndKey) {
+                    selectEndKey = key;
+                    highlightSelection(selectStartKey, selectEndKey);
+                }
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener('pointerup', () => { 
+        if (isPainting) { isPainting = false; if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); } 
+        if (isDT) { isDT = false; } 
+        
+        if (isSelecting) { 
+            isSelecting = false; 
+            if (selectStartKey !== selectEndKey) { 
+                let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; 
+                if (s > e) [s, e] = [e, s]; 
+                pendingStart = getDateKey(s); 
+                pendingEnd = getDateKey(e); 
+                openModal('createMulti', { start: pendingStart, end: pendingEnd }); 
+            } 
+            document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); 
+        } 
+        
+        if (isResizing) { 
+            isResizing = false; 
+            resizeData = null;
+            saveAndRefresh(); 
+        } 
     });
-    window.addEventListener('pointerup', () => { if (isPainting) { isPainting = false; if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); } if (isDT) { isDT = false; } if (isSelecting) { isSelecting = false; if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); } if (isResizing) { isResizing = false; saveAndRefresh(); } });
+
+    window.startResize = function(e, id, edge) {
+        e.preventDefault();
+        e.stopPropagation();
+        isResizing = true;
+        resizeData = { id: id, edge: edge };
+    };
+
     function startTimer() { if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
       tInt = setInterval(() => { const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); if (deltaSec > 0) { if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); } }, 500); }
     function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
@@ -856,9 +940,14 @@
         }
         const cell = document.createElement('div'); cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300'; cell.setAttribute('data-date', key);
         const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
-        cell.onclick = (e) => { if (window.innerWidth <= 768 && !e.target.closest('.todo-item') && !e.target.closest('.multi-task')) openDetailModal(key, d); };
-        cell.onmousedown = (e) => { if (window.innerWidth > 768 && !e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.resize-handle') && !e.target.closest('.date-trigger')) { isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); } };
-        cell.onmouseenter = () => { if (window.innerWidth > 768 && isSelecting) { selectEndKey = key; highlightSelection(selectStartKey, key); } }; cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); cell.ondblclick = (e) => { if (window.innerWidth > 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
+        
+        // 🔥 해결 3: 드래그 선택을 위한 터치 이벤트 연결
+        cell.onpointerdown = (e) => { 
+            if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.resize-handle') || e.target.closest('.date-trigger')) return;
+            isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); 
+        };
+        
+        cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); cell.ondblclick = (e) => { if (window.innerWidth > 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         const isToday = d.getTime() === today.getTime(); const isWeekend = d.getDay() === 0 || d.getDay() === 6;
         const dateWrap = document.createElement('div'); dateWrap.className = 'w-full'; const dateNum = document.createElement('div');
         let textColor = isWeekend ? 'text-red-500' : 'text-gray-700'; if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
@@ -884,9 +973,12 @@
             maxSlotInCell = Math.max(maxSlotInCell, t.slot); const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const bar = document.createElement('div'); bar.className = 'absolute h-6 left-0 right-0 multi-task flex items-center justify-center pointer-events-none'; bar.style.bottom = `${t.slot * 25 + 4}px`;
             const isStartOrSunday = (key === t.start || d.getDay() === 0); bar.style.zIndex = isStartOrSunday ? '50' : '10';
             let innerHTML = `<div class="relative w-full h-full flex items-center justify-center">`;
-            if (key === t.start && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'start')"></div>`;
+            
+            // 🔥 해결 1 적용: pointerdown 이벤트로 연결된 넓은 영역의 화살표 핸들
+            if (key === t.start) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'start')"></div>`;
             innerHTML += `<div class="h-[1.5px] opacity-50 absolute" style="background-color: ${cat.color}; left: ${key === t.start ? '8px' : '0'}; right: ${key === t.end ? '8px' : '0'};"></div>`;
-            if (key === t.end && window.innerWidth > 768) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onmousedown="startResize(event, '${t.id}', 'end')"></div>`;
+            if (key === t.end) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'end')"></div>`;
+            
             if (isStartOrSunday) { innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-2 py-0.5 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)};" draggable="${window.innerWidth > 768}" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[11px] md:text-[12px] pt-px text-black font-medium leading-none">${t.text}</span></div>`; }
             innerHTML += `</div>`; bar.innerHTML = innerHTML; bar.onclick = (e) => { e.stopPropagation(); if (!isResizing) openModal('editMulti', t); }; cell.appendChild(bar);
           }
@@ -929,8 +1021,6 @@
     }
 
     function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos })))); alert("데이터 백업이 완료되었습니다. (클립보드에 복사됨)"); }
-    function importData() { const c = prompt("백업 코드를 붙여넣으세요."); if (!c) return; try { const d = JSON.parse(decodeURIComponent(atob(c))); if(d.allTasks) allTasks = d.allTasks; if(d.multiTasks) multiTasks = d.multiTasks; if(d.categories) categories = d.categories; if(d.trackerColors) trackerColors = d.trackerColors; if(d.memo) localStorage.setItem('ianMemo', d.memo); if(d.dailyRecords) dailyRecords = d.dailyRecords; if(d.inboxTasks) inboxTasks = d.inboxTasks; if(d.weeklyMemos) weeklyMemos = d.weeklyMemos; if(d.weeklyHabits) weeklyHabits = d.weeklyHabits; if(d.extendedMemos) extendedMemos = d.extendedMemos; saveAllToLocal(); syncToCloud(); window.location.reload(); } catch (e) { alert("오류가 발생했습니다."); } }
-    function saveAllToLocal() { localStorage.setItem('ianCategories', JSON.stringify(categories)); localStorage.setItem('ianTrackerColors', JSON.stringify(trackerColors)); localStorage.setItem('ianSchedulerTasks', JSON.stringify(allTasks)); localStorage.setItem('ianMultiTasks', JSON.stringify(multiTasks)); localStorage.setItem('ianDailyRecords', JSON.stringify(dailyRecords)); localStorage.setItem('ianInboxTasks', JSON.stringify(inboxTasks)); localStorage.setItem('ianWeeklyMemos', JSON.stringify(weeklyMemos)); localStorage.setItem('ianWeeklyHabits', JSON.stringify(weeklyHabits)); localStorage.setItem('ianExtendedMemos', JSON.stringify(extendedMemos)); }
     
     function addNewCategory() { categories.push({ id: 'cat' + Date.now(), color: '#94a3b8', name: '새 카테고리' }); saveCategories(); buildCategoryUI(); }
     function toggleCategoryEdit() { isEditMode = !isEditMode; buildCategoryUI(); $('toggleEditBtn').textContent = isEditMode ? '완료' : '변경'; }
@@ -961,7 +1051,6 @@
     };
 
     function startMultiDrag(e, id) { e.stopPropagation(); draggedTaskInfo = { type: 'multi', id: id }; }
-    function startResize(e, id, edge) { e.preventDefault(); e.stopPropagation(); isResizing = true; resizingTaskId = id; resizingEdge = edge; }
     function highlightSelection(s, e) { if (!s || !e) return; let [st, et] = [new Date(s).getTime(), new Date(e).getTime()]; if (st > et) [st, et] = [et, st]; document.querySelectorAll('.group-cell').forEach(cell => { const d = new Date(cell.getAttribute('data-date')).getTime(); cell.classList.toggle('selected-range', d >= st && d <= et); }); }
     
     function handleDrop(e, targetDate) {
