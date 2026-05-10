@@ -15,7 +15,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
-  <!-- 터치 드래그 통역사 -->
   <script src="https://bernardo-castilho.github.io/DragDropTouch/DragDropTouch.js"></script>
 
   <style>
@@ -38,7 +37,7 @@
     .todo-list-container { position: relative; z-index: 20; pointer-events: none; }
     .todo-item { cursor: pointer !important; font-weight: 600; position: relative; z-index: 30; pointer-events: auto; color: #000; }
     
-    /* 🔥 해결 1: 화살표 터치 영역 3배 확장 (16px -> 40px) 및 흔들림 방지 */
+    /* 화살표 터치 영역 확장 및 흔들림 방지 */
     .resize-handle { width: 40px; height: 100%; position: absolute; top: 0; cursor: col-resize !important; z-index: 100; background: transparent; touch-action: none; }
     .resize-handle-start { left: -20px; }
     .resize-handle-end { right: -20px; }
@@ -65,7 +64,7 @@
     @media (max-width: 768px) { .group-cell { min-height: 100px !important; } }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen relative">
+<body class="bg-slate-50 min-h-screen relative overflow-x-hidden">
 
   <div id="loadingScreen" class="fixed inset-0 z-[2000] bg-white flex flex-col items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#22741C] mb-4"></div>
@@ -86,53 +85,15 @@
   <div id="mainApp" class="hidden w-full max-w-[1400px] flex flex-col xl:flex-row gap-4 md:gap-6 items-start mx-auto p-2 md:p-8">
     <div class="w-full xl:flex-1 bg-white rounded-2xl md:rounded-3xl shadow-md border border-gray-200 px-3 py-4 md:px-8 md:py-8 select-none relative z-10">
       
-<div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
             <span id="userProfileName" class="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg"></span>
             <button onclick="logout()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition px-2">로그아웃</button>
         </div>
         <div class="flex gap-2">
-            <button onclick="toggleDashboard()" id="dashToggleBtn" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1 transition-all">
-                <span>대시보드 숨기기</span> <span id="dashToggleArrow" class="text-[8px]">▲</span>
-            </button>
+            <button onclick="toggleDrawer()" class="text-[10px] font-bold bg-[#facc15] text-black border border-[#facc15] px-3 py-1.5 rounded-lg shadow-sm hover:bg-yellow-500 transition flex items-center gap-1">📋 내 보드 열기</button>
             <button onclick="openAnalytics()" class="text-[10px] font-bold bg-[#1b4332] text-white border border-[#1b4332] px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#22741C] transition">📊 성취 리포트</button>
             <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 수동 백업</button>
-        </div>
-      </div>
-
-      <div id="dashboardContainer" class="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 mb-6 transition-all duration-500 origin-top overflow-hidden" style="max-height: 800px; opacity: 1;">
-        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col h-44 md:h-56 overflow-hidden">
-          <div class="flex justify-between items-center mb-3">
-            <div class="flex items-center gap-2">
-              <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-[#22741C] rounded-sm"></span> 오늘 일정</h3>
-              <button onclick="openModal('createSingle', { dateKey: getDateKey(new Date()) })" class="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-md text-gray-600 font-bold hover:bg-gray-50 shadow-sm transition whitespace-nowrap">+ 일정 입력</button>
-            </div>
-            <span id="todayDateStr" class="text-[10px] text-[#22741C] font-bold bg-[#e4f8c4] px-2 py-0.5 rounded-md"></span>
-          </div>
-          <div id="todayTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'today')"></div>
-        </div>
-        
-        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col h-44 md:h-56 overflow-hidden">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-gray-800 rounded-sm"></span> 남은 일정</h3>
-            <span id="weekDateStr" class="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-md"></span>
-          </div>
-          <div id="weekTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'week')"></div>
-        </div>
-        
-        <div class="bg-[#fffbeb] rounded-xl border border-orange-100 p-4 shadow-sm flex flex-col h-44 md:h-56 relative">
-          <div class="flex justify-between items-center mb-2 flex-shrink-0">
-            <h3 class="font-bold text-orange-800 text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-orange-400 rounded-sm"></span> 메모장</h3>
-            <span class="text-[9px] text-blue-500 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>Cloud Sync</span>
-          </div>
-          <textarea id="memoArea" class="flex-1 w-full bg-transparent text-[13px] font-bold custom-scrollbar resize-none outline-none pr-1.5 mb-2"></textarea>
-          
-          <div class="flex gap-2 pt-2 border-t border-orange-200 flex-shrink-0 w-full overflow-x-hidden">
-            <button id="extMemoBtn0" onclick="openExtendedMemo(0)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 1</button>
-            <button id="extMemoBtn1" onclick="openExtendedMemo(1)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 2</button>
-            <button id="extMemoBtn2" onclick="openExtendedMemo(2)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 3</button>
-            <button id="extMemoBtn3" onclick="openExtendedMemo(3)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 4</button>
-          </div>
         </div>
       </div>
 
@@ -188,6 +149,49 @@
       <input type="text" id="inboxInput" placeholder="+ 할 일 추가 (Enter)" class="w-full text-[11px] font-bold px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#facc15] mb-2 transition flex-shrink-0 text-black">
       <div id="inboxList" class="w-full flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 min-h-[120px] pr-1 pb-1" ondragover="event.preventDefault()" ondrop="handleInboxDrop(event)"></div>
     </div>
+  </div>
+
+  <div id="dashboardDrawer" class="fixed inset-y-0 right-0 w-full md:w-[420px] bg-[#faf8f5] shadow-2xl z-[3000] transform translate-x-full transition-transform duration-300 flex flex-col border-l border-[#e6e2d8]">
+      <div class="flex justify-between items-center p-6 border-b border-[#e6e2d8] bg-white flex-shrink-0">
+          <h2 class="text-xl font-black text-gray-800">My Board 📋</h2>
+          <button onclick="toggleDrawer()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-6 bg-gray-50 flex flex-col gap-6 custom-scrollbar">
+          <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col min-h-[220px] overflow-hidden">
+            <div class="flex justify-between items-center mb-3">
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-[#22741C] rounded-sm"></span> 오늘 일정</h3>
+                <button onclick="openModal('createSingle', { dateKey: getDateKey(new Date()) })" class="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-md text-gray-600 font-bold hover:bg-gray-50 shadow-sm transition whitespace-nowrap">+ 일정 입력</button>
+              </div>
+              <span id="todayDateStr" class="text-[10px] text-[#22741C] font-bold bg-[#e4f8c4] px-2 py-0.5 rounded-md"></span>
+            </div>
+            <div id="todayTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'today')"></div>
+          </div>
+          
+          <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col min-h-[220px] overflow-hidden">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-gray-800 rounded-sm"></span> 남은 일정</h3>
+              <span id="weekDateStr" class="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-md"></span>
+            </div>
+            <div id="weekTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'week')"></div>
+          </div>
+          
+          <div class="bg-[#fffbeb] rounded-xl border border-orange-100 p-4 shadow-sm flex flex-col min-h-[240px] relative">
+            <div class="flex justify-between items-center mb-2 flex-shrink-0">
+              <h3 class="font-bold text-orange-800 text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-orange-400 rounded-sm"></span> 메모장</h3>
+              <span class="text-[9px] text-blue-500 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>Cloud Sync</span>
+            </div>
+            <textarea id="memoArea" class="flex-1 w-full bg-transparent text-[13px] font-bold custom-scrollbar resize-none outline-none pr-1.5 mb-2"></textarea>
+            
+            <div class="flex gap-2 pt-2 border-t border-orange-200 flex-shrink-0 w-full overflow-x-hidden">
+              <button id="extMemoBtn0" onclick="openExtendedMemo(0)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 1</button>
+              <button id="extMemoBtn1" onclick="openExtendedMemo(1)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 2</button>
+              <button id="extMemoBtn2" onclick="openExtendedMemo(2)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 3</button>
+              <button id="extMemoBtn3" onclick="openExtendedMemo(3)" class="flex-1 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 py-1.5 rounded-lg shadow-sm hover:bg-orange-50 truncate px-1 transition-colors">메모 4</button>
+            </div>
+          </div>
+      </div>
   </div>
 
   <div id="analyticsModal" class="hidden fixed inset-0 z-[900] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) closeAnalytics()">
@@ -378,6 +382,45 @@
     </div>
   </div>
 
+  <div id="smartRecordModal" class="hidden fixed inset-0 z-[4000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#faf8f5] w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-2xl font-black text-gray-800">타이머 기록 완료! 🎉</h2>
+          <p id="smartRecordTimeText" class="text-sm font-bold text-[#22741C] mt-1"></p>
+        </div>
+        <button onclick="$('smartRecordModal').classList.add('hidden')" class="text-3xl text-gray-400 hover:text-black">&times;</button>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" id="syncTrackerToggle" checked class="w-5 h-5 accent-[#22741C] cursor-pointer">
+          <span class="text-sm font-bold text-gray-700">데일리/위클리 타임트래커에 블록 자동 칠하기 🎨</span>
+        </label>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">오늘 할 일에서 가져오기</h3>
+        <div id="smartRecordTodayTasks" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">자주 하는 일 (카테고리)</h3>
+        <div id="smartRecordCategories" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="mb-8">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">직접 입력</h3>
+        <div class="flex gap-2">
+          <input type="text" id="smartRecordInput" class="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#22741C]" placeholder="어떤 일을 하셨나요?">
+          <input type="color" id="smartRecordColor" class="w-12 h-12 rounded-xl cursor-pointer border-0 bg-transparent p-0">
+        </div>
+      </div>
+
+      <button onclick="submitSmartRecord()" class="w-full bg-[#22741C] hover:bg-[#1b5e16] text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">기록 저장하기</button>
+    </div>
+  </div>
+
   <script>
     // 🔥 Firebase 환경 설정 및 초기화
     const firebaseConfig = {
@@ -537,6 +580,16 @@
     let timerLastTick = 0; 
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
+    // 💡 사이드 드로어 열기/닫기 마법
+    function toggleDrawer() {
+        const drawer = $('dashboardDrawer');
+        if (drawer.classList.contains('translate-x-full')) {
+            drawer.classList.remove('translate-x-full');
+        } else {
+            drawer.classList.add('translate-x-full');
+        }
+    }
+
     function openAnalytics() { analyticsDate = new Date(); analyticsMode = 'month'; $('analyticsModal').classList.remove('hidden'); renderAnalyticsTabs(); }
     function closeAnalytics() { $('analyticsModal').classList.add('hidden'); }
     window.changeAnalyticsMonth = function(dir) { analyticsDate.setMonth(analyticsDate.getMonth() + dir); analyticsMode = 'month'; renderAnalyticsTabs(); }
@@ -620,39 +673,69 @@
         timerMode = 'idle'; 
     };
 
-function renderTimeGrid(dateKey) {
-      const container = $('timeGrid'); container.innerHTML = ''; const data = dailyRecords[dateKey].grid; const labels = dailyRecords[dateKey].labels || {};
-      for(let h = 5; h < 29; h++) {
-        const realH = h % 24; const row = document.createElement('div'); row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
-        const hourLabel = document.createElement('div'); hourLabel.className = 'w-10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 border-r border-[#e6e2d8] bg-[#fdfbf7]'; hourLabel.textContent = String(realH).padStart(2, '0'); row.appendChild(hourLabel);
-        const cellContainer = document.createElement('div'); cellContainer.className = 'flex flex-1 relative';
-        let currentSegment = null; let segments = [];
-        for(let m = 0; m < 6; m++) {
-          const idx = (h - 5) * 6 + m; const color = data[idx];
-          if (color) { if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
-          const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
-          if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
-          
-          // 🔥 [수리 완료!] 마우스 & 터치 완벽 호환되도록 이벤트 수정
-          cell.onpointerdown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
-          cell.onpointerenter = () => { if(isPainting) { if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } applyBrushToCell(idx, cell); } };
-          cell.onpointerup = () => { if (!dragHasMoved) { if (data[idx]) openTimeBlockModal(idx, dateKey); else applyBrushToCell(idx, cell); } };
-          
-          cellContainer.appendChild(cell);
+    // 🔥 터치 드래그 + 스크롤 잠금 + 일정 조절 + 타임트래커 수동 색칠 통합 이벤트
+    window.addEventListener('pointermove', (e) => { 
+        if (isDT) { 
+            e.preventDefault();
+            let a = getAngle(e); 
+            if (lastA > 270 && a < 90) tLaps++; 
+            else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); 
+            lastA = a; 
+            const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); 
+            timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); 
+            updateTUI(); 
         }
-        if (currentSegment) segments.push(currentSegment);
-        segments.forEach(seg => {
-           let segText = ''; seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
-           if(segText) {
-               const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10';
-               const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100; overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
-               overlay.innerHTML = `<div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
-               cellContainer.appendChild(overlay);
-           }
-        });
-        row.appendChild(cellContainer); container.appendChild(row);
-      }
-    }
+
+        // 수동 드래그 색칠 지원 (PC+태블릿 모두 호환)
+        if (isPainting) {
+            e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const target = document.elementFromPoint(clientX, clientY);
+            if (target && target.classList.contains('time-cell')) {
+                const idx = parseInt(target.id.replace('time-cell-', ''));
+                if (!dragHasMoved && dragStartIdx !== idx) {
+                    applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`));
+                    dragHasMoved = true;
+                }
+                if (dragHasMoved) {
+                    applyBrushToCell(idx, target);
+                }
+            }
+        }
+        
+        if (isResizing && resizeData) { 
+            e.preventDefault(); 
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const target = document.elementFromPoint(clientX, clientY);
+            const hC = target?.closest('.group-cell'); 
+            if (hC) { 
+                const hD = hC.getAttribute('data-date'); 
+                const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); 
+                if (t) { 
+                    if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; 
+                    else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; 
+                    renderCalendar(); 
+                } 
+            } 
+        }
+
+        if (isSelecting) {
+            e.preventDefault(); 
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const target = document.elementFromPoint(clientX, clientY);
+            const hC = target?.closest('.group-cell');
+            if (hC) {
+                const key = hC.getAttribute('data-date');
+                if (key !== selectEndKey) {
+                    selectEndKey = key;
+                    highlightSelection(selectStartKey, selectEndKey);
+                }
+            }
+        }
+    }, { passive: false });
 
     window.addEventListener('pointerup', () => { 
         if (isPainting) { isPainting = false; if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); } 
@@ -688,8 +771,8 @@ function renderTimeGrid(dateKey) {
       tInt = setInterval(() => { const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); if (deltaSec > 0) { if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); } }, 500); }
     function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
     function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
-
-    // 🔥 기존 recordTimer 함수를 덮어쓰기 (스마트 모달 띄우기)
+    
+    // 🔥 스마트 타이머 기록 모달 띄우기
     let pendingRecordSec = 0;
     
     function recordTimer() { 
@@ -720,7 +803,6 @@ function renderTimeGrid(dateKey) {
                     btn.style.color = cat.color;
                     btn.style.borderColor = cat.color;
                     btn.textContent = t.text;
-                    // 👉 변경된 부분: 클릭한 버튼(this)의 정보를 같이 넘겨줍니다!
                     btn.onclick = function() { selectSmartRecord(t.text, cat.color, idx, this); };
                     todayContainer.appendChild(btn);
                 });
@@ -736,7 +818,6 @@ function renderTimeGrid(dateKey) {
             const btn = document.createElement('button');
             btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white hover:bg-gray-50 transition-all';
             btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${cat.color}"></span>${cat.name}`;
-            // 👉 변경된 부분: 클릭한 버튼(this)의 정보를 같이 넘겨줍니다!
             btn.onclick = function() { selectSmartRecord(cat.name + ' 작업', cat.color, null, this); };
             catContainer.appendChild(btn);
         });
@@ -746,7 +827,6 @@ function renderTimeGrid(dateKey) {
         $('smartRecordColor').value = categories.length > 0 ? categories[0].color : '#000000';
         $('smartRecordModal').dataset.taskIdx = '';
         
-        // 모달 열기
         $('smartRecordModal').classList.remove('hidden');
     }
 
@@ -756,39 +836,37 @@ function renderTimeGrid(dateKey) {
         const input = $('smartRecordInput');
         const colorInput = $('smartRecordColor');
         
-        // 1. 이미 선택된 '오늘 할 일'을 다시 누른 경우 (선택 해제 / 토글 OFF)
+        // 1. 이미 선택된 '오늘 할 일'을 다시 누른 경우 (선택 해제)
         if (taskIdx !== null && modal.dataset.taskIdx === String(taskIdx)) {
-            input.value = ''; // 입력창 비우기
-            colorInput.value = categories.length > 0 ? categories[0].color : '#000000'; // 기본 색상으로
-            modal.dataset.taskIdx = ''; // 인덱스 초기화
+            input.value = '';
+            colorInput.value = categories.length > 0 ? categories[0].color : '#000000';
+            modal.dataset.taskIdx = '';
             
-            // 모든 버튼 투명도 및 테두리 원상복구
             if (clickedBtn) {
                 const siblings = clickedBtn.parentElement.children;
                 for (let b of siblings) { b.style.opacity = '1'; b.style.borderWidth = '1px'; }
             }
-            return; // 여기서 멈춤!
+            return;
         }
 
-        // 2. 새로운 버튼을 누른 경우 (선택 ON)
+        // 2. 새로운 버튼을 누른 경우
         input.value = text;
         colorInput.value = color;
         modal.dataset.taskIdx = taskIdx !== null ? taskIdx : '';
 
-        // 3. (보너스 UX) 클릭한 버튼 강조하고 나머지는 흐리게 만들기
+        // 3. 시각적 피드백 효과
         if (clickedBtn && clickedBtn.parentElement.id === 'smartRecordTodayTasks') {
             const siblings = clickedBtn.parentElement.children;
             for (let b of siblings) {
                 if (b === clickedBtn) {
                     b.style.opacity = '1';
-                    b.style.borderWidth = '2px'; // 선택된 건 테두리 굵게
+                    b.style.borderWidth = '2px';
                 } else {
-                    b.style.opacity = '0.3'; // 나머지는 흐리게
+                    b.style.opacity = '0.3';
                     b.style.borderWidth = '1px';
                 }
             }
         } else if (clickedBtn && clickedBtn.parentElement.id === 'smartRecordCategories') {
-            // 카테고리 버튼을 누르면 '오늘 할 일' 시각적 효과 초기화
             document.querySelectorAll('#smartRecordTodayTasks button').forEach(b => {
                 b.style.opacity = '1'; b.style.borderWidth = '1px';
             });
@@ -804,29 +882,25 @@ function renderTimeGrid(dateKey) {
         let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; 
         if (timerMode === 'idle') type = 'timer'; 
         
-        // 1. 누적 시간 더하기
         dailyRecords[todayKey].recorded[type] += pendingRecordSec; 
         
         const inputText = $('smartRecordInput').value.trim();
         const inputColor = $('smartRecordColor').value;
         const taskIdx = $('smartRecordModal').dataset.taskIdx;
 
-        // 2. 오늘 일정에서 골랐다면 체크(완료) 처리
         if (taskIdx !== '' && allTasks[todayKey][taskIdx]) {
             allTasks[todayKey][taskIdx].isChecked = true;
         }
 
-        // 3. 타임트래커 자동 칠하기! (핵심 기능)
         if ($('syncTrackerToggle').checked && inputText) {
             const now = new Date();
             let currentHour = now.getHours();
-            if (currentHour < 5) currentHour += 24; // 새벽 5시 기준
+            if (currentHour < 5) currentHour += 24;
             const currentMin = now.getMinutes();
             
-            // 끝나는 칸과 시작하는 칸 계산 (1칸 = 10분)
             let endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
-            let blocksToFill = Math.floor(pendingRecordSec / 600); // 600초 = 10분
-            if (blocksToFill < 1) blocksToFill = 1; // 최소 1칸은 칠해줌
+            let blocksToFill = Math.floor(pendingRecordSec / 600);
+            if (blocksToFill < 1) blocksToFill = 1;
             let startIdx = Math.max(0, endIdx - blocksToFill + 1);
 
             for (let i = startIdx; i <= endIdx; i++) {
@@ -836,7 +910,6 @@ function renderTimeGrid(dateKey) {
             dailyRecords[todayKey].labels[startIdx] = { text: inputText, color: inputColor };
         }
 
-        // 4. 저장 및 화면 갱신
         savePlannerData(); 
         saveAndRefresh();
         updateRecordDisplay(); 
@@ -849,7 +922,7 @@ function renderTimeGrid(dateKey) {
         
         $('smartRecordModal').classList.add('hidden');
     }
-    
+
     function hardResetTimer() { if(confirm("오늘 하루 동안 기록된 총 누적 시간(스톱워치+타이머)이 모두 0으로 삭제됩니다. 정말 완전히 초기화할까요?")) { const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
     function formatSecs(sec) { const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
     function updateRecordDisplay() { const todayKey = getDateKey(new Date()); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
@@ -901,7 +974,7 @@ function renderTimeGrid(dateKey) {
       activeBrushColor = color; document.querySelectorAll('#plannerTaskList > div.brush-item').forEach(el => { el.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); el.classList.add('border-transparent'); }); element.classList.remove('border-transparent'); element.classList.add('bg-white', 'shadow-md', 'border-gray-200');
     }
 
-function renderTimeGrid(dateKey) {
+    function renderTimeGrid(dateKey) {
       const container = $('timeGrid'); container.innerHTML = ''; const data = dailyRecords[dateKey].grid; const labels = dailyRecords[dateKey].labels || {};
       for(let h = 5; h < 29; h++) {
         const realH = h % 24; const row = document.createElement('div'); row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
@@ -914,7 +987,6 @@ function renderTimeGrid(dateKey) {
           const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
           
-          // 🔥 [수리 완료!] 마우스 & 터치 완벽 호환되도록 이벤트 수정
           cell.onpointerdown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
           cell.onpointerenter = () => { if(isPainting) { if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } applyBrushToCell(idx, cell); } };
           cell.onpointerup = () => { if (!dragHasMoved) { if (data[idx]) openTimeBlockModal(idx, dateKey); else applyBrushToCell(idx, cell); } };
@@ -1096,7 +1168,6 @@ function renderTimeGrid(dateKey) {
         const cell = document.createElement('div'); cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300'; cell.setAttribute('data-date', key);
         const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
         
-        // 🔥 해결 3: 드래그 선택을 위한 터치 이벤트 연결
         cell.onpointerdown = (e) => { 
             if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.resize-handle') || e.target.closest('.date-trigger')) return;
             isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); 
@@ -1129,7 +1200,6 @@ function renderTimeGrid(dateKey) {
             const isStartOrSunday = (key === t.start || d.getDay() === 0); bar.style.zIndex = isStartOrSunday ? '50' : '10';
             let innerHTML = `<div class="relative w-full h-full flex items-center justify-center">`;
             
-            // 🔥 해결 1 적용: pointerdown 이벤트로 연결된 넓은 영역의 화살표 핸들
             if (key === t.start) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'start')"></div>`;
             innerHTML += `<div class="h-[1.5px] opacity-50 absolute" style="background-color: ${cat.color}; left: ${key === t.start ? '8px' : '0'}; right: ${key === t.end ? '8px' : '0'};"></div>`;
             if (key === t.end) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'end')"></div>`;
@@ -1253,44 +1323,5 @@ function renderTimeGrid(dateKey) {
         } catch(err) { console.error("초기화 중 에러 발생:", err); }
     };
   </script>
-  <div id="smartRecordModal" class="hidden fixed inset-0 z-[4000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#faf8f5] w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h2 class="text-2xl font-black text-gray-800">타이머 기록 완료! 🎉</h2>
-          <p id="smartRecordTimeText" class="text-sm font-bold text-[#22741C] mt-1"></p>
-        </div>
-        <button onclick="$('smartRecordModal').classList.add('hidden')" class="text-3xl text-gray-400 hover:text-black">&times;</button>
-      </div>
-
-      <div class="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm">
-        <label class="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" id="syncTrackerToggle" checked class="w-5 h-5 accent-[#22741C] cursor-pointer">
-          <span class="text-sm font-bold text-gray-700">데일리/위클리 타임트래커에 블록 자동 칠하기 🎨</span>
-        </label>
-      </div>
-
-      <div class="mb-6">
-        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">오늘 할 일에서 가져오기</h3>
-        <div id="smartRecordTodayTasks" class="flex flex-wrap gap-2"></div>
-      </div>
-
-      <div class="mb-6">
-        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">자주 하는 일 (카테고리)</h3>
-        <div id="smartRecordCategories" class="flex flex-wrap gap-2"></div>
-      </div>
-
-      <div class="mb-8">
-        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">직접 입력</h3>
-        <div class="flex gap-2">
-          <input type="text" id="smartRecordInput" class="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#22741C]" placeholder="어떤 일을 하셨나요?">
-          <input type="color" id="smartRecordColor" class="w-12 h-12 rounded-xl cursor-pointer border-0 bg-transparent p-0">
-        </div>
-      </div>
-
-      <button onclick="submitSmartRecord()" class="w-full bg-[#22741C] hover:bg-[#1b5e16] text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">기록 저장하기</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
