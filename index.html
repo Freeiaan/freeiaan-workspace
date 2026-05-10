@@ -617,51 +617,39 @@
         timerMode = 'idle'; 
     };
 
-    // 🔥 해결 2 & 3: 터치 드래그 + 스크롤 잠금 + 일정 길이 조절 마스터 통합 로직
-    window.addEventListener('pointermove', (e) => { 
-        if (isDT) { 
-            e.preventDefault();
-            let a = getAngle(e); 
-            if (lastA > 270 && a < 90) tLaps++; 
-            else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); 
-            lastA = a; 
-            const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); 
-            timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); 
-            updateTUI(); 
+function renderTimeGrid(dateKey) {
+      const container = $('timeGrid'); container.innerHTML = ''; const data = dailyRecords[dateKey].grid; const labels = dailyRecords[dateKey].labels || {};
+      for(let h = 5; h < 29; h++) {
+        const realH = h % 24; const row = document.createElement('div'); row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
+        const hourLabel = document.createElement('div'); hourLabel.className = 'w-10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 border-r border-[#e6e2d8] bg-[#fdfbf7]'; hourLabel.textContent = String(realH).padStart(2, '0'); row.appendChild(hourLabel);
+        const cellContainer = document.createElement('div'); cellContainer.className = 'flex flex-1 relative';
+        let currentSegment = null; let segments = [];
+        for(let m = 0; m < 6; m++) {
+          const idx = (h - 5) * 6 + m; const color = data[idx];
+          if (color) { if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
+          const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
+          if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
+          
+          // 🔥 [수리 완료!] 마우스 & 터치 완벽 호환되도록 이벤트 수정
+          cell.onpointerdown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
+          cell.onpointerenter = () => { if(isPainting) { if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } applyBrushToCell(idx, cell); } };
+          cell.onpointerup = () => { if (!dragHasMoved) { if (data[idx]) openTimeBlockModal(idx, dateKey); else applyBrushToCell(idx, cell); } };
+          
+          cellContainer.appendChild(cell);
         }
-        
-        if (isResizing && resizeData) { 
-            e.preventDefault(); // 스크롤 강제 잠금
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const target = document.elementFromPoint(clientX, clientY);
-            const hC = target?.closest('.group-cell'); 
-            if (hC) { 
-                const hD = hC.getAttribute('data-date'); 
-                const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); 
-                if (t) { 
-                    if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; 
-                    else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; 
-                    renderCalendar(); 
-                } 
-            } 
-        }
-
-        if (isSelecting) {
-            e.preventDefault(); // 스크롤 강제 잠금
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const target = document.elementFromPoint(clientX, clientY);
-            const hC = target?.closest('.group-cell');
-            if (hC) {
-                const key = hC.getAttribute('data-date');
-                if (key !== selectEndKey) {
-                    selectEndKey = key;
-                    highlightSelection(selectStartKey, selectEndKey);
-                }
-            }
-        }
-    }, { passive: false });
+        if (currentSegment) segments.push(currentSegment);
+        segments.forEach(seg => {
+           let segText = ''; seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
+           if(segText) {
+               const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10';
+               const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100; overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
+               overlay.innerHTML = `<div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
+               cellContainer.appendChild(overlay);
+           }
+        });
+        row.appendChild(cellContainer); container.appendChild(row);
+      }
+    }
 
     window.addEventListener('pointerup', () => { 
         if (isPainting) { isPainting = false; if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); } 
@@ -910,7 +898,7 @@
       activeBrushColor = color; document.querySelectorAll('#plannerTaskList > div.brush-item').forEach(el => { el.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); el.classList.add('border-transparent'); }); element.classList.remove('border-transparent'); element.classList.add('bg-white', 'shadow-md', 'border-gray-200');
     }
 
-    function renderTimeGrid(dateKey) {
+function renderTimeGrid(dateKey) {
       const container = $('timeGrid'); container.innerHTML = ''; const data = dailyRecords[dateKey].grid; const labels = dailyRecords[dateKey].labels || {};
       for(let h = 5; h < 29; h++) {
         const realH = h % 24; const row = document.createElement('div'); row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
@@ -922,9 +910,12 @@
           if (color) { if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
           const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
-          cell.onmousedown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
-          cell.onmouseenter = () => { if(isPainting) { if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } applyBrushToCell(idx, cell); } };
-          cell.onmouseup = () => { if (!dragHasMoved) { if (data[idx]) openTimeBlockModal(idx, dateKey); else applyBrushToCell(idx, cell); } };
+          
+          // 🔥 [수리 완료!] 마우스 & 터치 완벽 호환되도록 이벤트 수정
+          cell.onpointerdown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
+          cell.onpointerenter = () => { if(isPainting) { if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } applyBrushToCell(idx, cell); } };
+          cell.onpointerup = () => { if (!dragHasMoved) { if (data[idx]) openTimeBlockModal(idx, dateKey); else applyBrushToCell(idx, cell); } };
+          
           cellContainer.appendChild(cell);
         }
         if (currentSegment) segments.push(currentSegment);
