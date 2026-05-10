@@ -697,6 +697,8 @@
       tInt = setInterval(() => { const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); if (deltaSec > 0) { if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); } }, 500); }
     function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
     function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
+
+    // 🔥 기존 recordTimer 함수를 덮어쓰기 (스마트 모달 띄우기)
     let pendingRecordSec = 0;
     
     function recordTimer() { 
@@ -727,7 +729,8 @@
                     btn.style.color = cat.color;
                     btn.style.borderColor = cat.color;
                     btn.textContent = t.text;
-                    btn.onclick = () => selectSmartRecord(t.text, cat.color, idx);
+                    // 👉 변경된 부분: 클릭한 버튼(this)의 정보를 같이 넘겨줍니다!
+                    btn.onclick = function() { selectSmartRecord(t.text, cat.color, idx, this); };
                     todayContainer.appendChild(btn);
                 });
             }
@@ -742,24 +745,63 @@
             const btn = document.createElement('button');
             btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white hover:bg-gray-50 transition-all';
             btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${cat.color}"></span>${cat.name}`;
-            btn.onclick = () => selectSmartRecord(cat.name + ' 작업', cat.color, null);
+            // 👉 변경된 부분: 클릭한 버튼(this)의 정보를 같이 넘겨줍니다!
+            btn.onclick = function() { selectSmartRecord(cat.name + ' 작업', cat.color, null, this); };
             catContainer.appendChild(btn);
         });
 
         // 초기화
         $('smartRecordInput').value = '';
-        $('smartRecordColor').value = categories[0].color;
+        $('smartRecordColor').value = categories.length > 0 ? categories[0].color : '#000000';
         $('smartRecordModal').dataset.taskIdx = '';
         
         // 모달 열기
         $('smartRecordModal').classList.remove('hidden');
     }
 
-    // 💡 버튼 눌렀을 때 입력창 자동 채우기
-    function selectSmartRecord(text, color, taskIdx) {
-        $('smartRecordInput').value = text;
-        $('smartRecordColor').value = color;
-        if (taskIdx !== null) $('smartRecordModal').dataset.taskIdx = taskIdx;
+    // 💡 버튼 눌렀을 때 입력창 자동 채우기 및 토글 기능!
+    function selectSmartRecord(text, color, taskIdx, clickedBtn) {
+        const modal = $('smartRecordModal');
+        const input = $('smartRecordInput');
+        const colorInput = $('smartRecordColor');
+        
+        // 1. 이미 선택된 '오늘 할 일'을 다시 누른 경우 (선택 해제 / 토글 OFF)
+        if (taskIdx !== null && modal.dataset.taskIdx === String(taskIdx)) {
+            input.value = ''; // 입력창 비우기
+            colorInput.value = categories.length > 0 ? categories[0].color : '#000000'; // 기본 색상으로
+            modal.dataset.taskIdx = ''; // 인덱스 초기화
+            
+            // 모든 버튼 투명도 및 테두리 원상복구
+            if (clickedBtn) {
+                const siblings = clickedBtn.parentElement.children;
+                for (let b of siblings) { b.style.opacity = '1'; b.style.borderWidth = '1px'; }
+            }
+            return; // 여기서 멈춤!
+        }
+
+        // 2. 새로운 버튼을 누른 경우 (선택 ON)
+        input.value = text;
+        colorInput.value = color;
+        modal.dataset.taskIdx = taskIdx !== null ? taskIdx : '';
+
+        // 3. (보너스 UX) 클릭한 버튼 강조하고 나머지는 흐리게 만들기
+        if (clickedBtn && clickedBtn.parentElement.id === 'smartRecordTodayTasks') {
+            const siblings = clickedBtn.parentElement.children;
+            for (let b of siblings) {
+                if (b === clickedBtn) {
+                    b.style.opacity = '1';
+                    b.style.borderWidth = '2px'; // 선택된 건 테두리 굵게
+                } else {
+                    b.style.opacity = '0.3'; // 나머지는 흐리게
+                    b.style.borderWidth = '1px';
+                }
+            }
+        } else if (clickedBtn && clickedBtn.parentElement.id === 'smartRecordCategories') {
+            // 카테고리 버튼을 누르면 '오늘 할 일' 시각적 효과 초기화
+            document.querySelectorAll('#smartRecordTodayTasks button').forEach(b => {
+                b.style.opacity = '1'; b.style.borderWidth = '1px';
+            });
+        }
     }
 
     // 🚀 최종 저장 버튼 눌렀을 때 실행되는 마법!
