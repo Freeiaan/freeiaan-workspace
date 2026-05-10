@@ -72,42 +72,38 @@
       /* 모바일 공통 세팅 */
       body { background-color: #faf8f5 !important; }
       #mainApp { padding-bottom: 80px !important; }
-      
-      /* 💡 모바일 탭 마법: 메인 요소들 기본 숨김 */
-      #mainApp > div:first-child,
-      #mainApp > div:last-child,
-      #dashboardDrawer,
-      #mobileHabitSection { display: none !important; }
-
-      /* 서랍장 열기 버튼 숨김 */
+      #mainApp > div:first-child, #mainApp > div:last-child, #dashboardDrawer, #mobileHabitSection { display: none !important; }
       button[onclick="toggleDrawer()"] { display: none !important; }
 
-      /* 🏠 1. 홈 탭 (서랍장 전체 화면화 & 파스텔 카드) */
+      /* 🏠 1. 홈 탭 */
       body[data-mobile-tab="home"] #dashboardDrawer {
           display: flex !important; position: relative !important; transform: none !important; 
           width: 100% !important; height: 100vh !important; box-shadow: none !important; border: none !important; z-index: 10;
       }
       body[data-mobile-tab="home"] #mainApp { display: none !important; }
-      body[data-mobile-tab="home"] #dashboardDrawer > div:first-child { display: none !important; } /* 기존 헤더 숨김 */
+      body[data-mobile-tab="home"] #dashboardDrawer > div:first-child { display: none !important; } 
       
-      /* 파스텔톤 카드 변신 마법 (빈 공간 없애고 자동 높이 조절!) */
       .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; min-height: auto !important; }
       .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; min-height: auto !important; }
       .mobile-today-card::-webkit-scrollbar, .mobile-week-card::-webkit-scrollbar { display: none; }
       .mobile-today-card .dashboard-item, .mobile-week-card .dashboard-item { background: transparent !important; border: none !important; box-shadow: none !important; padding-left: 0 !important; padding-top: 4px !important; padding-bottom: 4px !important; }
-      
-      /* 🔥 모바일 리스트 잘림 방지 & 작대기 숨김 */
-      #todayTasksList, #weekTasksList { flex: none !important; height: auto !important; overflow: visible !important; }
+
+      /* 🔥 해결: 스크롤 부활 & 리스트 잘림 방지 & 작대기 숨김 */
+      #todayTasksList, #weekTasksList { max-height: 250px !important; overflow-y: auto !important; flex: 1 !important; }
       .drag-handle-dash { display: none !important; }
-      
+
       /* 📅 2. 캘린더 탭 */
       body[data-mobile-tab="calendar"] #mainApp { display: flex !important; padding-top: 10px !important; }
       body[data-mobile-tab="calendar"] #mainApp > div:first-child { display: block !important; border: none; box-shadow: none; padding: 0 !important; background: transparent; }
+      
+      /* 🔥 해결: 캘린더 왼쪽 WEEK 공간 없애기 */
+      #calendarArea { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+      .week-side-btn, .empty-corner { display: none !important; }
 
       /* ⏱️ 3. 타이머 탭 */
       body[data-mobile-tab="timer"] #mainApp { display: flex !important; padding-top: 10px !important; }
       body[data-mobile-tab="timer"] #mainApp > div:last-child { display: flex !important; width: 100% !important; border: none; box-shadow: none; padding: 10px !important; background: transparent; }
-      #timerHistoryContainer { display: flex !important; } /* 타이머 히스토리 켜기 */
+      #timerHistoryContainer { display: flex !important; }
 
       /* 🔥 4. 해빗 탭 */
       body[data-mobile-tab="habit"] #mobileHabitSection { display: flex !important; }
@@ -152,16 +148,17 @@
         <div id="filterBar" class="flex gap-1.5 no-scrollbar overflow-x-auto"></div>
       </div>
 
-      <header class="flex justify-between items-center mb-4 px-1 gap-4">
+      <header class="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-4 px-1 gap-4 w-full">
         <div class="flex items-center gap-2 md:gap-3">
           <button id="prevBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">◀</button>
           <h1 id="monthYear" class="text-base md:text-xl font-bold text-black"></h1>
           <button id="nextBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">▶</button>
         </div>
+        <div id="mobileWeekButtons" class="md:hidden flex gap-2 overflow-x-auto w-full custom-scrollbar pb-1"></div>
       </header>
 
       <div id="calendarArea" class="rounded-xl border border-gray-200 overflow-hidden bg-gray-200 gap-px relative" style="display: grid; grid-template-columns: 24px repeat(7, minmax(0, 1fr));">
-        <div class="day-header bg-gray-100 border-b border-gray-200"></div>
+        <div class="day-header bg-gray-100 border-b border-gray-200 empty-corner"></div>
         <div class="day-header day-header-sun">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header day-header-sat">토</div>
         <div id="calendar" class="contents"></div>
       </div>
@@ -1125,6 +1122,21 @@
     function renderCalendar() {
       const calendar = $('calendar'); if (!calendar) return; calendar.innerHTML = '';
       const year = displayDate.getFullYear(), month = displayDate.getMonth(); $('monthYear').textContent = `${year}년 ${month + 1}월`;
+      
+      // 🔥 모바일용 주차별 둥근 버튼 동적 생성
+      const mobileWeekBtns = $('mobileWeekButtons');
+      if (mobileWeekBtns) {
+          mobileWeekBtns.innerHTML = '';
+          const weeks = getMonthWeeks(year, month);
+          weeks.forEach(w => {
+              const btn = document.createElement('button');
+              btn.className = 'px-3 py-1.5 bg-white border border-gray-200 rounded-[10px] text-[11px] font-extrabold text-gray-700 whitespace-nowrap shadow-sm hover:bg-gray-50';
+              btn.textContent = w.weekNum + '주차';
+              btn.onclick = () => openWeeklyPlanner(w.start, w.end);
+              mobileWeekBtns.appendChild(btn);
+          });
+      }
+
       const firstDay = new Date(year, month, 1).getDay(); const today = new Date(); today.setHours(0, 0, 0, 0);
       const filteredMulti = multiTasks.filter(t => selectedFilters.has('all') || selectedFilters.has(t.categoryId));
       const slots = [];
@@ -1134,16 +1146,28 @@
         const d = new Date(year, month, i - firstDay + 1); const key = getDateKey(d);
         if (i % 7 === 0) {
             const wStart = new Date(year, month, i - firstDay + 1); const wEnd = new Date(year, month, i - firstDay + 7);
-            const weekBtn = document.createElement('div'); weekBtn.className = 'bg-[#e5e7eb] hover:bg-[#d1d5db] cursor-pointer flex items-center justify-center transition-colors group border-b border-gray-100 min-h-[120px] h-full w-full relative z-[200] pointer-events-auto'; weekBtn.innerHTML = `<div class="rotate-[-90deg] text-[10px] font-bold text-gray-500 tracking-widest opacity-60 group-hover:opacity-100 transition-opacity absolute pointer-events-none whitespace-nowrap">WEEK</div>`;
+            const weekBtn = document.createElement('div'); 
+            weekBtn.className = 'week-side-btn bg-[#e5e7eb] hover:bg-[#d1d5db] cursor-pointer flex items-center justify-center transition-colors group border-b border-gray-100 min-h-[120px] h-full w-full relative z-[200] pointer-events-auto'; 
+            weekBtn.innerHTML = `<div class="rotate-[-90deg] text-[10px] font-bold text-gray-500 tracking-widest opacity-60 group-hover:opacity-100 transition-opacity absolute pointer-events-none whitespace-nowrap">WEEK</div>`;
             const openPlannerHandler = (e) => { e.preventDefault(); e.stopPropagation(); openWeeklyPlanner(wStart, wEnd); }; weekBtn.onmousedown = openPlannerHandler; weekBtn.onclick = openPlannerHandler; weekBtn.addEventListener('touchstart', openPlannerHandler, {passive: false}); calendar.appendChild(weekBtn);
         }
         const cell = document.createElement('div'); cell.className = 'min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300'; cell.setAttribute('data-date', key);
         const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
         
+        // 🔥 해결: 캘린더 드래그는 '꾹 누르기(0.5초)' 했을 때만 발동! (스와이프 꼬임 방지)
+        let pressTimer;
         cell.onpointerdown = (e) => { 
             if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.resize-handle') || e.target.closest('.date-trigger')) return;
-            isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); 
+            if (window.innerWidth < 768) {
+                pressTimer = setTimeout(() => {
+                    isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); 
+                }, 500); // 0.5초 꾹 누르면 드래그 모드 켜짐!
+            } else {
+                isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); 
+            }
         };
+        cell.onpointermove = () => { clearTimeout(pressTimer); }; // 스크롤(스와이프) 시도하면 꾹누르기 취소!
+        cell.onpointerup = () => { clearTimeout(pressTimer); };
         
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); cell.ondblclick = (e) => { if (window.innerWidth > 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         const isToday = d.getTime() === today.getTime(); const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -1199,7 +1223,6 @@
           }); 
       }
       
-      // 🔥 마법 1단계: 모바일 홈 화면 환영 인사 로직
       const greetingEl = $('mobileGreeting');
       if (greetingEl) {
           if (todayTasksCount === 0) greetingEl.innerHTML = `이안님, <br><span class="text-[#22741C]">오늘의 목표</span>를 세워볼까요? 🚀`;
@@ -1217,7 +1240,9 @@
 
     function createDashItem(t, key, idx, showDate = false) {
       const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
-      const div = document.createElement('div'); div.draggable = true; 
+      const div = document.createElement('div'); 
+      // 🔥 해결: 모바일에서는 드래그 모션을 강제로 꺼버려서 체크박스 터치 오류 해결!
+      div.draggable = window.innerWidth >= 768; 
       div.className = "dashboard-item bg-white rounded-xl border border-gray-100 shadow-sm cursor-move flex-shrink-0 pr-3 py-2"; 
       div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
       
@@ -1232,7 +1257,7 @@
           dateBadge = `<span class="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-2 flex-shrink-0">~${mStr}.${dStr} ${dayStr}</span>`;
       }
 
-      div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 md:w-[15px] md:h-[15px] rounded"><span class="cat-badge-bg text-[12px] md:text-[13px] font-bold md:font-medium ml-1" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] md:text-[13px] truncate font-bold md:font-medium ml-1.5 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>${dateBadge}`;
+      div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-5 h-5 md:w-[15px] md:h-[15px] rounded-md"><span class="cat-badge-bg text-[14px] md:text-[13px] font-black md:font-medium ml-1" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[15px] md:text-[13px] truncate font-bold md:font-medium ml-1.5 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>${dateBadge}`;
       
       div.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('dash-key', key); e.dataTransfer.setData('dash-idx', idx); };
       div.querySelector('input').onclick = (e) => { e.stopPropagation(); allTasks[key][idx].isChecked = e.target.checked; saveAndRefresh(); }; 
