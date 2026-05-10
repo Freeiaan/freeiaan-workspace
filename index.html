@@ -1388,6 +1388,58 @@
 
     function isDateBetween(d, s, e) { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; }
 
+// 🔥 ESC 키 누르면 가장 위에 있는 모달/서랍부터 똑똑하게 하나씩 닫기!
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            // 1. 스마트 타이머 모달 (가장 위, z-4000)
+            if (!$('smartRecordModal').classList.contains('hidden')) {
+                $('smartRecordModal').classList.add('hidden');
+                return;
+            }
+            // 2. 우측 대시보드 서랍장 (z-3000)
+            const drawer = $('dashboardDrawer');
+            if (drawer && !drawer.classList.contains('translate-x-full')) {
+                drawer.classList.add('translate-x-full');
+                return;
+            }
+            // 3. 성취 리포트 (z-900)
+            if (!$('analyticsModal').classList.contains('hidden')) {
+                closeAnalytics();
+                return;
+            }
+            // 4. 확장 메모장 (z-800)
+            if (!$('extendedMemoModal').classList.contains('hidden')) {
+                closeExtendedMemo();
+                return;
+            }
+            // 5. 일반 일정 설정창 (z-600)
+            if (!$('eventModal').classList.contains('hidden')) {
+                closeModal();
+                return;
+            }
+            // 6. 타임 블록 설정창 (z-500)
+            if (!$('timeBlockModal').classList.contains('hidden')) {
+                $('timeBlockModal').classList.add('hidden');
+                return;
+            }
+            // 7. 데일리 플래너 (z-400)
+            if (!$('dailyPlannerModal').classList.contains('hidden')) {
+                closePlanner();
+                return;
+            }
+            // 8. 위클리 플래너 (z-400)
+            if (!$('weeklyPlannerModal').classList.contains('hidden')) {
+                closeWeeklyPlanner();
+                return;
+            }
+            // 9. 모바일 상세 일정 (z-200)
+            if (!$('mobileDetailModal').classList.contains('hidden')) {
+                closeDetailModal();
+                return;
+            }
+        }
+    });
+    
     window.onload = () => { 
         try {
             const prevBtn = $('prevBtn'); if(prevBtn) prevBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() - 1); renderCalendar(); };
