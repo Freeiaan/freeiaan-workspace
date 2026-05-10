@@ -364,27 +364,34 @@
 
   <div id="dailyPlannerModal" class="hidden fixed inset-0 z-[400] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-2 md:p-6" onclick="if(event.target === this) closePlanner()">
     <div class="bg-[#faf8f5] w-full max-w-5xl h-[90vh] md:h-[80vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
-      <header class="p-6 md:p-8 flex justify-between items-end border-b border-[#e6e2d8]">
-         <div>
-           <h2 id="plannerTitle" class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Day Record</h2>
-           <p id="plannerSubtitle" class="text-xs font-bold text-gray-500 mt-2 uppercase tracking-widest"></p>
+      <header class="p-6 md:p-8 flex flex-col border-b border-[#e6e2d8] flex-shrink-0">
+         <div class="flex justify-between items-start w-full">
+             <div>
+               <h2 id="plannerTitle" class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Day Record</h2>
+               <p id="plannerSubtitle" class="text-xs font-bold text-gray-500 mt-2 uppercase tracking-widest"></p>
+             </div>
+             <button onclick="closePlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
          </div>
-         <button onclick="closePlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+         <div class="flex gap-2 mt-5 md:hidden">
+             <button id="dpTabBtnTracker" onclick="switchDpTab('tracker')" class="flex-1 py-2 text-[12px] font-bold rounded-lg bg-[#1b4332] text-white shadow-sm transition-colors">타임 트래커</button>
+             <button id="dpTabBtnNotes" onclick="switchDpTab('notes')" class="flex-1 py-2 text-[12px] font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">할 일 & 메모</button>
+         </div>
       </header>
-      <div class="flex-1 overflow-hidden flex flex-col md:flex-row p-4 md:p-8 gap-8">
-         <div class="w-full md:w-1/2 flex flex-col h-full relative">
+      <div class="flex-1 overflow-hidden flex p-4 md:p-8 gap-8">
+         <div id="dpSectionTracker" class="w-full md:w-1/2 flex flex-col h-full relative flex-shrink-0">
             <div class="flex justify-between items-end mb-1">
                 <h3 class="font-bold text-sm text-gray-800 tracking-wide">TIME TRACKER</h3>
                 <div id="modalRecordDisplay" class="text-[11px] font-bold text-[#22741C]"></div>
             </div>
-            <p class="text-[10px] text-gray-400 mb-3">(빈 칸을 드래그하면 색이 칠해지고, 칠해진 칸을 다시 드래그하면 지워집니다)</p>
+            <p class="text-[10px] text-gray-400 mb-3">(빈 칸을 드래그해 색칠하세요. <b>스크롤은 왼쪽 시간표 숫자를 밀어주세요!</b>)</p>
             <div class="flex text-[10px] text-gray-400 mb-1 pl-10 border-b border-[#e6e2d8] pb-1">
                <div class="flex-1 text-center font-semibold">10</div><div class="flex-1 text-center font-semibold">20</div><div class="flex-1 text-center font-semibold">30</div>
                <div class="flex-1 text-center font-semibold">40</div><div class="flex-1 text-center font-semibold">50</div><div class="flex-1 text-center font-semibold">60</div>
             </div>
             <div id="timeGrid" class="flex-1 overflow-y-auto custom-scrollbar pr-2 select-none border-l border-[#e6e2d8] relative pt-6"></div>
          </div>
-         <div class="w-full md:w-1/2 flex flex-col h-full gap-6">
+         
+         <div id="dpSectionNotes" class="hidden md:flex w-full md:w-1/2 flex-col h-full gap-6 flex-shrink-0">
             <div class="flex-shrink-0 max-h-[50%] flex flex-col">
                <h3 class="font-bold text-sm mb-3 text-gray-800 tracking-wide">TASKS</h3>
                <input type="text" id="plannerNewTaskInput" placeholder="+ 새로운 할 일 추가 (작성 후 Enter)" class="w-full text-[13px] font-bold px-3 py-2.5 rounded-xl border border-[#e6e2d8] bg-white/50 mb-2">
@@ -1093,9 +1100,31 @@
       currentPlannerDateKey = dateKey; $('plannerTitle').textContent = `Day ${dateObj.getDate()}`; $('plannerSubtitle').textContent = `${dateObj.getFullYear()} . ${String(dateObj.getMonth() + 1).padStart(2, '0')} . ${String(dateObj.getDate()).padStart(2, '0')}`;
       if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
       $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden');
+      
+      // 🔥 모바일에서는 열릴 때 항상 '타임 트래커' 탭으로 켜지게 세팅!
+      if(window.innerWidth < 768 && window.switchDpTab) switchDpTab('tracker');
     }
     function closePlanner() { $('dailyPlannerModal').classList.add('hidden'); currentPlannerDateKey = null; }
     function savePlannerData() { if(currentPlannerDateKey) dailyRecords[currentPlannerDateKey].note = $('plannerNote').value; setLocal('ianDailyRecords', dailyRecords); }
+
+    // 🔥 모바일 데일리 플래너 탭 전환 마법!
+    window.switchDpTab = function(tab) {
+        const secT = $('dpSectionTracker'), secN = $('dpSectionNotes');
+        const btnT = $('dpTabBtnTracker'), btnN = $('dpTabBtnNotes');
+        if(!secT || !secN) return;
+        
+        if (tab === 'tracker') {
+            secT.classList.remove('hidden'); secT.classList.add('flex');
+            secN.classList.remove('flex'); secN.classList.add('hidden');
+            btnT.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-[#1b4332] text-white shadow-sm transition-colors';
+            btnN.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors';
+        } else {
+            secT.classList.remove('flex'); secT.classList.add('hidden');
+            secN.classList.remove('hidden'); secN.classList.add('flex');
+            btnN.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-[#1b4332] text-white shadow-sm transition-colors';
+            btnT.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors';
+        }
+    };
 
     function renderPlannerTasks(dateKey) {
       const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = []; if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
@@ -1603,6 +1632,15 @@
     }
 
     window.addEventListener('resize', () => {
+        // 🔥 PC 화면으로 커지면 두 탭을 모두 보여주기!
+        if (window.innerWidth >= 768) {
+            const secT = $('dpSectionTracker'), secN = $('dpSectionNotes');
+            if(secT && secN) {
+                secT.classList.remove('hidden'); secT.classList.add('flex');
+                secN.classList.remove('hidden'); secN.classList.add('flex');
+            }
+        }
+        
         if (window.innerWidth < 768 && !document.body.getAttribute('data-mobile-tab')) {
             switchMobileTab('home');
         } else if (window.innerWidth >= 768) {
