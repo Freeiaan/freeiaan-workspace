@@ -110,6 +110,16 @@
 
       /* 🔥 4. 해빗 탭 */
       body[data-mobile-tab="habit"] #mobileHabitSection { display: flex !important; }
+
+      /* 🔥 주말 숨김 마법 (토, 일요일 칸을 날려버리고 평일 5칸으로 확장!) */
+      body.hide-weekends .weekend-col { display: none !important; }
+      body.hide-weekends #calendarArea { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+      @media (min-width: 768px) {
+          body.hide-weekends #calendarArea { grid-template-columns: 24px repeat(5, minmax(0, 1fr)) !important; }
+      }
+      
+      /* 📅 타임블럭스 스타일 초미니 폰트 & 체크박스 */
+      .tiny-calendar-checkbox { width: 11px !important; height: 11px !important; border-width: 1px !important; border-radius: 2px !important; margin-right: 2px !important; margin-top: 1px !important; }
     }
   </style>
 </head>
@@ -151,21 +161,26 @@
         <div id="filterBar" class="flex gap-1.5 no-scrollbar overflow-x-auto"></div>
       </div>
 
-      <header class="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-4 px-1 gap-4 w-full">
-        <div class="flex items-center gap-2 md:gap-3">
-          <button id="prevBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">◀</button>
-          <h1 id="monthYear" class="text-base md:text-xl font-bold text-black"></h1>
-          <button id="nextBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">▶</button>
+      <header class="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-4 px-1 gap-3 w-full">
+        <div class="flex items-center justify-between w-full md:w-auto">
+            <div class="flex items-center gap-2 md:gap-3">
+              <button id="prevBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">◀</button>
+              <h1 id="monthYear" class="text-base md:text-xl font-bold text-black"></h1>
+              <button id="nextBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">▶</button>
+            </div>
+            <div class="flex gap-1.5 md:hidden">
+                <button onclick="goToToday()" class="px-2.5 py-1 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px] text-[10px] font-extrabold text-[#22741C] shadow-sm active:scale-95 transition-all">오늘</button>
+                <button onclick="toggleWeekends()" id="weekendToggleBtn" class="px-2.5 py-1 bg-white border border-gray-200 rounded-[8px] text-[10px] font-bold text-gray-600 shadow-sm active:scale-95 transition-all">주말 숨김</button>
+            </div>
         </div>
         <div id="mobileWeekButtons" class="md:hidden flex gap-2 overflow-x-auto w-full custom-scrollbar pb-1"></div>
       </header>
 
       <div id="calendarArea" class="rounded-xl border border-gray-200 overflow-hidden bg-gray-200 gap-px relative" style="display: grid; grid-template-columns: 24px repeat(7, minmax(0, 1fr));">
         <div class="day-header bg-gray-100 border-b border-gray-200 empty-corner"></div>
-        <div class="day-header day-header-sun">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header day-header-sat">토</div>
+        <div class="day-header day-header-sun weekend-col">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header day-header-sat weekend-col">토</div>
         <div id="calendar" class="contents"></div>
       </div>
-    </div>
 
     <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)]">
       <div class="flex justify-between w-full items-center mb-4 flex-shrink-0">
@@ -1122,11 +1137,32 @@
       savePlannerData();
     }
 
+    // 🔥 새 기능 1: 주말 숨김/보기 스위치
+    function toggleWeekends() {
+        document.body.classList.toggle('hide-weekends');
+        const btn = $('weekendToggleBtn');
+        if (btn) {
+            if (document.body.classList.contains('hide-weekends')) {
+                btn.textContent = '주말 보기';
+                btn.classList.add('bg-gray-100');
+            } else {
+                btn.textContent = '주말 숨김';
+                btn.classList.remove('bg-gray-100');
+            }
+        }
+    }
+
+    // 🔥 새 기능 2: '오늘'로 순간이동!
+    function goToToday() {
+        displayDate = new Date(); // 오늘 날짜로 시간 초기화
+        renderCalendar(); // 달력 다시 그리기!
+    }
+
+    // 📅 캘린더 그리기 (폰트 축소 & 주말 숨김 기능 반영 완료!)
     function renderCalendar() {
       const calendar = $('calendar'); if (!calendar) return; calendar.innerHTML = '';
       const year = displayDate.getFullYear(), month = displayDate.getMonth(); $('monthYear').textContent = `${year}년 ${month + 1}월`;
       
-      // 🔥 모바일용 주차별 둥근 버튼 동적 생성
       const mobileWeekBtns = $('mobileWeekButtons');
       if (mobileWeekBtns) {
           mobileWeekBtns.innerHTML = '';
@@ -1140,6 +1176,83 @@
           });
       }
 
+      const firstDay = new Date(year, month, 1).getDay(); const today = new Date(); today.setHours(0, 0, 0, 0);
+      const filteredMulti = multiTasks.filter(t => selectedFilters.has('all') || selectedFilters.has(t.categoryId));
+      const slots = [];
+      filteredMulti.sort((a, b) => new Date(a.start) - new Date(b.start)).forEach(t => { let slot = slots.findIndex(s => new Date(t.start) > new Date(s)); if (slot === -1) { slot = slots.length; slots.push(t.end); } else slots[slot] = t.end; t.slot = slot; });
+
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(year, month, i - firstDay + 1); const key = getDateKey(d);
+        const isWeekend = d.getDay() === 0 || d.getDay() === 6; // 토/일요일 판별
+
+        if (i % 7 === 0) {
+            const wStart = new Date(year, month, i - firstDay + 1); const wEnd = new Date(year, month, i - firstDay + 7);
+            const weekBtn = document.createElement('div'); 
+            weekBtn.className = 'week-side-btn bg-[#e5e7eb] hover:bg-[#d1d5db] cursor-pointer flex items-center justify-center transition-colors group border-b border-gray-100 min-h-[120px] h-full w-full relative z-[200] pointer-events-auto'; 
+            weekBtn.innerHTML = `<div class="rotate-[-90deg] text-[10px] font-bold text-gray-500 tracking-widest opacity-60 group-hover:opacity-100 transition-opacity absolute pointer-events-none whitespace-nowrap">WEEK</div>`;
+            const openPlannerHandler = (e) => { e.preventDefault(); e.stopPropagation(); openWeeklyPlanner(wStart, wEnd); }; weekBtn.onmousedown = openPlannerHandler; weekBtn.onclick = openPlannerHandler; weekBtn.addEventListener('touchstart', openPlannerHandler, {passive: false}); calendar.appendChild(weekBtn);
+        }
+        
+        const cell = document.createElement('div'); 
+        // 🔥 생성되는 칸에도 주말(weekend-col) 이름표 달아주기!
+        cell.className = `min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300 ${isWeekend ? 'weekend-col' : ''}`; 
+        cell.setAttribute('data-date', key);
+        const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
+        
+        let pressTimer;
+        cell.onpointerdown = (e) => { 
+            if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.resize-handle') || e.target.closest('.date-trigger')) return;
+            if (window.innerWidth < 768) {
+                pressTimer = setTimeout(() => { isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); }, 500); 
+            } else { isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); }
+        };
+        cell.onpointermove = () => { clearTimeout(pressTimer); }; 
+        cell.onpointerup = () => { clearTimeout(pressTimer); };
+        cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); cell.ondblclick = (e) => { if (window.innerWidth > 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
+        
+        const isToday = d.getTime() === today.getTime();
+        const dateWrap = document.createElement('div'); dateWrap.className = 'w-full'; const dateNum = document.createElement('div');
+        let textColor = isWeekend ? 'text-red-500' : 'text-gray-700'; if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
+        let bgClass = 'bg-transparent'; if (isToday) bgClass = 'today-highlight'; else if (isCurrentMonth) bgClass = 'other-day-highlight';
+        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`; dateNum.textContent = d.getDate(); dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); }; dateWrap.appendChild(dateNum); cell.appendChild(dateWrap);
+        
+        const todoContainer = document.createElement('div'); todoContainer.className = "mt-1 flex flex-col gap-0.5 overflow-hidden todo-list-container flex-1 px-0.5";
+        if (Array.isArray(allTasks[key])) {
+          allTasks[key].forEach((t, idx) => {
+            if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
+              const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
+              const item = document.createElement('div'); item.draggable = (window.innerWidth > 768); 
+              // 🔥 타임블럭스처럼 아기자기한 폰트(9px) & 꽉 찬 너비로 축소!
+              item.className = 'todo-item text-[9.5px] truncate px-0.5 rounded flex items-start w-full';
+              const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+              
+              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox"> <span class="${isCheckedClass} font-extrabold truncate leading-tight pt-px" style="color: ${colorStyle}; letter-spacing: -0.5px;">${t.text}</span>`;
+              
+              item.ondragstart = () => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; }; 
+              item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; 
+              item.onclick = (e) => { e.stopPropagation(); if (e.target.tagName !== 'INPUT') openModal('editSingle', { dateKey: key, index: idx, ...t }); }; 
+              todoContainer.appendChild(item);
+            }
+          });
+        }
+        cell.appendChild(todoContainer);
+        
+        let maxSlotInCell = -1;
+        filteredMulti.forEach(t => {
+          if (isDateBetween(d, t.start, t.end)) {
+            maxSlotInCell = Math.max(maxSlotInCell, t.slot); const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const bar = document.createElement('div'); bar.className = 'absolute h-6 left-0 right-0 multi-task flex items-center justify-center pointer-events-none'; bar.style.bottom = `${t.slot * 25 + 4}px`;
+            const isStartOrSunday = (key === t.start || d.getDay() === 0); bar.style.zIndex = isStartOrSunday ? '50' : '10';
+            let innerHTML = `<div class="relative w-full h-full flex items-center justify-center">`;
+            if (key === t.start) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'start')"></div>`;
+            innerHTML += `<div class="h-[1.5px] opacity-50 absolute" style="background-color: ${cat.color}; left: ${key === t.start ? '8px' : '0'}; right: ${key === t.end ? '8px' : '0'};"></div>`;
+            if (key === t.end) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'end')"></div>`;
+            if (isStartOrSunday) { innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-2 py-0.5 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)};" draggable="${window.innerWidth > 768}" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[11px] md:text-[12px] pt-px text-black font-medium leading-none">${t.text}</span></div>`; }
+            innerHTML += `</div>`; bar.innerHTML = innerHTML; bar.onclick = (e) => { e.stopPropagation(); if (!isResizing) openModal('editMulti', t); }; cell.appendChild(bar);
+          }
+        });
+        cell.style.paddingBottom = maxSlotInCell >= 0 ? `${(maxSlotInCell + 1) * 25 + 8}px` : '4px'; calendar.appendChild(cell);
+      }
+    }
       const firstDay = new Date(year, month, 1).getDay(); const today = new Date(); today.setHours(0, 0, 0, 0);
       const filteredMulti = multiTasks.filter(t => selectedFilters.has('all') || selectedFilters.has(t.categoryId));
       const slots = [];
