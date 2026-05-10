@@ -556,6 +556,9 @@
     function initAppRenders() {
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
         updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
+        
+        loadTimerState(); // 🔥 페이지 열릴 때 타이머 상태 완벽 복구!
+
         const memoArea = $('memoArea'); 
         if(memoArea) { 
             memoArea.value = localStorage.getItem('ianMemo') || ''; 
@@ -767,11 +770,69 @@
         resizeData = { id: id, edge: edge };
     };
 
-    function startTimer() { if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
-      tInt = setInterval(() => { const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); if (deltaSec > 0) { if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); } }, 500); }
-    function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
-    function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
+// 🔥 브라우저를 꺼도 살아남는 백그라운드 타이머 마법
+    function saveTimerState() {
+        localStorage.setItem('ianTimerState', JSON.stringify({ isR, timerMode, timerLastTick, timeLeft, sessionElapsed }));
+    }
+
+    function loadTimerState() {
+        const saved = getLocal('ianTimerState', null);
+        if (saved) {
+            timerMode = saved.timerMode || 'idle';
+            timeLeft = saved.timeLeft || 0;
+            sessionElapsed = saved.sessionElapsed || 0;
+            timerLastTick = saved.timerLastTick || Date.now();
+            
+            if (saved.isR) {
+                // 창이 닫혀있던 '밀린 시간'을 계산해서 더해줍니다!
+                const now = Date.now();
+                const deltaSec = Math.floor((now - timerLastTick) / 1000);
+                if (deltaSec > 0) {
+                    if (timerMode === 'stopwatch') timeLeft += deltaSec;
+                    else timeLeft -= deltaSec;
+                    sessionElapsed += deltaSec;
+                }
+                
+                if (timerMode === 'timer' && timeLeft <= 0) {
+                    timeLeft = 0;
+                    updateTUI();
+                    pauseTimer(); // 시간이 끝났으면 멈추고
+                    recordTimer(); // 기록 모달창 띄우기
+                } else {
+                    isR = false;
+                    startTimer(); // 밀린 시간 계산 후 타이머 자연스럽게 재시작!
+                }
+            } else {
+                updateTUI();
+                if (timerMode !== 'idle' && sessionElapsed > 0) {
+                    $('startBtn').textContent = '계속';
+                }
+            }
+        }
+    }
+
+    function startTimer() { 
+        if (isR) return; 
+        if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
+        isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
+        tInt = setInterval(() => { 
+            const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
+            if (deltaSec > 0) { 
+                if (timerMode === 'stopwatch') timeLeft += deltaSec; 
+                else timeLeft -= deltaSec; 
+                sessionElapsed += deltaSec; 
+                timerLastTick += deltaSec * 1000; 
+                updateTUI(); 
+                saveTimerState(); // 🔥 1초마다 생존 신고(저장)!
+                if (timerMode === 'timer' && timeLeft <= 0) { pauseTimer(); recordTimer(); } 
+            } 
+        }, 500); 
+        saveTimerState(); 
+    }
     
+    function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); saveTimerState(); }
+    
+    function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); saveTimerState(); }
     // 🔥 스마트 타이머 기록 모달 띄우기
     let pendingRecordSec = 0;
     
