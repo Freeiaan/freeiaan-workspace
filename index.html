@@ -697,7 +697,126 @@
       tInt = setInterval(() => { const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); if (deltaSec > 0) { if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); if (timerMode === 'timer' && timeLeft <= 0) recordTimer(); } }, 500); }
     function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
     function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); }
-    function recordTimer() { if (sessionElapsed <= 0) return; const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; dailyRecords[todayKey].recorded[type] += sessionElapsed; savePlannerData(); updateRecordDisplay(); resetTimer(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); }
+    let pendingRecordSec = 0;
+    
+    function recordTimer() { 
+        if (sessionElapsed <= 0) {
+            alert("기록할 시간이 없습니다!");
+            return; 
+        }
+        pendingRecordSec = sessionElapsed;
+        const h = Math.floor(pendingRecordSec / 3600);
+        const m = Math.floor((pendingRecordSec % 3600) / 60);
+        $('smartRecordTimeText').textContent = `총 집중 시간 : ${h > 0 ? h + '시간 ' : ''}${m}분`;
+        
+        const todayKey = getDateKey(new Date());
+        
+        // 1. 오늘 할 일 버튼 세팅
+        const todayContainer = $('smartRecordTodayTasks');
+        todayContainer.innerHTML = '';
+        if (allTasks[todayKey] && allTasks[todayKey].length > 0) {
+            const uncompleted = allTasks[todayKey].filter(t => !t.isChecked);
+            if(uncompleted.length === 0) {
+                todayContainer.innerHTML = '<span class="text-xs text-gray-400">남은 일정이 없습니다.</span>';
+            } else {
+                uncompleted.forEach((t, idx) => {
+                    const cat = categories.find(c => c.id === t.categoryId) || categories[0];
+                    const btn = document.createElement('button');
+                    btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border hover:opacity-80 transition-all';
+                    btn.style.backgroundColor = hexToRgba(cat.color, 0.1);
+                    btn.style.color = cat.color;
+                    btn.style.borderColor = cat.color;
+                    btn.textContent = t.text;
+                    btn.onclick = () => selectSmartRecord(t.text, cat.color, idx);
+                    todayContainer.appendChild(btn);
+                });
+            }
+        } else {
+            todayContainer.innerHTML = '<span class="text-xs text-gray-400">오늘 등록된 일정이 없습니다.</span>';
+        }
+
+        // 2. 카테고리 버튼 세팅
+        const catContainer = $('smartRecordCategories');
+        catContainer.innerHTML = '';
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white hover:bg-gray-50 transition-all';
+            btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${cat.color}"></span>${cat.name}`;
+            btn.onclick = () => selectSmartRecord(cat.name + ' 작업', cat.color, null);
+            catContainer.appendChild(btn);
+        });
+
+        // 초기화
+        $('smartRecordInput').value = '';
+        $('smartRecordColor').value = categories[0].color;
+        $('smartRecordModal').dataset.taskIdx = '';
+        
+        // 모달 열기
+        $('smartRecordModal').classList.remove('hidden');
+    }
+
+    // 💡 버튼 눌렀을 때 입력창 자동 채우기
+    function selectSmartRecord(text, color, taskIdx) {
+        $('smartRecordInput').value = text;
+        $('smartRecordColor').value = color;
+        if (taskIdx !== null) $('smartRecordModal').dataset.taskIdx = taskIdx;
+    }
+
+    // 🚀 최종 저장 버튼 눌렀을 때 실행되는 마법!
+    function submitSmartRecord() {
+        const todayKey = getDateKey(new Date());
+        if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
+        if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; 
+        
+        let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; 
+        if (timerMode === 'idle') type = 'timer'; 
+        
+        // 1. 누적 시간 더하기
+        dailyRecords[todayKey].recorded[type] += pendingRecordSec; 
+        
+        const inputText = $('smartRecordInput').value.trim();
+        const inputColor = $('smartRecordColor').value;
+        const taskIdx = $('smartRecordModal').dataset.taskIdx;
+
+        // 2. 오늘 일정에서 골랐다면 체크(완료) 처리
+        if (taskIdx !== '' && allTasks[todayKey][taskIdx]) {
+            allTasks[todayKey][taskIdx].isChecked = true;
+        }
+
+        // 3. 타임트래커 자동 칠하기! (핵심 기능)
+        if ($('syncTrackerToggle').checked && inputText) {
+            const now = new Date();
+            let currentHour = now.getHours();
+            if (currentHour < 5) currentHour += 24; // 새벽 5시 기준
+            const currentMin = now.getMinutes();
+            
+            // 끝나는 칸과 시작하는 칸 계산 (1칸 = 10분)
+            let endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
+            let blocksToFill = Math.floor(pendingRecordSec / 600); // 600초 = 10분
+            if (blocksToFill < 1) blocksToFill = 1; // 최소 1칸은 칠해줌
+            let startIdx = Math.max(0, endIdx - blocksToFill + 1);
+
+            for (let i = startIdx; i <= endIdx; i++) {
+                dailyRecords[todayKey].grid[i] = inputColor;
+            }
+            if (!dailyRecords[todayKey].labels) dailyRecords[todayKey].labels = {};
+            dailyRecords[todayKey].labels[startIdx] = { text: inputText, color: inputColor };
+        }
+
+        // 4. 저장 및 화면 갱신
+        savePlannerData(); 
+        saveAndRefresh();
+        updateRecordDisplay(); 
+        resetTimer(); 
+        if (currentPlannerDateKey === todayKey) {
+            updateModalRecordDisplay(todayKey);
+            renderTimeGrid(todayKey);
+            renderPlannerTasks(todayKey);
+        }
+        
+        $('smartRecordModal').classList.add('hidden');
+    }
+    
     function hardResetTimer() { if(confirm("오늘 하루 동안 기록된 총 누적 시간(스톱워치+타이머)이 모두 0으로 삭제됩니다. 정말 완전히 초기화할까요?")) { const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
     function formatSecs(sec) { const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
     function updateRecordDisplay() { const todayKey = getDateKey(new Date()); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
@@ -1098,5 +1217,44 @@
         } catch(err) { console.error("초기화 중 에러 발생:", err); }
     };
   </script>
+  <div id="smartRecordModal" class="hidden fixed inset-0 z-[4000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#faf8f5] w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-2xl font-black text-gray-800">타이머 기록 완료! 🎉</h2>
+          <p id="smartRecordTimeText" class="text-sm font-bold text-[#22741C] mt-1"></p>
+        </div>
+        <button onclick="$('smartRecordModal').classList.add('hidden')" class="text-3xl text-gray-400 hover:text-black">&times;</button>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" id="syncTrackerToggle" checked class="w-5 h-5 accent-[#22741C] cursor-pointer">
+          <span class="text-sm font-bold text-gray-700">데일리/위클리 타임트래커에 블록 자동 칠하기 🎨</span>
+        </label>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">오늘 할 일에서 가져오기</h3>
+        <div id="smartRecordTodayTasks" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">자주 하는 일 (카테고리)</h3>
+        <div id="smartRecordCategories" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="mb-8">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">직접 입력</h3>
+        <div class="flex gap-2">
+          <input type="text" id="smartRecordInput" class="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#22741C]" placeholder="어떤 일을 하셨나요?">
+          <input type="color" id="smartRecordColor" class="w-12 h-12 rounded-xl cursor-pointer border-0 bg-transparent p-0">
+        </div>
+      </div>
+
+      <button onclick="submitSmartRecord()" class="w-full bg-[#22741C] hover:bg-[#1b5e16] text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">기록 저장하기</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
