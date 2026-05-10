@@ -86,18 +86,21 @@
   <div id="mainApp" class="hidden w-full max-w-[1400px] flex flex-col xl:flex-row gap-4 md:gap-6 items-start mx-auto p-2 md:p-8">
     <div class="w-full xl:flex-1 bg-white rounded-2xl md:rounded-3xl shadow-md border border-gray-200 px-3 py-4 md:px-8 md:py-8 select-none relative z-10">
       
-      <div class="flex justify-between items-center mb-4">
+<div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
             <span id="userProfileName" class="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg"></span>
             <button onclick="logout()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition px-2">로그아웃</button>
         </div>
         <div class="flex gap-2">
+            <button onclick="toggleDashboard()" id="dashToggleBtn" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1 transition-all">
+                <span>대시보드 숨기기</span> <span id="dashToggleArrow" class="text-[8px]">▲</span>
+            </button>
             <button onclick="openAnalytics()" class="text-[10px] font-bold bg-[#1b4332] text-white border border-[#1b4332] px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#22741C] transition">📊 성취 리포트</button>
             <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 수동 백업</button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 mb-6">
+      <div id="dashboardContainer" class="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 mb-6 transition-all duration-500 origin-top overflow-hidden" style="max-height: 800px; opacity: 1;">
         <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col h-44 md:h-56 overflow-hidden">
           <div class="flex justify-between items-center mb-3">
             <div class="flex items-center gap-2">
