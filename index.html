@@ -71,9 +71,30 @@
     @media (max-width: 767px) {
       /* 모바일에서는 메인 앱 밑에 탭바 공간을 비워줍니다 */
       #mainApp { padding-bottom: 80px !important; }
-      /* 2단계에서 쓸 화면 숨김 마법 (일단 세팅만 해둠) */
-      .mobile-section { display: none !important; }
-      .mobile-section.active { display: block !important; }
+      
+      /* 💡 모바일 탭 마법: 메인 요소들 기본 숨김 */
+      #mainApp > div:first-child,
+      #mainApp > div:last-child,
+      #dashboardDrawer { display: none !important; }
+
+      /* 서랍장 열기 버튼 숨김 (모바일은 하단 탭으로 이동하니까요!) */
+      button[onclick="toggleDrawer()"] { display: none !important; }
+
+      /* 🏠 1. 홈 탭 (서랍장 껍데기를 벗기고 전체 화면으로!) */
+      body[data-mobile-tab="home"] #dashboardDrawer {
+          display: flex !important; position: relative !important; transform: none !important; 
+          width: 100% !important; height: 100vh !important; box-shadow: none !important; border: none !important; z-index: 10;
+      }
+      body[data-mobile-tab="home"] #mainApp { display: none !important; }
+      body[data-mobile-tab="home"] #dashboardDrawer > div:first-child { display: none !important; } /* 서랍 닫기 헤더 숨김 */
+
+      /* 📅 2. 캘린더 탭 */
+      body[data-mobile-tab="calendar"] #mainApp { display: flex !important; padding-top: 10px !important; }
+      body[data-mobile-tab="calendar"] #mainApp > div:first-child { display: block !important; border: none; box-shadow: none; padding: 0 !important; background: transparent; }
+
+      /* ⏱️ 3. 타이머 탭 */
+      body[data-mobile-tab="timer"] #mainApp { display: flex !important; padding-top: 10px !important; }
+      body[data-mobile-tab="timer"] #mainApp > div:last-child { display: flex !important; width: 100% !important; border: none; box-shadow: none; padding: 10px !important; background: transparent; }
     }
   </style>
 </head>
@@ -1509,11 +1530,19 @@
         const activeBtn = $('tabBtn-' + tabName);
         if(activeBtn) activeBtn.classList.add('active');
         
-        // 2. 화면 전환 (이 부분은 다음 2단계 수술에서 화면을 쪼개고 나면 작동할 겁니다!)
-        document.querySelectorAll('.mobile-section').forEach(sec => sec.classList.remove('active'));
-        const activeSec = $('section-' + tabName);
-        if(activeSec) activeSec.classList.add('active');
+        // 🔥 2. 마법의 스위치: body에 현재 탭 이름표 붙이기! (CSS가 이걸 보고 화면을 바꿔줍니다)
+        document.body.setAttribute('data-mobile-tab', tabName);
     }
+
+    // 모바일 접속 시 초기 화면을 '홈'으로 세팅
+    window.addEventListener('resize', () => {
+        if (window.innerWidth < 768 && !document.body.getAttribute('data-mobile-tab')) {
+            switchMobileTab('home');
+        } else if (window.innerWidth >= 768) {
+            document.body.removeAttribute('data-mobile-tab');
+        }
+    });
+    if (window.innerWidth < 768) switchMobileTab('home');
     
   </script>
 </body>
