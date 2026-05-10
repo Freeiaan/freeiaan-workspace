@@ -64,7 +64,7 @@
     @media (max-width: 768px) { .group-cell { min-height: 100px !important; } }
     
     /* 📱 모바일 하단 탭바 & 화면 제어용 스타일 */
-    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-center; font-size: 10px; color: #9ca3af; padding: 10px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-center; font-size: 10px; color: #9ca3af; padding: 6px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
     .mobile-tab-btn.active { color: #22741C; font-weight: 900; }
     .mobile-tab-btn.active span:first-child { transform: translateY(-2px); transition: transform 0.2s; }
     
@@ -95,6 +95,11 @@
       .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; min-height: auto !important; }
       .mobile-today-card::-webkit-scrollbar, .mobile-week-card::-webkit-scrollbar { display: none; }
       .mobile-today-card .dashboard-item, .mobile-week-card .dashboard-item { background: transparent !important; border: none !important; box-shadow: none !important; padding-left: 0 !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+      
+      /* 🔥 모바일 리스트 잘림 방지 & 작대기 숨김 */
+      #todayTasksList, #weekTasksList { flex: none !important; height: auto !important; overflow: visible !important; }
+      .drag-handle-dash { display: none !important; }
+      
       /* 📅 2. 캘린더 탭 */
       body[data-mobile-tab="calendar"] #mainApp { display: flex !important; padding-top: 10px !important; }
       body[data-mobile-tab="calendar"] #mainApp > div:first-child { display: block !important; border: none; box-shadow: none; padding: 0 !important; background: transparent; }
@@ -214,22 +219,22 @@
           <div id="mobileGreeting" class="md:hidden text-[26px] font-black text-gray-800 mt-4 mb-8 px-2 leading-tight tracking-tight"></div>
 
           <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col min-h-[220px] overflow-hidden mobile-today-card">
-            <div class="flex justify-between items-center mb-3">
+            <div class="flex justify-between items-center mb-4">
               <div class="flex items-center gap-2">
-                <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-[#22741C] rounded-sm md:block hidden"></span> 오늘 할 일</h3>
+                <h3 class="font-bold text-black text-base md:text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-[#22741C] rounded-sm"></span> 오늘 할 일</h3>
                 <button onclick="openModal('createSingle', { dateKey: getDateKey(new Date()) })" class="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-md text-gray-600 font-bold hover:bg-gray-50 shadow-sm transition whitespace-nowrap md:block hidden">+ 일정 입력</button>
               </div>
               <span id="todayDateStr" class="text-[11px] md:text-[10px] text-gray-400 md:text-[#22741C] font-bold bg-transparent md:bg-[#e4f8c4] px-0 md:px-2 py-0.5 rounded-md"></span>
             </div>
-            <div id="todayTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'today')"></div>
+            <div id="todayTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 md:gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'today')"></div>
           </div>
           
           <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col min-h-[220px] overflow-hidden mobile-week-card">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="font-bold text-black text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-gray-800 rounded-sm md:block hidden"></span> 내일 할 일</h3>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-bold text-black text-base md:text-sm flex items-center gap-2"><span class="w-1.5 h-4 bg-gray-800 rounded-sm"></span> 이번주 남은 할 일</h3>
               <span id="weekDateStr" class="text-[11px] md:text-[10px] text-gray-400 font-bold bg-transparent md:bg-gray-100 px-0 md:px-2 py-0.5 rounded-md"></span>
             </div>
-            <div id="weekTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'week')"></div>
+            <div id="weekTasksList" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 md:gap-1.5 pb-1 pr-1.5" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'week')"></div>
           </div>
           
           <div class="bg-[#fffbeb] rounded-xl border border-orange-100 p-4 shadow-sm flex flex-col min-h-[240px] relative mb-16 md:mb-0">
@@ -277,7 +282,7 @@
       </div>
   </div>
 
-  <nav id="mobileTabBar" class="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between z-[5000] pb-6 pt-2 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+  <nav id="mobileTabBar" class="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between z-[5000] pb-2 pt-2 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
       <button onclick="switchMobileTab('home')" id="tabBtn-home" class="mobile-tab-btn active">
           <span class="text-[22px] mb-1">🏠</span><span>홈</span>
       </button>
