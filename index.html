@@ -704,14 +704,36 @@
     function closeAnalytics() { $('analyticsModal').classList.add('hidden'); }
     window.changeAnalyticsMonth = function(dir) { analyticsDate.setMonth(analyticsDate.getMonth() + dir); analyticsMode = 'month'; renderAnalyticsTabs(); }
 
+    // 🔥 해결: 주차 계산 로직 완벽 수정 (월 걸침 현상 해결!)
     function getMonthWeeks(year, month) {
-        let weeks = []; let current = new Date(year, month, 1);
-        if (current.getDay() !== 0) { current.setDate(current.getDate() + (7 - current.getDay())); }
+        let weeks = [];
+        // 1. 해당 월의 1일 가져오기
+        let current = new Date(year, month, 1);
+        
+        // 2. 1일이 속한 주의 '일요일'로 날짜 당기기 (예: 6월 1일이 월요일이면, 5월 31일 일요일로 셋팅)
+        current.setDate(current.getDate() - current.getDay());
+
         let weekNum = 1;
-        while(current.getMonth() === month) {
-            let end = new Date(current); end.setDate(end.getDate() + 6);
-            weeks.push({ weekNum: weekNum, start: new Date(current), end: new Date(end), key: getDateKey(current), label: `${weekNum}주차 ${String(current.getMonth()+1).padStart(2,'0')}.${String(current.getDate()).padStart(2,'0')}~${String(end.getMonth()+1).padStart(2,'0')}.${String(end.getDate()).padStart(2,'0')}` });
-            weekNum++; current.setDate(current.getDate() + 7);
+        // 3. 해당 주차의 일요일(start)이나 토요일(end) 중 하루라도 '목표 달'에 걸쳐있으면 주차로 인정!
+        while(true) {
+            let end = new Date(current);
+            end.setDate(end.getDate() + 6); // 일요일 기준 6일 뒤인 토요일 셋팅
+
+            // 이번 주가 완전히 다음 달로 넘어가 버렸다면 반복문 종료
+            if (current.getMonth() !== month && end.getMonth() !== month && current.getTime() > new Date(year, month, 1).getTime()) {
+                break; 
+            }
+
+            weeks.push({ 
+                weekNum: weekNum, 
+                start: new Date(current), 
+                end: new Date(end), 
+                key: getDateKey(current), 
+                label: `${weekNum}주차 ${String(current.getMonth()+1).padStart(2,'0')}.${String(current.getDate()).padStart(2,'0')}~${String(end.getMonth()+1).padStart(2,'0')}.${String(end.getDate()).padStart(2,'0')}` 
+            });
+            
+            weekNum++; 
+            current.setDate(current.getDate() + 7); // 다음 주 일요일로 이동
         }
         return weeks;
     }
