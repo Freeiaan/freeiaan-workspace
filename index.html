@@ -64,7 +64,7 @@
     @media (max-width: 768px) { .group-cell { min-height: 100px !important; } }
     
     /* 📱 모바일 하단 탭바 & 화면 제어용 스타일 */
-    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-center; font-size: 10px; color: #9ca3af; padding: 6px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-center; font-size: 10px; color: #9ca3af; padding: 4px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
     .mobile-tab-btn.active { color: #22741C; font-weight: 900; }
     .mobile-tab-btn.active span:first-child { transform: translateY(-2px); transition: transform 0.2s; }
     
@@ -86,10 +86,10 @@
       .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; min-height: auto !important; }
       .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; min-height: auto !important; }
       .mobile-today-card::-webkit-scrollbar, .mobile-week-card::-webkit-scrollbar { display: none; }
-      .mobile-today-card .dashboard-item, .mobile-week-card .dashboard-item { background: transparent !important; border: none !important; box-shadow: none !important; padding-left: 0 !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+      .mobile-today-card .dashboard-item, .mobile-week-card .dashboard-item { background: transparent !important; border: none !important; box-shadow: none !important; padding-left: 0 !important; padding-top: 6px !important; padding-bottom: 6px !important; min-height: 32px !important; }
 
-      /* 🔥 해결: 스크롤 부활 & 리스트 잘림 방지 & 작대기 숨김 */
-      #todayTasksList, #weekTasksList { max-height: 250px !important; overflow-y: auto !important; flex: 1 !important; }
+      /* 🔥 해결: 윗부분 잘림 방지 (padding-top 추가) & 스크롤 부활 */
+      #todayTasksList, #weekTasksList { max-height: 250px !important; overflow-y: auto !important; flex: 1 !important; padding-top: 4px !important; }
       .drag-handle-dash { display: none !important; }
 
       /* 📅 2. 캘린더 탭 */
@@ -1241,7 +1241,6 @@
     function createDashItem(t, key, idx, showDate = false) {
       const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
       const div = document.createElement('div'); 
-      // 🔥 해결: 모바일에서는 드래그 모션을 강제로 꺼버려서 체크박스 터치 오류 해결!
       div.draggable = window.innerWidth >= 768; 
       div.className = "dashboard-item bg-white rounded-xl border border-gray-100 shadow-sm cursor-move flex-shrink-0 pr-3 py-2"; 
       div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
@@ -1257,7 +1256,8 @@
           dateBadge = `<span class="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-2 flex-shrink-0">~${mStr}.${dStr} ${dayStr}</span>`;
       }
 
-      div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-5 h-5 md:w-[15px] md:h-[15px] rounded-md"><span class="cat-badge-bg text-[14px] md:text-[13px] font-black md:font-medium ml-1" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[15px] md:text-[13px] truncate font-bold md:font-medium ml-1.5 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>${dateBadge}`;
+      // 🔥 해결: 폰트 크기 축소(13px), 뱃지 크기 축소(11px), 체크박스 축소(w-4) 및 윗부분 잘림 유발 코드(leading-none, pt-px) 제거!
+      div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 md:w-[15px] md:h-[15px] rounded-md"><span class="cat-badge-bg text-[11px] md:text-[13px] font-bold md:font-medium ml-1.5" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] md:text-[13px] truncate font-medium md:font-medium ml-1.5 ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>${dateBadge}`;
       
       div.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('dash-key', key); e.dataTransfer.setData('dash-idx', idx); };
       div.querySelector('input').onclick = (e) => { e.stopPropagation(); allTasks[key][idx].isChecked = e.target.checked; saveAndRefresh(); }; 
