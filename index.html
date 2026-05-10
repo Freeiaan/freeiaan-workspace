@@ -1216,16 +1216,48 @@
       const now = new Date(); now.setHours(0, 0, 0, 0); const tK = getDateKey(now); $('todayDateStr').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일`;
       const daysToSaturday = 6 - now.getDay(); const saturday = new Date(now); saturday.setDate(now.getDate() + daysToSaturday); $('weekDateStr').textContent = `~ ${saturday.getMonth() + 1}월 ${saturday.getDate()}일 토요일까지`;
       const tL = $('todayTasksList'), wL = $('weekTasksList'); tL.innerHTML = ''; wL.innerHTML = '';
-      if (Array.isArray(allTasks[tK])) { allTasks[tK].forEach((t, i) => { if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) tL.appendChild(createDashItem(t, tK, i)); }); }
-      for (let i = 1; i <= daysToSaturday; i++) { let d = new Date(now); d.setDate(now.getDate() + i); let k = getDateKey(d); if (Array.isArray(allTasks[k])) { allTasks[k].forEach((t, idx) => { if (!t.isChecked && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) wL.appendChild(createDashItem(t, k, idx)); }); } }
+      
+      // 오늘 일정 (날짜 꼬리표 안 붙임: false)
+      if (Array.isArray(allTasks[tK])) { 
+          allTasks[tK].forEach((t, i) => { if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) tL.appendChild(createDashItem(t, tK, i, false)); }); 
+      }
+      
+      // 남은 일정 (날짜 꼬리표 붙임: true)
+      for (let i = 1; i <= daysToSaturday; i++) { 
+          let d = new Date(now); d.setDate(now.getDate() + i); let k = getDateKey(d); 
+          if (Array.isArray(allTasks[k])) { 
+              allTasks[k].forEach((t, idx) => { if (!t.isChecked && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) wL.appendChild(createDashItem(t, k, idx, true)); }); 
+          } 
+      }
     }
 
-    function createDashItem(t, key, idx) {
-      const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.draggable = true; div.className = "dashboard-item bg-white rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0"; div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
-      const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black'; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
-      div.innerHTML = `<div class="drag-handle-dash">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg text-[13px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>`;
+    function createDashItem(t, key, idx, showDate = false) {
+      const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
+      const div = document.createElement('div'); div.draggable = true; 
+      div.className = "dashboard-item bg-white rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0 pr-2"; 
+      div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
+      
+      const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black'; 
+      const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+      
+      // 🔥 날짜 꼬리표 (배지) 생성 로직
+      let dateBadge = '';
+      if (showDate) {
+          const parts = key.split('-'); 
+          const dObj = new Date(parts[0], parts[1]-1, parts[2]);
+          const mStr = String(dObj.getMonth()+1).padStart(2,'0'); 
+          const dStr = String(dObj.getDate()).padStart(2,'0');
+          const dayStr = ['일','월','화','수','목','금','토'][dObj.getDay()];
+          dateBadge = `<span class="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-2 flex-shrink-0">~${mStr}.${dStr} ${dayStr}</span>`;
+      }
+
+      div.innerHTML = `<div class="drag-handle-dash">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"><span class="cat-badge-bg text-[13px] font-medium" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] truncate font-medium ml-1 pt-px leading-none ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>${dateBadge}`;
+      
       div.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('dash-key', key); e.dataTransfer.setData('dash-idx', idx); };
-      div.querySelector('input').onclick = (e) => { e.stopPropagation(); allTasks[key][idx].isChecked = e.target.checked; saveAndRefresh(); }; div.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) openModal('editSingle', { dateKey: key, index: idx, ...t }); }; return div;
+      div.querySelector('input').onclick = (e) => { e.stopPropagation(); allTasks[key][idx].isChecked = e.target.checked; saveAndRefresh(); }; 
+      div.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) openModal('editSingle', { dateKey: key, index: idx, ...t }); }; 
+      
+      return div;
     }
 
     function handleDashOver(e) { e.preventDefault(); }
