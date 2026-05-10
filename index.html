@@ -83,15 +83,15 @@
       body[data-mobile-tab="home"] #mainApp { display: none !important; }
       body[data-mobile-tab="home"] #dashboardDrawer > div:first-child { display: none !important; } 
       
-      /* 파스텔톤 카드 변신 마법 (다시 스크롤 방식으로 복구 & 높이 최적화!) */
+      /* 이안님 맞춤형 픽셀 깎기! (카드 높이, 여백 완벽 세팅) */
       .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; height: 260px !important; overflow: hidden !important; }
       .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; height: 260px !important; overflow: hidden !important; }
       .mobile-today-card .dashboard-item, .mobile-week-card .dashboard-item { background: transparent !important; border: none !important; box-shadow: none !important; padding-left: 0 !important; padding-top: 1px !important; padding-bottom: 1px !important; }
 
-      /* 🔥 스크롤 부활 & 맨 윗부분 잘림 완벽 방지 (천장 쿠션 추가) */
+      /* 스크롤 부활 & 맨 윗부분 잘림 완벽 방지 (천장 쿠션 추가) */
       #todayTasksList, #weekTasksList { max-height: none !important; overflow-y: auto !important; height: 100% !important; flex: 1 !important; padding-top: 1px !important; padding-bottom: 1px !important; }
       
-      /* 이안님이 살려낸 지저분한 스크롤바 투명하게 숨기기! */
+      /* 스크롤바 투명하게 숨기기! */
       #todayTasksList::-webkit-scrollbar, #weekTasksList::-webkit-scrollbar { display: none; }
       .drag-handle-dash { display: none !important; }
 
@@ -99,7 +99,7 @@
       body[data-mobile-tab="calendar"] #mainApp { display: flex !important; padding-top: 10px !important; }
       body[data-mobile-tab="calendar"] #mainApp > div:first-child { display: block !important; border: none; box-shadow: none; padding: 0 !important; background: transparent; }
       
-      /* 🔥 해결: 캘린더 왼쪽 WEEK 공간 없애기 */
+      /* 캘린더 왼쪽 WEEK 공간 없애기 */
       #calendarArea { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
       .week-side-btn, .empty-corner { display: none !important; }
 
@@ -111,15 +111,18 @@
       /* 🔥 4. 해빗 탭 */
       body[data-mobile-tab="habit"] #mobileHabitSection { display: flex !important; }
 
-      /* 🔥 주말 숨김 마법 (토, 일요일 칸을 날려버리고 평일 5칸으로 확장!) */
+      /* 🔥 주말 숨김 마법 */
       body.hide-weekends .weekend-col { display: none !important; }
       body.hide-weekends #calendarArea { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
-      @media (min-width: 768px) {
-          body.hide-weekends #calendarArea { grid-template-columns: 24px repeat(5, minmax(0, 1fr)) !important; }
-      }
       
       /* 📅 타임블럭스 스타일 초미니 폰트 & 체크박스 */
       .tiny-calendar-checkbox { width: 11px !important; height: 11px !important; border-width: 1px !important; border-radius: 2px !important; margin-right: 2px !important; margin-top: 1px !important; }
+    }
+
+    /* PC 버전을 위한 주말 숨김 마법 유지 */
+    @media (min-width: 768px) {
+        body.hide-weekends .weekend-col { display: none !important; }
+        body.hide-weekends #calendarArea { grid-template-columns: 24px repeat(5, minmax(0, 1fr)) !important; }
     }
   </style>
 </head>
@@ -181,8 +184,7 @@
         <div class="day-header day-header-sun weekend-col">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header day-header-sat weekend-col">토</div>
         <div id="calendar" class="contents"></div>
       </div>
-
-    <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)]">
+    </div> <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)]">
       <div class="flex justify-between w-full items-center mb-4 flex-shrink-0">
         <h2 class="text-base font-bold text-black md:block hidden">타이머</h2>
         <h2 class="text-2xl font-black text-gray-800 md:hidden block">Timer ⏱️</h2>
@@ -660,14 +662,13 @@
     }
 
     function initAppRenders() {
-        // 🔥 모바일 해빗 탭을 위해 이번 주 Key 기본값 세팅
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
 
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
         updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
-        renderTimerHistory(); renderHabits(); // 1, 2, 3 단계 마법 적용!
+        renderTimerHistory(); renderHabits();
 
-        loadTimerState(); // 페이지 열릴 때 타이머 상태 완벽 복구!
+        loadTimerState();
 
         const memoArea = $('memoArea'); 
         if(memoArea) { 
@@ -849,7 +850,7 @@
             isPainting = false; 
             if (currentPlannerDateKey) {
                 renderTimeGrid(currentPlannerDateKey);
-                if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); // 🔥 드래그 색칠 후 타임라인 갱신
+                if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); 
             } 
         } 
         if (isDT) { isDT = false; } 
@@ -1016,12 +1017,11 @@
             dailyRecords[todayKey].labels[startIdx] = { text: inputText, color: inputColor };
         }
 
-        savePlannerData(); saveAndRefresh(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); // 🔥 마법 2단계: 히스토리 갱신
+        savePlannerData(); saveAndRefresh(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); 
         if (currentPlannerDateKey === todayKey) { updateModalRecordDisplay(todayKey); renderTimeGrid(todayKey); renderPlannerTasks(todayKey); }
         $('smartRecordModal').classList.add('hidden');
     }
 
-    // 🔥 마법 2단계: 모바일 타이머 하단 타임라인 리스트 생성기
     function renderTimerHistory() {
         const list = $('timerHistoryList'); if(!list) return; list.innerHTML = '';
         const todayKey = getDateKey(new Date()); const data = dailyRecords[todayKey];
@@ -1137,7 +1137,6 @@
       savePlannerData();
     }
 
-    // 🔥 새 기능 1: 주말 숨김/보기 스위치
     function toggleWeekends() {
         document.body.classList.toggle('hide-weekends');
         const btn = $('weekendToggleBtn');
@@ -1152,13 +1151,11 @@
         }
     }
 
-    // 🔥 새 기능 2: '오늘'로 순간이동!
     function goToToday() {
-        displayDate = new Date(); // 오늘 날짜로 시간 초기화
-        renderCalendar(); // 달력 다시 그리기!
+        displayDate = new Date(); 
+        renderCalendar(); 
     }
 
-    // 📅 캘린더 그리기 (폰트 축소 & 주말 숨김 기능 반영 완료!)
     function renderCalendar() {
       const calendar = $('calendar'); if (!calendar) return; calendar.innerHTML = '';
       const year = displayDate.getFullYear(), month = displayDate.getMonth(); $('monthYear').textContent = `${year}년 ${month + 1}월`;
@@ -1183,7 +1180,7 @@
 
       for (let i = 0; i < 42; i++) {
         const d = new Date(year, month, i - firstDay + 1); const key = getDateKey(d);
-        const isWeekend = d.getDay() === 0 || d.getDay() === 6; // 토/일요일 판별
+        const isWeekend = d.getDay() === 0 || d.getDay() === 6; 
 
         if (i % 7 === 0) {
             const wStart = new Date(year, month, i - firstDay + 1); const wEnd = new Date(year, month, i - firstDay + 7);
@@ -1194,7 +1191,6 @@
         }
         
         const cell = document.createElement('div'); 
-        // 🔥 생성되는 칸에도 주말(weekend-col) 이름표 달아주기!
         cell.className = `min-h-[120px] bg-white border-r border-b border-gray-100 group-cell relative flex flex-col transition-all duration-300 ${isWeekend ? 'weekend-col' : ''}`; 
         cell.setAttribute('data-date', key);
         const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
@@ -1222,11 +1218,12 @@
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
               const item = document.createElement('div'); item.draggable = (window.innerWidth > 768); 
-              // 🔥 타임블럭스처럼 아기자기한 폰트(9px) & 꽉 찬 너비로 축소!
-              item.className = 'todo-item text-[9.5px] truncate px-0.5 rounded flex items-start w-full';
+              
+              // 🔥 PC(md)에서는 원래 폰트 크기로 복구, 모바일에서는 타임블럭스 작은 폰트로 유지!
+              item.className = 'todo-item text-[9.5px] md:text-[12px] truncate px-0.5 md:px-1 rounded flex items-start md:items-center w-full gap-0 md:gap-1.5';
               const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
               
-              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox"> <span class="${isCheckedClass} font-extrabold truncate leading-tight pt-px" style="color: ${colorStyle}; letter-spacing: -0.5px;">${t.text}</span>`;
+              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0"> <span class="${isCheckedClass} font-extrabold md:font-medium truncate leading-tight md:leading-none pt-px md:pt-0 tracking-tighter md:tracking-normal" style="color: ${colorStyle};">${t.text}</span>`;
               
               item.ondragstart = () => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; }; 
               item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; 
@@ -1269,7 +1266,6 @@
           }); 
       }
       
-      // 🔥 해결: 구글 로그인한 사람의 이름을 가져와서 인사하기! (이름이 없으면 '방문자님'으로 표시)
       const greetingEl = $('mobileGreeting');
       if (greetingEl) {
           const userName = (currentUser && currentUser.displayName) ? `${currentUser.displayName}님` : '이안님';
@@ -1305,7 +1301,7 @@
           dateBadge = `<span class="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-2 flex-shrink-0">~${mStr}.${dStr} ${dayStr}</span>`;
       }
 
-      // 🔥 해결: 폰트 크기 축소(13px), 뱃지 크기 축소(11px), 체크박스 축소(w-4) 및 윗부분 잘림 유발 코드(leading-none, pt-px) 제거!
+      // 🔥 PC(md) 폰트/간격 복구 완료!
       div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 md:w-[15px] md:h-[15px] rounded-md"><span class="cat-badge-bg text-[11px] md:text-[13px] font-bold md:font-medium ml-1.5" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] md:text-[13px] truncate font-medium md:font-medium ml-1.5 ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>${dateBadge}`;
       
       div.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('dash-key', key); e.dataTransfer.setData('dash-idx', idx); };
@@ -1381,7 +1377,6 @@
 
     function isDateBetween(d, s, e) { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; }
 
-    // 🔥 3단계 마법: 해빗 트래커 구출 & 자동 양방향 동기화
     function saveWeeklySpecifics() { setLocal('ianWeeklyMemos', weeklyMemos); setLocal('ianWeeklyHabits', weeklyHabits); }
     window.toggleTaskFromWeekly = function(dateKey, index, event) { allTasks[dateKey][index].isChecked = event.target.checked; saveAndRefresh(); const span = event.target.nextElementSibling; if (event.target.checked) span.classList.add('line-through', 'opacity-50'); else span.classList.remove('line-through', 'opacity-50'); };
     window.addHabit = function() { if (!weeklyHabits[window.currentWeekKey]) weeklyHabits[window.currentWeekKey] = []; weeklyHabits[window.currentWeekKey].push({ text: '', tracker: [0,0,0,0,0,0,0] }); saveWeeklySpecifics(); renderHabits(); };
@@ -1452,7 +1447,6 @@
     window.toggleHabitEdit = function() { isHabitEditMode = !isHabitEditMode; const desktopBtn = $('habitEditBtn'); if(desktopBtn) desktopBtn.textContent = isHabitEditMode ? '완료' : '- 삭제'; const mobileBtn = $('mobileHabitEditBtn'); if(mobileBtn) mobileBtn.textContent = isHabitEditMode ? '완료' : '- 삭제'; renderHabits(); };
     window.deleteHabit = function(index) { if(weeklyHabits[window.currentWeekKey]) { weeklyHabits[window.currentWeekKey].splice(index, 1); saveWeeklySpecifics(); renderHabits(); } };
     
-    // 🔥 마법 3단계: PC/모바일 양방향 해빗 트래커 동시 렌더링
     function renderHabits() {
         const containers = document.querySelectorAll('.habit-list-container');
         if(containers.length === 0) return;
@@ -1525,14 +1519,14 @@
         if (oldColor) { while(start > 0 && data.grid[start - 1] === oldColor) start--; while(end < 143 && data.grid[end + 1] === oldColor) end++; }
         for(let i = start; i <= end; i++) { data.grid[i] = newColor; if(data.labels) delete data.labels[i]; }
         if (newText) { if (!data.labels) data.labels = {}; data.labels[start] = { text: newText, color: newColor }; }
-        savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); // 🔥 히스토리 갱신
+        savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); 
     };
 
     $('tbDeleteBtn').onclick = () => {
         const data = dailyRecords[currentPlannerDateKey]; const oldColor = data.grid[tbCurrentIdx]; let start = tbCurrentIdx, end = tbCurrentIdx;
         if (oldColor) { while(start > 0 && data.grid[start - 1] === oldColor) start--; while(end < 143 && data.grid[end + 1] === oldColor) end++; }
         for(let i = start; i <= end; i++) { data.grid[i] = null; if (data.labels && data.labels[i]) delete data.labels[i]; }
-        savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); // 🔥 히스토리 갱신
+        savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); 
     }
 
     window.addEventListener('keydown', function(e) {
