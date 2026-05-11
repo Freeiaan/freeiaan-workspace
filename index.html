@@ -1379,6 +1379,26 @@
         }
     });
     if (window.innerWidth < 768) switchMobileTab('home');
+
+    // 🔥 잃어버린 오늘/주말숨김 버튼 기능 부활!
+    function goToToday() { 
+        displayDate = new Date(); 
+        renderCalendar(); 
+    }
+
+    function toggleWeekends() { 
+        document.body.classList.toggle('hide-weekends'); 
+        const btn = document.getElementById('weekendToggleBtn');
+        if (btn) {
+            if (document.body.classList.contains('hide-weekends')) {
+                btn.textContent = '주말 보기';
+                btn.classList.add('bg-gray-100');
+            } else {
+                btn.textContent = '주말 숨김';
+                btn.classList.remove('bg-gray-100');
+            }
+        }
+    }
     
   </script>
 </body>
