@@ -15,7 +15,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
@@ -71,12 +70,10 @@
     .time-cell:hover { background-color: rgba(0,0,0,0.05); }
     @media (max-width: 768px) { .group-cell { min-height: 100px !important; } }
     
-    /* 📱 모바일 하단 탭바 스타일 */
-    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-center; font-size: 10px; color: #9ca3af; padding: 2px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-center; font-size: 10px; color: #9ca3af; padding: 4px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
     .mobile-tab-btn.active { color: #22741C; font-weight: 900; }
     .mobile-tab-btn.active span:first-child { transform: translateY(-2px); transition: transform 0.2s; }
 
-    /* 🔥 모바일 퀵 메뉴 (꾹 누르기) */
     #mobileQuickMenu { position: fixed; display: none; z-index: 9999; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); padding: 6px; border: 1px solid #eee; flex-direction: column; gap: 4px; min-width: 150px; }
     .quick-menu-btn { padding: 12px 16px; font-size: 13px; font-weight: 600; color: #333; border-radius: 8px; display: flex; align-items: center; justify-content: flex-start; gap: 8px; transition: background 0.2s; border: none; background: transparent; width: 100%; }
     .quick-menu-btn:active { background: #f0fdf4; }
@@ -86,7 +83,7 @@
     @media (max-width: 767px) {
       body { background-color: #faf8f5 !important; }
       #mainApp { padding-bottom: 80px !important; }
-      #mainApp > div:first-child, #mainApp > div:last-child, #dashboardDrawer, #mobileHabitSection, #mobileMemoSection { display: none !important; }
+      #mainApp > div:first-child, #mainApp > div:last-child, #dashboardDrawer, #mobileHabitSection { display: none !important; }
       button[onclick="toggleDrawer()"] { display: none !important; }
 
       body[data-mobile-tab="home"] #dashboardDrawer { display: flex !important; position: relative !important; transform: none !important; width: 100% !important; height: 100vh !important; box-shadow: none !important; border: none !important; z-index: 10; }
@@ -111,9 +108,6 @@
       #timerHistoryContainer { display: flex !important; }
 
       body[data-mobile-tab="habit"] #mobileHabitSection { display: flex !important; }
-      
-      /* 🔥 폴더 메모장 모바일 탭 연결 */
-      body[data-mobile-tab="memo"] #mobileMemoSection { display: flex !important; }
 
       body.hide-weekends .weekend-col { display: none !important; }
       body.hide-weekends #calendarArea { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
@@ -127,13 +121,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen relative overflow-x-hidden no-select">
-
-  <div id="pull-spinner" class="fixed top-[-60px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
-      <div class="bg-white rounded-full p-2.5 shadow-md border border-gray-100">
-          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-t-2 border-[#22741C]"></div>
-      </div>
-  </div>
+<body class="bg-slate-50 min-h-screen relative overflow-x-hidden">
 
   <div id="loadingScreen" class="fixed inset-0 z-[2000] bg-white flex flex-col items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#22741C] mb-4"></div>
@@ -307,19 +295,11 @@
       </div>
   </div>
 
-  <div id="mobileMemoSection" class="hidden flex-col w-full h-[100vh] bg-[#faf8f5] p-6 pb-24 overflow-y-auto">
-      <div class="flex justify-between items-center mb-8 pt-4">
-          <h2 class="text-3xl font-black text-gray-800 tracking-tight">Memo Box 📁</h2>
-      </div>
-      <div id="memoFolderGrid" class="grid grid-cols-2 gap-4"></div>
-  </div>
-
   <nav id="mobileTabBar" class="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between z-[5000] pb-6 pt-2 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
       <button onclick="switchMobileTab('home')" id="tabBtn-home" class="mobile-tab-btn active"><span class="text-[22px] mb-1">🏠</span><span>홈</span></button>
       <button onclick="switchMobileTab('calendar')" id="tabBtn-calendar" class="mobile-tab-btn"><span class="text-[22px] mb-1">📅</span><span>캘린더</span></button>
       <button onclick="switchMobileTab('timer')" id="tabBtn-timer" class="mobile-tab-btn"><span class="text-[22px] mb-1">⏱️</span><span>타이머</span></button>
       <button onclick="switchMobileTab('habit')" id="tabBtn-habit" class="mobile-tab-btn"><span class="text-[22px] mb-1">🔥</span><span>해빗</span></button>
-      <button onclick="switchMobileTab('memo')" id="tabBtn-memo" class="mobile-tab-btn"><span class="text-[22px] mb-1">📁</span><span>메모</span></button>
   </nav>
 
   <div id="mobileQuickMenu">
@@ -431,18 +411,10 @@
       </header>
       <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
          <div class="w-full md:flex-1 h-[350px] md:h-auto md:min-h-0 flex-shrink-0 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
-             
-             <div id="weeklyBarChartContainer" class="p-3 border-b border-[#e6e2d8] bg-white"></div>
-             
-             <div class="flex justify-between items-center bg-[#f8fafc] px-3 py-3 border-b border-[#e6e2d8] gap-3">
-    <h3 class="font-bold text-[12px] md:text-[13px] text-gray-800 tracking-tight leading-tight flex-shrink-0">
-        WEEKLY<br class="md:hidden">TIME TRACKER
-    </h3>
-    
-    <span class="text-[8px] md:text-[9px] text-gray-400 leading-tight text-right">
-        * 체크리스트 클릭 시 자동 동기화되며,<br class="md:hidden">일간 트래커 데이터가 요일별로 요약 표시됩니다.
-    </span>
-</div>
+             <div class="flex items-center justify-between bg-[#f8fafc] px-3 py-3 border-b border-[#e6e2d8] gap-2 md:gap-4">
+                 <h3 class="font-bold text-[11px] md:text-[13px] text-gray-800 tracking-tight leading-[1.1] flex-shrink-0">WEEKLY<br class="md:hidden">TIME TRACKER</h3>
+                 <span class="text-[8px] md:text-[9px] text-gray-400 leading-tight break-keep">* 체크리스트 클릭 시 자동 동기화되며, 일간 트래커 데이터가 요일별로 요약 표시됩니다.</span>
+             </div>
              <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
                <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
                  <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border" style="height: 160px; background-color: #f8fafc;"></div>
@@ -659,6 +631,7 @@
 
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
+        // iOS 홈화면 추가 시 튕김 방지를 위해 무조건 팝업 방식으로 통일
         auth.signInWithPopup(provider).catch(error => { 
             console.error("로그인 에러:", error); 
             alert("로그인 중 오류가 발생했습니다."); 
@@ -674,6 +647,7 @@
             $('loginScreen').classList.add('hidden');
             $('mainApp').classList.remove('hidden');
             
+            // 로그인 상태일 때 하단 탭바 다시 보이기
             const mobileTabBar = $('mobileTabBar');
             if (mobileTabBar) mobileTabBar.style.display = ''; 
 
@@ -684,6 +658,7 @@
             loadFromCloud(); 
             checkNotice();
             
+            // 모바일일 경우 로그인 직후에 홈 화면을 명시적으로 다시 그려주기
             if (window.innerWidth < 768) switchMobileTab('home');
 
         } else {
@@ -693,65 +668,122 @@
             $('mainApp').classList.add('hidden');
             $('adminBtn').classList.add('hidden');
             
+            // 🔥 로그아웃 상태일 때 모바일 UI 하단으로 새어나오지 않게 꽁꽁 숨기기
             const drawer = $('dashboardDrawer');
             const habitSec = $('mobileHabitSection');
-            const memoSec = $('mobileMemoSection');
             const tabBar = $('mobileTabBar');
             if (drawer) drawer.style.display = 'none';
             if (habitSec) habitSec.style.display = 'none';
-            if (memoSec) memoSec.style.display = 'none';
             if (tabBar) tabBar.style.display = 'none';
             document.body.removeAttribute('data-mobile-tab');
         }
     });
 
-    // 🔥 관리자 로직
-    function openAdminModal() { $('adminModal').classList.remove('hidden'); loadNoticeHistory(); }
+    // 🔥 관리자 모달 열기 & 히스토리 불러오기
+    function openAdminModal() { 
+        $('adminModal').classList.remove('hidden'); 
+        loadNoticeHistory();
+    }
+    
+    // 🔥 공지 발송 및 히스토리 저장
     function sendNotice() {
         const version = $('adminNoticeVersion').value.trim();
         const title = $('adminNoticeTitle').value.trim();
         const content = $('adminNoticeContent').value.trim();
         if(!version || !title || !content) { alert("빈칸을 모두 채워주세요!"); return; }
 
-        const noticeData = { version: version, title: title, content: content, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+        const noticeData = {
+            version: version,
+            title: title,
+            content: content,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // 1. 유저들이 보는 메인 공지 업데이트
         db.collection('system').doc('notice').set(noticeData).then(() => {
+            // 2. 히스토리 보관함(notice_history)에 버전별로 따로 기록!
             return db.collection('notice_history').doc(version).set(noticeData);
         }).then(() => {
             alert("🚀 전 세계 유저에게 공지사항 발송 완료!");
-            loadNoticeHistory(); clearAdminForm(); 
-        }).catch(e => { console.error(e); alert("발송 실패 ㅠㅠ: " + e.message); });
+            loadNoticeHistory(); // 왼쪽 리스트 새로고침
+            clearAdminForm();    // 오른쪽 폼 비우기
+        }).catch(e => {
+            console.error(e);
+            alert("발송 실패 ㅠㅠ: " + e.message);
+        });
     }
+
+    // 🔥 파이어베이스에서 이전 히스토리 불러오기
     function loadNoticeHistory() {
-        const listContainer = $('adminNoticeHistory'); listContainer.innerHTML = '<div class="text-sm text-gray-400 text-center py-10">불러오는 중...</div>';
+        const listContainer = $('adminNoticeHistory');
+        listContainer.innerHTML = '<div class="text-sm text-gray-400 text-center py-10">불러오는 중...</div>';
+
         db.collection('notice_history').orderBy('timestamp', 'desc').get().then(snapshot => {
             listContainer.innerHTML = '';
-            if (snapshot.empty) { listContainer.innerHTML = '<div class="text-sm text-gray-400 text-center py-10 font-bold">아직 발송된 공지가 없습니다.</div>'; return; }
+            if (snapshot.empty) {
+                listContainer.innerHTML = '<div class="text-sm text-gray-400 text-center py-10 font-bold">아직 발송된 공지가 없습니다.</div>';
+                return;
+            }
             snapshot.forEach(doc => {
-                const data = doc.data(); const item = document.createElement('div');
+                const data = doc.data();
+                const item = document.createElement('div');
                 item.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-purple-400 transition-all group flex flex-col gap-2';
-                item.onclick = () => { $('adminNoticeVersion').value = data.version; $('adminNoticeTitle').value = data.title; $('adminNoticeContent').value = data.content; };
+                
+                // 리스트 클릭 시 오른쪽 작성 폼에 텍스트 쏙! 불러오기
+                item.onclick = () => {
+                    $('adminNoticeVersion').value = data.version;
+                    $('adminNoticeTitle').value = data.title;
+                    $('adminNoticeContent').value = data.content;
+                };
+                
                 const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : '최근';
-                item.innerHTML = `<div class="flex justify-between items-center"><span class="text-[11px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${data.version}</span><span class="text-[10px] text-gray-400 font-bold">${dateStr}</span></div><h4 class="text-[13px] font-bold text-gray-800 truncate group-hover:text-purple-600 transition">${data.title}</h4>`;
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${data.version}</span>
+                        <span class="text-[10px] text-gray-400 font-bold">${dateStr}</span>
+                    </div>
+                    <h4 class="text-[13px] font-bold text-gray-800 truncate group-hover:text-purple-600 transition">${data.title}</h4>
+                `;
                 listContainer.appendChild(item);
             });
-        }).catch(e => { listContainer.innerHTML = '<div class="text-sm text-red-400 text-center py-10 font-bold">히스토리를 불러오지 못했습니다.</div>'; });
+        }).catch(e => {
+            console.log(e);
+            listContainer.innerHTML = '<div class="text-sm text-red-400 text-center py-10 font-bold">히스토리를 불러오지 못했습니다.</div>';
+        });
     }
-    function clearAdminForm() { $('adminNoticeVersion').value = ''; $('adminNoticeTitle').value = ''; $('adminNoticeContent').value = ''; }
 
+    // 🔥 폼 내용 싹 비우기
+    function clearAdminForm() {
+        $('adminNoticeVersion').value = '';
+        $('adminNoticeTitle').value = '';
+        $('adminNoticeContent').value = '';
+    }
+
+    // 🔥 [추가됨] 공지사항 확인 로직
     function checkNotice() {
         db.collection('system').doc('notice').get().then(doc => {
             if (doc.exists) {
-                const data = doc.data(); const lastSeen = localStorage.getItem('ianLastNoticeVersion');
+                const data = doc.data();
+                const lastSeen = localStorage.getItem('ianLastNoticeVersion');
+                // 유저가 본 적 없는 새로운 버전의 공지라면 팝업 띄우기
                 if (data.version && data.version !== lastSeen) {
-                    $('noticeVersionBadge').textContent = data.version; $('noticeTitle').textContent = data.title; $('noticeContent').textContent = data.content;
-                    $('noticeModal').classList.remove('hidden'); $('noticeModal').dataset.currentVersion = data.version;
+                    $('noticeVersionBadge').textContent = data.version;
+                    $('noticeTitle').textContent = data.title;
+                    $('noticeContent').textContent = data.content;
+                    $('noticeModal').classList.remove('hidden');
+                    // 팝업을 띄울 때 이번 버전을 메모리에 임시 저장해둠
+                    $('noticeModal').dataset.currentVersion = data.version;
                 }
             }
         }).catch(e => console.log("공지사항 체크 실패:", e));
     }
+
+    // 🔥 [추가됨] 공지사항 닫기 (다신 안 보기)
     function closeNotice() {
         const version = $('noticeModal').dataset.currentVersion;
-        if (version) localStorage.setItem('ianLastNoticeVersion', version); 
+        if (version) {
+            localStorage.setItem('ianLastNoticeVersion', version); // 다신 안 뜨게 로컬스토리지에 도장 쾅!
+        }
         $('noticeModal').classList.add('hidden');
     }
 
@@ -790,7 +822,6 @@
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
         updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
         renderTimerHistory(); renderHabits(); loadTimerState(); 
-        renderMemoFolders(); // 🔥 폴더 메모장 초기화 추가!
         const memoArea = $('memoArea'); 
         if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
     }
@@ -871,27 +902,46 @@
     
     tDial.onpointerdown = (e) => { if (isR) return; e.preventDefault(); isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e); timerMode = 'idle'; };
     
+    // 🔥 전역 pointermove 수정완료: 터치 드래그 정확히 인식
     window.addEventListener('pointermove', (e) => { 
         if (isDT) { e.preventDefault(); let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
-        if (isPainting) {
-            e.preventDefault(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const target = document.elementFromPoint(clientX, clientY);
-            if (target && target.classList.contains('time-cell')) { const idx = parseInt(target.id.replace('time-cell-', '')); if (!dragHasMoved && dragStartIdx !== idx) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } if (dragHasMoved) applyBrushToCell(idx, target); }
+        
+        if (isPainting && e.pointerType !== 'mouse') {
+            e.preventDefault(); 
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            if (target && target.classList.contains('time-cell')) { 
+                const idx = parseInt(target.id.replace('time-cell-', '')); 
+                if (!dragHasMoved && dragStartIdx !== idx) { 
+                    applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
+                    dragHasMoved = true; 
+                } 
+                if (dragHasMoved) applyBrushToCell(idx, target); 
+            }
         }
+
         if (isResizing && resizeData) { 
-            e.preventDefault(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const target = document.elementFromPoint(clientX, clientY); const hC = target?.closest('.group-cell'); 
+            e.preventDefault(); 
+            const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell'); 
             if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); if (t) { if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } 
         }
         if (isSelecting) {
-            e.preventDefault(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const target = document.elementFromPoint(clientX, clientY); const hC = target?.closest('.group-cell');
+            e.preventDefault(); 
+            const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
             if (hC) { const key = hC.getAttribute('data-date'); if (key !== selectEndKey) { selectEndKey = key; highlightSelection(selectStartKey, selectEndKey); } }
         }
     }, { passive: false });
 
+    // 🔥 전역 pointerup 수정완료: 마우스 드래그 끝날 때 화면 정상 렌더링
     window.addEventListener('pointerup', () => { 
-        if (isPainting) { isPainting = false; if (currentPlannerDateKey) { renderTimeGrid(currentPlannerDateKey); if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); } } 
+        if (isPainting) { 
+            isPainting = false; 
+            setTimeout(() => {
+                if (currentPlannerDateKey) { 
+                    renderTimeGrid(currentPlannerDateKey); 
+                    if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); 
+                } 
+            }, 10);
+        } 
         if (isDT) { isDT = false; } 
         if (isSelecting) { 
             isSelecting = false; 
@@ -1066,60 +1116,90 @@
         const hourLabel = document.createElement('div'); hourLabel.className = 'w-10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 border-r border-[#e6e2d8] bg-[#fdfbf7]'; hourLabel.textContent = String(realH).padStart(2, '0'); row.appendChild(hourLabel);
         const cellContainer = document.createElement('div'); cellContainer.className = 'flex flex-1 relative';
         let currentSegment = null; let segments = [];
+        
         for(let m = 0; m < 6; m++) {
           const idx = (h - 5) * 6 + m; const color = data[idx];
           if (color) { if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
+          
           const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
           
-          // 🔥 수정됨: 0.6초 롱프레스 모바일 터치 처리 적용
+          // 🔥 수정완료: 브라우저 포인터 캡처 릴리즈 + 마우스 즉시 칠하기 완벽 호환
           let pressTimer = null;
+          
           cell.onpointerdown = (e) => { 
-              dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
+              // PC 마우스 드래그를 막는 주범! 포인터 캡처 강제 해제
+              if (cell.hasPointerCapture(e.pointerId)) {
+                  cell.releasePointerCapture(e.pointerId);
+              }
               
               if (e.pointerType === 'mouse') {
                   e.preventDefault(); 
                   isPainting = true;
+                  dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
+                  // 클릭하자마자 즉시 칠하기
+                  applyBrushToCell(idx, cell);
+                  dragHasMoved = true; 
               } 
               else {
+                  dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
                   pressTimer = setTimeout(() => { 
                       isPainting = true; 
                       applyBrushToCell(idx, cell); 
+                      dragHasMoved = true;
                       if(navigator.vibrate) navigator.vibrate(50);
                   }, 600);
               }
           };
+          
           cell.onpointermove = (e) => { 
               if (e.pointerType !== 'mouse' && !isPainting && pressTimer) { 
                   clearTimeout(pressTimer); pressTimer = null; 
               } 
           };
-          cell.onpointerenter = () => { 
-              if(isPainting) { 
-                  if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } 
+          
+          cell.onpointerenter = (e) => { 
+              if(isPainting && e.pointerType === 'mouse') { 
+                  if (!dragHasMoved) { 
+                      applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
+                      dragHasMoved = true; 
+                  } 
                   applyBrushToCell(idx, cell); 
               } 
           };
+          
           cell.onpointerup = () => { 
               if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
-              if (!isPainting) { 
-                  if (data[idx]) openTimeBlockModal(idx, dateKey); 
-              } else { 
-                  if (!dragHasMoved) applyBrushToCell(idx, cell); 
+              if (isPainting) { 
+                  if (!dragHasMoved) { 
+                      // 제자리 클릭 시 수정 모달 띄우거나 색칠
+                      if (data[idx]) openTimeBlockModal(idx, dateKey); 
+                      else applyBrushToCell(idx, cell); 
+                  } 
+                  isPainting = false; 
+                  // 마우스 뗐을 때 재렌더링
+                  setTimeout(() => {
+                      if (currentPlannerDateKey) { 
+                          renderTimeGrid(currentPlannerDateKey); 
+                          if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); 
+                      }
+                  }, 10);
               } 
-              isPainting = false; 
           };
+          
           cell.onpointercancel = () => { 
               if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
               isPainting = false; 
           };
+          
           cellContainer.appendChild(cell);
         }
+        
         if (currentSegment) segments.push(currentSegment);
         segments.forEach(seg => {
            let segText = ''; seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
            if(segText) {
-               const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10';
+               const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10 w-full';
                const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100; overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
                overlay.innerHTML = `<div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
                cellContainer.appendChild(overlay);
@@ -1293,57 +1373,10 @@
     window.updateHabitText = function(index, value) { if(weeklyHabits[window.currentWeekKey]) { weeklyHabits[window.currentWeekKey][index].text = value; saveWeeklySpecifics(); } };
     window.toggleHabit = function(hIndex, dIndex) { if(weeklyHabits[window.currentWeekKey]) { let val = weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex]; val = (val + 1) % 3; weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex] = val; saveWeeklySpecifics(); renderHabits(); } };
 
-    // 🔥 추가됨: 위클리 카테고리 통계 차트 렌더링
-    function renderWeeklyBarChart(startDate) {
-        const chartContainer = $('weeklyBarChartContainer');
-        if(!chartContainer) return;
-        
-        let catSums = {};
-        categories.forEach(c => catSums[c.id] = 0);
-        
-        let totalSec = 0;
-        for(let i=0; i<7; i++) {
-            const d = new Date(startDate); d.setDate(startDate.getDate() + i);
-            const dateKey = getDateKey(d);
-            const grid = dailyRecords[dateKey]?.grid || [];
-            grid.forEach(color => {
-                if (color) {
-                    const cat = categories.find(c => c.color === color);
-                    if (cat) { catSums[cat.id] += 600; totalSec += 600; } // 1 block = 10 mins (600s)
-                }
-            });
-        }
-        
-        let html = '<h3 class="text-[11px] font-extrabold text-gray-700 mb-3 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-[#22741C] rounded-sm"></span> 카테고리별 누적 시간</h3><div class="space-y-2">';
-        categories.forEach(cat => {
-            const sec = catSums[cat.id];
-            if (sec > 0) {
-                const pct = totalSec > 0 ? (sec / totalSec) * 100 : 0;
-                const h = Math.floor(sec / 3600);
-                const m = Math.floor((sec % 3600) / 60);
-                const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
-                html += `
-                <div class="flex items-center gap-2 text-[10px]">
-                    <span class="w-14 text-right font-bold text-gray-600 truncate">${cat.name}</span>
-                    <div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
-                        <div class="h-full flex items-center justify-end px-2 font-bold text-gray-800" style="width: ${Math.max(pct, 5)}%; background-color: ${cat.color}; opacity: 0.8;">${timeStr}</div>
-                    </div>
-                </div>`;
-            }
-        });
-        if(totalSec === 0) html += '<div class="text-[10px] text-gray-400 text-center py-2 font-bold">이번 주 기록이 없습니다.</div>';
-        html += '</div>';
-        chartContainer.innerHTML = html;
-    }
-
     function openWeeklyPlanner(startDate, endDate) {
       window.currentWeekKey = getDateKey(startDate);
       $('weeklySubtitle').textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')} - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}`;
       const wMemoArea = $('weeklySpecificMemo'); if(wMemoArea) { wMemoArea.value = weeklyMemos[currentWeekKey] || ''; wMemoArea.oninput = (e) => { if(window.currentWeekKey) { weeklyMemos[window.currentWeekKey] = e.target.value; saveWeeklySpecifics(); } }; }
-      
-      // 🔥 바 차트 실행!
-      renderWeeklyBarChart(startDate);
-      
       renderHabits(); const slotHeight = 20; const timeLabels = $('weeklyTimeLabels'); timeLabels.innerHTML = '';
       for(let h = 5; h < 29; h++) { const div = document.createElement('div'); div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`; div.style.height = `${slotHeight}px`; div.textContent = `${h % 24}:00`; timeLabels.appendChild(div); }
       const gridContainer = $('weeklyGridContainer'); gridContainer.innerHTML = ''; const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -1434,42 +1467,6 @@
     function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
-
-    // 🔥 추가됨: 모바일 탭 연동을 위한 폴더 메모장 렌더링
-    function renderMemoFolders() {
-        const grid = $('memoFolderGrid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        
-        const colors = ['#DEFF9A', '#DAFFDE', '#BCC6D0', '#F9FAF1'];
-        extendedMemos.forEach((memo, i) => {
-            const color = colors[i % colors.length];
-            const card = document.createElement('div');
-            card.className = 'folder-card bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative cursor-pointer flex flex-col items-center justify-center aspect-square transition-transform active:scale-95';
-            card.innerHTML = `
-                <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-3" style="background-color: ${hexToRgba(color, 0.3)}">
-                    <i class="fa-solid fa-folder text-3xl" style="color: ${color}"></i>
-                </div>
-                <span class="font-bold text-gray-800 text-sm text-center w-full truncate px-1">${memo.title || '메모 ' + (i+1)}</span>
-                <button onclick="event.stopPropagation(); renameFolder(${i})" class="absolute top-4 right-4 p-2 text-gray-300 hover:text-gray-500">
-                    <i class="fa-solid fa-pen text-[12px]"></i>
-                </button>
-            `;
-            // 폴더 클릭 시 기존의 확장 메모 모달(extendedMemoModal) 띄우기
-            card.onclick = () => openExtendedMemo(i); 
-            grid.appendChild(card);
-        });
-    }
-
-    function renameFolder(index) {
-        const newName = prompt("폴더 이름을 변경하세요:", extendedMemos[index].title);
-        if(newName !== null && newName.trim() !== '') {
-            extendedMemos[index].title = newName.trim();
-            setLocal('ianExtendedMemos', extendedMemos);
-            renderMemoFolders();     // 모바일 탭 폴더 업데이트
-            renderExtMemoButtons();  // 대시보드 쪽 메모 버튼 업데이트
-        }
-    }
 
     function handleQuickAdd() { openModal('createSingle', { dateKey: quickMenuTargetKey }); closeQuickMenu(); }
     function handleQuickRange() { isSelecting = true; selectStartKey = quickMenuTargetKey; selectEndKey = quickMenuTargetKey; highlightSelection(quickMenuTargetKey, quickMenuTargetKey); closeQuickMenu(); }
@@ -1623,7 +1620,6 @@
         } catch(err) { console.error("초기화 중 에러 발생:", err); }
     };
 
-    // 🔥 5개 탭 연동을 위한 함수 수정
     function switchMobileTab(tabName) {
         if (window.innerWidth >= 768) return; 
         document.querySelectorAll('.mobile-tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1648,7 +1644,55 @@
     });
     if (window.innerWidth < 768) switchMobileTab('home');
 
-    // 🔄 모바일 '당겨서 새로고침' (Soft Refresh) 로직
+    // 🔥 전역 pointermove 수정완료: 터치 드래그 정확히 인식
+    window.addEventListener('pointermove', (e) => { 
+        if (isDT) { e.preventDefault(); let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
+        
+        if (isPainting && e.pointerType !== 'mouse') {
+            e.preventDefault(); 
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            if (target && target.classList.contains('time-cell')) { 
+                const idx = parseInt(target.id.replace('time-cell-', '')); 
+                if (!dragHasMoved && dragStartIdx !== idx) { 
+                    applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
+                    dragHasMoved = true; 
+                } 
+                if (dragHasMoved) applyBrushToCell(idx, target); 
+            }
+        }
+
+        if (isResizing && resizeData) { 
+            e.preventDefault(); 
+            const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell'); 
+            if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); if (t) { if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } 
+        }
+        if (isSelecting) {
+            e.preventDefault(); 
+            const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
+            if (hC) { const key = hC.getAttribute('data-date'); if (key !== selectEndKey) { selectEndKey = key; highlightSelection(selectStartKey, selectEndKey); } }
+        }
+    }, { passive: false });
+
+    // 🔥 전역 pointerup 수정완료: 마우스 드래그 끝날 때 화면 정상 렌더링
+    window.addEventListener('pointerup', () => { 
+        if (isPainting) { 
+            isPainting = false; 
+            setTimeout(() => {
+                if (currentPlannerDateKey) { 
+                    renderTimeGrid(currentPlannerDateKey); 
+                    if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); 
+                } 
+            }, 10);
+        } 
+        if (isDT) { isDT = false; } 
+        if (isSelecting) { 
+            isSelecting = false; 
+            if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } 
+            document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); 
+        } 
+        if (isResizing) { isResizing = false; resizeData = null; saveAndRefresh(); } 
+    });
+
     let pStartY = 0;
     let pIsPulling = false;
 
@@ -1701,7 +1745,7 @@
                     
                     renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
                     buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
-                    renderTimerHistory(); renderHabits(); renderMemoFolders();
+                    renderTimerHistory(); renderHabits(); 
                     
                     setTimeout(() => { pSpinner.style.top = '-60px'; }, 500);
                 }).catch(e => {
