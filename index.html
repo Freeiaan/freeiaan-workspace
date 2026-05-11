@@ -414,10 +414,15 @@
       </header>
       <div class="flex-1 overflow-hidden flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
          <div class="flex-1 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
-             <div class="flex justify-between items-end bg-[#f8fafc] px-4 py-2 border-b border-[#e6e2d8]">
-                 <h3 class="font-bold text-[13px] text-gray-800 tracking-wide">WEEKLY TIME TRACKER</h3>
-                 <span class="text-[9px] text-gray-400">* 체크리스트 클릭 시 자동 동기화되며, 일간 트래커 데이터가 요일별로 요약 표시됩니다.</span>
-             </div>
+             <div class="flex justify-between items-center bg-[#f8fafc] px-3 py-3 border-b border-[#e6e2d8] gap-3">
+    <h3 class="font-bold text-[12px] md:text-[13px] text-gray-800 tracking-tight leading-tight flex-shrink-0">
+        WEEKLY<br class="md:hidden">TIME TRACKER
+    </h3>
+    
+    <span class="text-[8px] md:text-[9px] text-gray-400 leading-tight text-right">
+        * 체크리스트 클릭 시 자동 동기화되며,<br class="md:hidden">일간 트래커 데이터가 요일별로 요약 표시됩니다.
+    </span>
+</div>
              <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
                <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
                  <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border" style="height: 160px; background-color: #f8fafc;"></div>
