@@ -596,14 +596,21 @@
 
     function setLocal(key, data) { localStorage.setItem(key, JSON.stringify(data)); syncToCloud(); }
 
-    // 🔥 모바일 로그인 완벽 대응 (모바일은 화면 이동, PC는 팝업)
+    // 🔥 해결: 모바일 무한 로그인 루프 방지 (모든 기기에서 팝업창 방식 사용)
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            auth.signInWithRedirect(provider);
-        } else {
-            auth.signInWithPopup(provider).catch(error => { console.error("로그인 에러:", error); alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요."); });
-        }
+        
+        auth.signInWithPopup(provider).then((result) => {
+            console.log("로그인 성공!");
+        }).catch(error => { 
+            console.error("로그인 에러:", error); 
+            // 팝업 차단이 걸려있을 경우를 대비한 친절한 안내!
+            if (error.code === 'auth/popup-blocked') {
+                alert("🚨 브라우저의 '팝업 차단' 기능 때문에 로그인이 안 되고 있어요!\n설정에서 팝업 차단을 해제한 후 다시 시도해 주세요.");
+            } else {
+                alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요."); 
+            }
+        });
     }
     
     function logout() { if(confirm("로그아웃 하시겠습니까?")) { auth.signOut(); resetTimer(); } }
