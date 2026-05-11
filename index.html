@@ -412,8 +412,8 @@
          </div>
          <button onclick="closeWeeklyPlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
-      <div class="flex-1 overflow-hidden flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
-         <div class="flex-1 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
+      <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
+         <div class="w-full md:flex-1 h-[350px] md:h-auto md:min-h-0 flex-shrink-0 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
              <div class="flex justify-between items-center bg-[#f8fafc] px-3 py-3 border-b border-[#e6e2d8] gap-3">
     <h3 class="font-bold text-[12px] md:text-[13px] text-gray-800 tracking-tight leading-tight flex-shrink-0">
         WEEKLY<br class="md:hidden">TIME TRACKER
@@ -1111,9 +1111,44 @@
           const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
           
-          cell.onpointerdown = (e) => { e.preventDefault(); isPainting = true; dragHasMoved = false; dragStartIdx = idx; dragAction = data[idx] ? 'erase' : 'paint'; };
-          cell.onpointerenter = () => { if(isPainting) { if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } applyBrushToCell(idx, cell); } };
-          cell.onpointerup = () => { if (!dragHasMoved) { if (data[idx]) openTimeBlockModal(idx, dateKey); else applyBrushToCell(idx, cell); } };
+          let pressTimer = null;
+          cell.onpointerdown = (e) => { 
+              dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
+              if (window.innerWidth < 768) {
+                  // 모바일: 0.6초 꾹 누르면 색칠 모드 시작 (가벼운 터치는 스크롤 허용)
+                  pressTimer = setTimeout(() => { 
+                      isPainting = true; 
+                      applyBrushToCell(idx, cell); 
+                      if(navigator.vibrate) navigator.vibrate(50); // 꾹 눌렸을 때 미세한 진동 피드백
+                  }, 600);
+              } else { 
+                  e.preventDefault(); isPainting = true; 
+              }
+          };
+          cell.onpointermove = () => { 
+              // 스크롤하려고 손가락을 움직이면 꾹 누르기 취소
+              if (!isPainting && pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+          };
+          cell.onpointerenter = () => { 
+              if(isPainting) { 
+                  if (!dragHasMoved) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } 
+                  applyBrushToCell(idx, cell); 
+              } 
+          };
+          cell.onpointerup = () => { 
+              if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+              if (!isPainting) { 
+                  // 꾹 누르기 전에 뗐으면 기존 블록 수정 모달만 열기
+                  if (data[idx]) openTimeBlockModal(idx, dateKey); 
+              } else { 
+                  if (!dragHasMoved) applyBrushToCell(idx, cell); 
+              } 
+              isPainting = false; 
+          };
+          cell.onpointercancel = () => { 
+              if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+              isPainting = false; 
+          };
           cellContainer.appendChild(cell);
         }
         if (currentSegment) segments.push(currentSegment);
