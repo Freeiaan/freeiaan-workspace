@@ -122,6 +122,7 @@
       .tiny-calendar-checkbox { width: 11px !important; height: 11px !important; border-width: 1px !important; border-radius: 2px !important; margin-right: 2px !important; margin-top: 1px !important; }
     }
 
+    /* 🔥 PC 레이아웃 보호를 위한 필수 구조 */
     @media (min-width: 768px) {
         body.hide-weekends .weekend-col { display: none !important; }
         body.hide-weekends #calendarArea { grid-template-columns: 24px repeat(5, minmax(0, 1fr)) !important; }
@@ -547,6 +548,14 @@
   </div>
 
   <script>
+    const $ = id => document.getElementById(id);
+    const getDateKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    const hexToRgba = (hex, a) => { if(!hex || typeof hex !== 'string' || hex.length < 7) return 'transparent'; const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `rgba(${r},${g},${b},${a})`; };
+    function getStartOfWeek(date) { const d = new Date(date); const diff = d.getDate() - d.getDay(); return new Date(d.setDate(diff)); }
+    
+    // 🔥 바로 이 함수가 없어져서 모든 에러가 났던 겁니다! 부활 완료!
+    const isDateBetween = (d, s, e) => { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; };
+
     const firebaseConfig = {
       apiKey: "AIzaSyCox_I7nCXxYOF0AvfwG2i_-oSl5Gbu8Tk",
       authDomain: "freeiaan-scheduler.firebaseapp.com",
@@ -559,11 +568,6 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     let currentUser = null;
-
-    const $ = id => document.getElementById(id);
-    const getDateKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-    const hexToRgba = (hex, a) => { if(!hex || typeof hex !== 'string' || hex.length < 7) return 'transparent'; const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `rgba(${r},${g},${b},${a})`; };
-    function getStartOfWeek(date) { const d = new Date(date); const diff = d.getDate() - d.getDay(); return new Date(d.setDate(diff)); }
 
     const defaultCats = [ { id: 'cat1', color: '#000000', name: '기본' }, { id: 'cat2', color: '#ef4444', name: '유튜브' }, { id: 'cat3', color: '#1c64f2', name: '편집' }, { id: 'cat4', color: '#facc15', name: '마켓' }, { id: 'cat5', color: '#22c55e', name: '공부' } ];
     const defaultTrackerColors = [ { id: 'tc1', color: '#000000' }, { id: 'tc2', color: '#ef4444' }, { id: 'tc3', color: '#3b82f6' }, { id: 'tc4', color: '#facc15' }, { id: 'tc5', color: '#4ade80' } ];
@@ -592,16 +596,13 @@
 
     function setLocal(key, data) { localStorage.setItem(key, JSON.stringify(data)); syncToCloud(); }
 
-    // 🔥 해결 1: 모바일 로그인 완벽 대응 (Redirect 방식 사용)
+    // 🔥 모바일 로그인 완벽 대응 (모바일은 화면 이동, PC는 팝업)
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
             auth.signInWithRedirect(provider);
         } else {
-            auth.signInWithPopup(provider).catch(error => {
-                console.error("로그인 에러:", error);
-                alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
-            });
+            auth.signInWithPopup(provider).catch(error => { console.error("로그인 에러:", error); alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요."); });
         }
     }
     
@@ -652,7 +653,6 @@
     let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0, timerMode = 'idle', sessionElapsed = 0, timerLastTick = 0; 
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
-    // 🔥 해결 2: 생략됐던 모든 핵심 기능들을 모조리 복원!
     function initAppRenders() {
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
@@ -1017,10 +1017,10 @@
         const btnT = $('dpTabBtnTracker'), btnN = $('dpTabBtnNotes');
         if(!secT || !secN) return;
         if (tab === 'tracker') {
-            secT.classList.remove('hidden'); secT.classList.add('flex'); secN.classList.remove('flex'); secN.classList.add('hidden');
+            secT.classList.replace('hidden', 'flex'); secN.classList.replace('flex', 'hidden');
             btnT.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-[#1b4332] text-white shadow-sm transition-colors'; btnN.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors';
         } else {
-            secT.classList.remove('flex'); secT.classList.add('hidden'); secN.classList.remove('hidden'); secN.classList.add('flex');
+            secT.classList.replace('flex', 'hidden'); secN.classList.replace('hidden', 'flex');
             btnN.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-[#1b4332] text-white shadow-sm transition-colors'; btnT.className = 'flex-1 py-2 text-[12px] font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors';
         }
     };
@@ -1221,7 +1221,7 @@
     function handleQuickRange() { isSelecting = true; selectStartKey = quickMenuTargetKey; selectEndKey = quickMenuTargetKey; highlightSelection(quickMenuTargetKey, quickMenuTargetKey); closeQuickMenu(); }
     function closeQuickMenu() { $('mobileQuickMenu').style.display = 'none'; }
 
-    // 🔥 메인 캘린더 그리기 로직
+    // 🔥 메인 캘린더 그리기 로직 (isDateBetween 부활로 이제 완벽 작동합니다)
     function renderCalendar() {
       const calendar = $('calendar'); if (!calendar) return; calendar.innerHTML = '';
       const year = displayDate.getFullYear(), month = displayDate.getMonth(); $('monthYear').textContent = `${year}년 ${month + 1}월`;
@@ -1259,7 +1259,6 @@
         cell.setAttribute('data-date', key);
         const isCurrentMonth = d.getMonth() === month; if (!isCurrentMonth) cell.classList.add('bg-gray-50', 'text-gray-300');
         
-        // 🔥 똑똑한 터치 마법 (심플 터치 & 꾹 누르기 & 드래그)
         cell.onpointerdown = (e) => { 
             if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.resize-handle') || e.target.closest('.date-trigger')) return;
             downTime = Date.now();
@@ -1271,7 +1270,7 @@
                     menu.style.display = 'flex';
                     menu.style.left = `${Math.min(e.clientX, window.innerWidth - 160)}px`;
                     menu.style.top = `${Math.min(e.clientY, window.innerHeight - 150)}px`;
-                }, 500); // 0.5초 대기
+                }, 500); 
             } else { isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); }
         };
         cell.onpointermove = () => { clearTimeout(pressTimer); }; 
@@ -1281,7 +1280,7 @@
         
         cell.onclick = (e) => { 
             if (window.innerWidth < 768 && !e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                if (Date.now() - downTime < 300) {  // 0.3초 미만이면 짧은 터치로 인식
+                if (Date.now() - downTime < 300) { 
                     clearTimeout(pressTimer);
                     openModal('createSingle', { dateKey: key }); 
                 }
@@ -1300,7 +1299,6 @@
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
               const item = document.createElement('div'); item.draggable = true; 
-              // 🔥 날씬하고 세련된 폰트
               item.className = 'todo-item text-[10px] md:text-[11px] truncate px-0.5 md:px-1 rounded flex items-start md:items-center w-full gap-0 md:gap-1.5';
               const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
               
