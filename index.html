@@ -545,14 +545,25 @@
   </div>
 
   <div id="adminModal" class="hidden fixed inset-0 z-[6000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
-          <h3 class="text-xl font-black mb-6 text-purple-600 flex items-center gap-2">👑 공지사항 발송 통제실</h3>
-          <input type="text" id="adminNoticeVersion" placeholder="버전 (예: v1.1)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-3 font-bold focus:border-purple-400 outline-none transition">
-          <input type="text" id="adminNoticeTitle" placeholder="공지 제목" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-3 font-bold focus:border-purple-400 outline-none transition">
-          <textarea id="adminNoticeContent" placeholder="공지 내용" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-6 font-medium h-32 resize-none custom-scrollbar focus:border-purple-400 outline-none transition"></textarea>
-          <div class="flex justify-end gap-2">
-              <button onclick="$('adminModal').classList.add('hidden')" class="px-5 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition">취소</button>
-              <button onclick="sendNotice()" class="px-6 py-2 bg-purple-600 text-white rounded-xl font-bold shadow-md hover:bg-purple-700 transition">전체 유저에게 발송 🚀</button>
+      <div class="bg-white rounded-3xl w-full max-w-4xl flex flex-col md:flex-row shadow-2xl overflow-hidden h-[80vh] md:h-auto md:max-h-[85vh]">
+          <div class="w-full md:w-1/2 bg-gray-50 p-6 md:p-8 flex flex-col border-b md:border-b-0 md:border-r border-gray-200 h-1/2 md:h-[600px] overflow-hidden">
+              <h3 class="text-lg font-black mb-4 text-gray-800 flex items-center gap-2">📜 지난 공지사항</h3>
+              <p class="text-[11px] text-gray-400 mb-4 font-bold">* 클릭하면 내용을 다시 불러옵니다.</p>
+              <div id="adminNoticeHistory" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 pr-2">
+                  </div>
+          </div>
+          <div class="w-full md:w-1/2 p-6 md:p-8 flex flex-col h-1/2 md:h-[600px] overflow-y-auto custom-scrollbar">
+              <div class="flex justify-between items-center mb-6">
+                  <h3 class="text-xl font-black text-purple-600 flex items-center gap-2">👑 통제실</h3>
+                  <button onclick="$('adminModal').classList.add('hidden')" class="text-3xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+              </div>
+              <input type="text" id="adminNoticeVersion" placeholder="버전 (예: v1.1)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-3 font-bold focus:border-purple-400 outline-none transition">
+              <input type="text" id="adminNoticeTitle" placeholder="공지 제목" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-3 font-bold focus:border-purple-400 outline-none transition">
+              <textarea id="adminNoticeContent" placeholder="공지 내용" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-6 font-medium flex-1 min-h-[150px] resize-none custom-scrollbar focus:border-purple-400 outline-none transition"></textarea>
+              <div class="flex justify-end gap-2 mt-auto pt-4">
+                  <button onclick="clearAdminForm()" class="px-5 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition text-sm">내용 지우기</button>
+                  <button onclick="sendNotice()" class="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold shadow-md hover:bg-purple-700 transition text-sm">전체 발송 🚀</button>
+              </div>
           </div>
       </div>
   </div>
@@ -651,27 +662,84 @@
         }
     });
 
-    // 🔥 [추가됨] 관리자 모달 열기 & 공지 전송 로직
-    function openAdminModal() { $('adminModal').classList.remove('hidden'); }
+    // 🔥 관리자 모달 열기 & 히스토리 불러오기
+    function openAdminModal() { 
+        $('adminModal').classList.remove('hidden'); 
+        loadNoticeHistory();
+    }
     
+    // 🔥 공지 발송 및 히스토리 저장
     function sendNotice() {
         const version = $('adminNoticeVersion').value.trim();
         const title = $('adminNoticeTitle').value.trim();
         const content = $('adminNoticeContent').value.trim();
         if(!version || !title || !content) { alert("빈칸을 모두 채워주세요!"); return; }
 
-        db.collection('system').doc('notice').set({
+        const noticeData = {
             version: version,
             title: title,
             content: content,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // 1. 유저들이 보는 메인 공지 업데이트
+        db.collection('system').doc('notice').set(noticeData).then(() => {
+            // 2. 히스토리 보관함(notice_history)에 버전별로 따로 기록!
+            return db.collection('notice_history').doc(version).set(noticeData);
         }).then(() => {
-            alert("🚀 전 세계 유저에게 공지사항이 성공적으로 발송되었습니다!");
-            $('adminModal').classList.add('hidden');
+            alert("🚀 전 세계 유저에게 공지사항 발송 완료!");
+            loadNoticeHistory(); // 왼쪽 리스트 새로고침
+            clearAdminForm();    // 오른쪽 폼 비우기
         }).catch(e => {
             console.error(e);
             alert("발송 실패 ㅠㅠ: " + e.message);
         });
+    }
+
+    // 🔥 파이어베이스에서 이전 히스토리 불러오기
+    function loadNoticeHistory() {
+        const listContainer = $('adminNoticeHistory');
+        listContainer.innerHTML = '<div class="text-sm text-gray-400 text-center py-10">불러오는 중...</div>';
+
+        db.collection('notice_history').orderBy('timestamp', 'desc').get().then(snapshot => {
+            listContainer.innerHTML = '';
+            if (snapshot.empty) {
+                listContainer.innerHTML = '<div class="text-sm text-gray-400 text-center py-10 font-bold">아직 발송된 공지가 없습니다.</div>';
+                return;
+            }
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const item = document.createElement('div');
+                item.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-purple-400 transition-all group flex flex-col gap-2';
+                
+                // 리스트 클릭 시 오른쪽 작성 폼에 텍스트 쏙! 불러오기
+                item.onclick = () => {
+                    $('adminNoticeVersion').value = data.version;
+                    $('adminNoticeTitle').value = data.title;
+                    $('adminNoticeContent').value = data.content;
+                };
+                
+                const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : '최근';
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${data.version}</span>
+                        <span class="text-[10px] text-gray-400 font-bold">${dateStr}</span>
+                    </div>
+                    <h4 class="text-[13px] font-bold text-gray-800 truncate group-hover:text-purple-600 transition">${data.title}</h4>
+                `;
+                listContainer.appendChild(item);
+            });
+        }).catch(e => {
+            console.log(e);
+            listContainer.innerHTML = '<div class="text-sm text-red-400 text-center py-10 font-bold">히스토리를 불러오지 못했습니다.</div>';
+        });
+    }
+
+    // 🔥 폼 내용 싹 비우기
+    function clearAdminForm() {
+        $('adminNoticeVersion').value = '';
+        $('adminNoticeTitle').value = '';
+        $('adminNoticeContent').value = '';
     }
 
     // 🔥 [추가됨] 공지사항 확인 로직
