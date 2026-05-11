@@ -1114,20 +1114,26 @@
           let pressTimer = null;
           cell.onpointerdown = (e) => { 
               dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
-              if (window.innerWidth < 768) {
-                  // 모바일: 0.6초 꾹 누르면 색칠 모드 시작 (가벼운 터치는 스크롤 허용)
+              
+              // 🔥 핵심: 마우스(PC)면 딜레이 없이 예전처럼 즉시 색칠 시작!
+              if (e.pointerType === 'mouse') {
+                  e.preventDefault(); 
+                  isPainting = true;
+              } 
+              // 손가락(모바일/태블릿 터치)일 때만 스크롤 방지를 위해 0.6초 꾹 누르기 적용
+              else {
                   pressTimer = setTimeout(() => { 
                       isPainting = true; 
                       applyBrushToCell(idx, cell); 
-                      if(navigator.vibrate) navigator.vibrate(50); // 꾹 눌렸을 때 미세한 진동 피드백
+                      if(navigator.vibrate) navigator.vibrate(50);
                   }, 600);
-              } else { 
-                  e.preventDefault(); isPainting = true; 
               }
           };
-          cell.onpointermove = () => { 
-              // 스크롤하려고 손가락을 움직이면 꾹 누르기 취소
-              if (!isPainting && pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+          cell.onpointermove = (e) => { 
+              // 터치 스크롤 중이면 꾹 누르기 취소
+              if (e.pointerType !== 'mouse' && !isPainting && pressTimer) { 
+                  clearTimeout(pressTimer); pressTimer = null; 
+              } 
           };
           cell.onpointerenter = () => { 
               if(isPainting) { 
@@ -1138,12 +1144,17 @@
           cell.onpointerup = () => { 
               if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
               if (!isPainting) { 
-                  // 꾹 누르기 전에 뗐으면 기존 블록 수정 모달만 열기
+                  // 꾹 누르기 전에 뗐으면 기존 일정 수정 모달 띄우기
                   if (data[idx]) openTimeBlockModal(idx, dateKey); 
               } else { 
                   if (!dragHasMoved) applyBrushToCell(idx, cell); 
               } 
               isPainting = false; 
+          };
+          cell.onpointercancel = () => { 
+              if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+              isPainting = false; 
+          };
           };
           cell.onpointercancel = () => { 
               if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
