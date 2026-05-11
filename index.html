@@ -1124,25 +1124,22 @@
           const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
           
-          // 🔥 수정완료: 브라우저 포인터 캡처 릴리즈 + 마우스 즉시 칠하기 완벽 호환
           let pressTimer = null;
           
           cell.onpointerdown = (e) => { 
-              // PC 마우스 드래그를 막는 주범! 포인터 캡처 강제 해제
+              // PC 마우스 드래그 끊김 방지 (포인터 캡처 해제)
               if (cell.hasPointerCapture(e.pointerId)) {
                   cell.releasePointerCapture(e.pointerId);
               }
               
+              dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
+              
               if (e.pointerType === 'mouse') {
                   e.preventDefault(); 
                   isPainting = true;
-                  dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
-                  // 클릭하자마자 즉시 칠하기
-                  applyBrushToCell(idx, cell);
-                  dragHasMoved = true; 
+                  // ❌ 문제의 원인 제거! 누르자마자 강제로 칠하는 코드를 빼서 '클릭'과 '드래그'를 완벽히 구분하게 만듭니다.
               } 
               else {
-                  dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
                   pressTimer = setTimeout(() => { 
                       isPainting = true; 
                       applyBrushToCell(idx, cell); 
@@ -1160,6 +1157,7 @@
           
           cell.onpointerenter = (e) => { 
               if(isPainting && e.pointerType === 'mouse') { 
+                  // 마우스가 옆 칸으로 넘어갈 때 비로소 '시작 칸'과 '현재 칸'을 칠합니다 (진짜 드래그 시작)
                   if (!dragHasMoved) { 
                       applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
                       dragHasMoved = true; 
@@ -1172,12 +1170,11 @@
               if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
               if (isPainting) { 
                   if (!dragHasMoved) { 
-                      // 제자리 클릭 시 수정 모달 띄우거나 색칠
-                      if (data[idx]) openTimeBlockModal(idx, dateKey); 
-                      else applyBrushToCell(idx, cell); 
+                      // ✨ 바로 이 부분! 드래그 없이 제자리 클릭만 했을 때 ✨
+                      if (data[idx]) openTimeBlockModal(idx, dateKey); // 이미 색이 있으면 일정 입력 모달 열기!
+                      else applyBrushToCell(idx, cell); // 빈 칸이면 한 칸만 색칠하기
                   } 
                   isPainting = false; 
-                  // 마우스 뗐을 때 재렌더링
                   setTimeout(() => {
                       if (currentPlannerDateKey) { 
                           renderTimeGrid(currentPlannerDateKey); 
