@@ -1563,6 +1563,88 @@
         }
     });
     if (window.innerWidth < 768) switchMobileTab('home');
+
+    // 🔄 모바일 '당겨서 새로고침' (Soft Refresh)
+    let pStartY = 0;
+    let pIsPulling = false;
+    
+    // 새로고침 로딩 스피너 UI 생성
+    const pSpinner = document.createElement('div');
+    pSpinner.innerHTML = '<div class="bg-white rounded-full p-2.5 shadow-md border border-gray-100"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-t-2 border-[#22741C]"></div></div>';
+    pSpinner.className = 'fixed top-[-60px] left-1/2 transform -translate-x-1/2 z-[9999] transition-all duration-300 pointer-events-none';
+    document.body.appendChild(pSpinner);
+
+    document.addEventListener('touchstart', (e) => {
+        // 🔥 타이머 돌리기, 색칠하기, 다중 일정 드래그 중에는 새로고침 방지!
+        if (e.target.closest('#timerClickArea') || e.target.closest('.time-cell') || e.target.closest('.multi-task')) return;
+
+        // 현재 터치한 곳이 맨 위(scrollTop === 0)일 때만 작동 시작
+        const scrollContainer = e.target.closest('.overflow-y-auto') || document.documentElement;
+        if (scrollContainer.scrollTop <= 0) {
+            pStartY = e.touches[0].clientY;
+            pIsPulling = true;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!pIsPulling) return;
+        const y = e.touches[0].clientY;
+        const dy = y - pStartY;
+        
+        // 밑으로 당길 때만 스피너가 손가락을 따라 내려옴 (최대 150px)
+        if (dy > 0 && dy < 150) { 
+            pSpinner.style.transition = 'none'; 
+            pSpinner.style.top = `${dy - 60}px`;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+        if (!pIsPulling) return;
+        pIsPulling = false;
+        pSpinner.style.transition = 'all 0.3s ease'; // 놓을 때는 부드럽게 애니메이션
+        
+        const y = e.changedTouches[0].clientY;
+        const dy = y - pStartY;
+        
+        // 80px 이상 충분히 당겼으면 동기화(새로고침) 실행!
+        if (dy > 80) { 
+            pSpinner.style.top = '20px'; // 스피너 고정
+            
+            if(currentUser) {
+                db.collection('users').doc(currentUser.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if(data.categories) categories = data.categories; 
+                        if(data.trackerColors) trackerColors = data.trackerColors;
+                        if(data.allTasks) allTasks = data.allTasks; 
+                        if(data.multiTasks) multiTasks = data.multiTasks;
+                        if(data.dailyRecords) dailyRecords = data.dailyRecords; 
+                        if(data.inboxTasks) inboxTasks = data.inboxTasks;
+                        if(data.weeklyMemos) weeklyMemos = data.weeklyMemos; 
+                        if(data.weeklyHabits) weeklyHabits = data.weeklyHabits;
+                        if(data.extendedMemos) extendedMemos = data.extendedMemos; 
+                        if(data.memo !== undefined && $('memoArea')) $('memoArea').value = data.memo;
+                    }
+                    
+                    // 🔥 핵심: 타이머(timerState)는 절대 건드리지 않고 화면 UI만 최신화!
+                    renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
+                    buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
+                    renderTimerHistory(); renderHabits(); 
+                    
+                    // 0.5초 뒤에 뱅글뱅글 스피너 숨기기
+                    setTimeout(() => { pSpinner.style.top = '-60px'; }, 500);
+                }).catch(e => {
+                    console.error("동기화 실패:", e);
+                    setTimeout(() => { pSpinner.style.top = '-60px'; }, 500);
+                });
+            } else {
+                pSpinner.style.top = '-60px';
+            }
+        } else {
+            // 살짝 당기다 말았으면 스피너 원상복구
+            pSpinner.style.top = '-60px'; 
+        }
+    }, { passive: true });
     
   </script>
 </body>
