@@ -148,18 +148,15 @@
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
             <span id="userProfileName" class="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg"></span>
-            
             <button id="adminBtn" onclick="openAdminModal()" class="hidden text-[10px] md:text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200 px-2.5 py-1.5 rounded-lg hover:bg-purple-200 transition shadow-sm">👑 관리자</button>
-            
             <button onclick="logout()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition px-2">로그아웃</button>
         </div>
         <div class="flex gap-2">
-            <div class="flex gap-2">
-    <button onclick="openLedger()" class="text-[10px] font-bold bg-[#facc15] text-black border border-[#facc15] px-3 py-1.5 rounded-lg shadow-sm hover:bg-yellow-500 transition flex items-center gap-1">💰 가계부</button>
-    <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 수동 백업</button>
-</div>
-      </div>
-
+            <button onclick="openLedger()" class="text-[10px] font-bold bg-[#facc15] text-black border border-[#facc15] px-3 py-1.5 rounded-lg shadow-sm hover:bg-yellow-500 transition flex items-center gap-1">💰 가계부</button>
+            <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 수동 백업</button>
+        </div>
+      </div> <!-- 🔥 드디어 박스가 정상적으로 닫혔습니다! -->
+      
       <div class="flex items-center gap-2 mb-6 pb-1">
         <span class="text-[10px] font-bold text-black flex-shrink-0 mr-1 uppercase">Filter:</span>
         <div id="filterBar" class="flex gap-1.5 no-scrollbar overflow-x-auto"></div>
