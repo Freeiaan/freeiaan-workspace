@@ -590,6 +590,8 @@
     const $ = id => document.getElementById(id);
     const getDateKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
     const hexToRgba = (hex, a) => { if(!hex || typeof hex !== 'string' || hex.length < 7) return 'transparent'; const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `rgba(${r},${g},${b},${a})`; };
+    // 🔥 배경색 밝기를 계산해서 폰트 색상을 #000000(검정) 또는 #ffffff(흰색)으로 자동 반환해 주는 함수
+    const getContrastColor = (hex) => { if (!hex) return '#000000'; const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000; return (yiq >= 128) ? '#000000' : '#ffffff'; };
     function getStartOfWeek(date) { const d = new Date(date); const diff = d.getDate() - d.getDay(); return new Date(d.setDate(diff)); }
     const isDateBetween = (d, s, e) => { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; };
 
@@ -626,7 +628,7 @@
         if (!currentUser) return;
         clearTimeout(syncTimeout);
         syncTimeout = setTimeout(() => {
-            const dataToSave = { categories, trackerColors, allTasks, multiTasks, dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos, memo: $('memoArea') ? $('memoArea').value : '' };
+            const dataToSave = { categories, trackerColors, allTasks, multiTasks, dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos, memo: $('memoArea') ? $('memoArea').value : '', lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '' };
             db.collection('users').doc(currentUser.uid).set(dataToSave).catch(e => console.error('☁️ 저장 실패:', e));
         }, 1500);
     }
@@ -660,7 +662,6 @@
             }
 
             loadFromCloud(); 
-            checkNotice();
             
             // 🔥 [수정됨] 로그인/새로고침 직후, 마지막으로 보던 탭을 열어줍니다! (없으면 home)
             if (window.innerWidth < 768) {
@@ -789,7 +790,8 @@
     function closeNotice() {
         const version = $('noticeModal').dataset.currentVersion;
         if (version) {
-            localStorage.setItem('ianLastNoticeVersion', version); // 다신 안 뜨게 로컬스토리지에 도장 쾅!
+            localStorage.setItem('ianLastNoticeVersion', version); // 로컬에 도장 쾅!
+            syncToCloud(); // 🔥 클라우드(구글 계정)에도 "나 이거 읽었어!" 하고 즉시 동기화!
         }
         $('noticeModal').classList.add('hidden');
     }
@@ -804,11 +806,16 @@
                 if(data.dailyRecords) dailyRecords = data.dailyRecords; if(data.inboxTasks) inboxTasks = data.inboxTasks;
                 if(data.weeklyMemos) weeklyMemos = data.weeklyMemos; if(data.weeklyHabits) weeklyHabits = data.weeklyHabits;
                 if(data.extendedMemos) extendedMemos = data.extendedMemos; if(data.memo !== undefined) localStorage.setItem('ianMemo', data.memo);
-            } else { syncToCloud(); }
-            initAppRenders(); 
-            $('loadingScreen').classList.add('hidden');
-        }).catch(err => { console.error(err); initAppRenders(); $('loadingScreen').classList.add('hidden'); });
-    }
+            // 🔥 계정에 저장된 공지사항 읽음 기록 가져오기
+            if(data.lastNoticeVersion) localStorage.setItem('ianLastNoticeVersion', data.lastNoticeVersion);
+        } else { syncToCloud(); }
+        initAppRenders(); 
+        $('loadingScreen').classList.add('hidden');
+        
+        // 🔥 데이터를 완벽히 다 불러온 후에 공지사항 띄울지 말지 체크!
+        checkNotice(); 
+    }).catch(err => { console.error(err); initAppRenders(); $('loadingScreen').classList.add('hidden'); });
+}
 
     let currentWeekKey = null, currentExtMemoIndex = null, currentPlannerDateKey = null, isHabitEditMode = false;
     let selectedFilters = new Set(['all']), displayDate = new Date();
@@ -1558,9 +1565,15 @@
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
               const item = document.createElement('div'); item.draggable = true; 
               item.className = 'todo-item text-[10px] md:text-[11px] truncate px-0.5 md:px-1 rounded flex items-start md:items-center w-full gap-0 md:gap-1.5';
-              const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+              const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : ''; 
               
-              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0"> <span class="${isCheckedClass} truncate leading-tight md:leading-none pt-px md:pt-0 tracking-tighter md:tracking-normal" style="color: ${colorStyle};">${t.text}</span>`;
+              // 🔥 기존에는 글자색(colorStyle)으로 썼던 걸 배경색(bgColor)으로 변경합니다!
+              const bgColor = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+              // 🔥 위에서 만든 색상 판독기를 돌려서 글자색(fontColor)을 알아냅니다!
+              const fontColor = getContrastColor(cat.color);
+              
+              // span 태그에 background-color, color, 그리고 라벨처럼 예쁘게 보이도록 px-1.5, py-0.5, rounded-md 속성을 추가했어요.
+              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1" style="background-color: ${bgColor}; color: ${fontColor};">${t.text}</span>`;
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
               item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; 
