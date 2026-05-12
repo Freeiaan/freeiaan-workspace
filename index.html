@@ -83,7 +83,7 @@
     @media (max-width: 767px) {
       body { background-color: #faf8f5 !important; }
       #mainApp { padding-bottom: 80px !important; }
-      #mainApp > div:first-child, #mainApp > div:last-child, #dashboardDrawer, #mobileHabitSection { display: none !important; }
+      #mainApp > div:first-child, #mainApp > div:last-child, #dashboardDrawer, #mobileHabitSection, #mobileMemoSection { display: none !important; }
       button[onclick="toggleDrawer()"] { display: none !important; }
 
       body[data-mobile-tab="home"] #dashboardDrawer { display: flex !important; position: relative !important; transform: none !important; width: 100% !important; height: 100vh !important; box-shadow: none !important; border: none !important; z-index: 10; }
@@ -108,6 +108,7 @@
       #timerHistoryContainer { display: flex !important; }
 
       body[data-mobile-tab="habit"] #mobileHabitSection { display: flex !important; }
+      body[data-mobile-tab="memo"] #mobileMemoSection { display: flex !important; }
 
       body.hide-weekends .weekend-col { display: none !important; }
       body.hide-weekends #calendarArea { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
@@ -295,12 +296,20 @@
       </div>
   </div>
 
-  <nav id="mobileTabBar" class="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between z-[5000] pb-6 pt-2 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
-      <button onclick="switchMobileTab('home')" id="tabBtn-home" class="mobile-tab-btn active"><span class="text-[22px] mb-1">🏠</span><span>홈</span></button>
-      <button onclick="switchMobileTab('calendar')" id="tabBtn-calendar" class="mobile-tab-btn"><span class="text-[22px] mb-1">📅</span><span>캘린더</span></button>
-      <button onclick="switchMobileTab('timer')" id="tabBtn-timer" class="mobile-tab-btn"><span class="text-[22px] mb-1">⏱️</span><span>타이머</span></button>
-      <button onclick="switchMobileTab('habit')" id="tabBtn-habit" class="mobile-tab-btn"><span class="text-[22px] mb-1">🔥</span><span>해빗</span></button>
-  </nav>
+  <div id="mobileMemoSection" class="hidden flex-col w-full h-[100vh] bg-[#faf8f5] p-6 pb-24 overflow-y-auto">
+      <div class="flex justify-between items-center mb-8 pt-4">
+          <h2 class="text-3xl font-black text-gray-800 tracking-tight">Memo Box 📁</h2>
+      </div>
+      <div id="memoFolderGrid" class="grid grid-cols-2 gap-4"></div>
+  </div>
+
+  <nav id="mobileTabBar" class="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-between z-[5000] pb-6 pt-2 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+      <button onclick="switchMobileTab('home')" id="tabBtn-home" class="mobile-tab-btn active"><span class="text-[22px] mb-1">🏠</span><span>홈</span></button>
+      <button onclick="switchMobileTab('calendar')" id="tabBtn-calendar" class="mobile-tab-btn"><span class="text-[22px] mb-1">📅</span><span>캘린더</span></button>
+      <button onclick="switchMobileTab('timer')" id="tabBtn-timer" class="mobile-tab-btn"><span class="text-[22px] mb-1">⏱️</span><span>타이머</span></button>
+      <button onclick="switchMobileTab('habit')" id="tabBtn-habit" class="mobile-tab-btn"><span class="text-[22px] mb-1">🔥</span><span>해빗</span></button>
+      <button onclick="switchMobileTab('memo')" id="tabBtn-memo" class="mobile-tab-btn"><span class="text-[22px] mb-1">📁</span><span>메모</span></button>
+  </nav>
 
   <div id="mobileQuickMenu">
       <button class="quick-menu-btn add" onclick="handleQuickAdd()">✨ 일반 일정 추가</button>
@@ -1618,16 +1627,18 @@
     };
 
     function switchMobileTab(tabName) {
-        if (window.innerWidth >= 768) return; 
-        document.querySelectorAll('.mobile-tab-btn').forEach(btn => btn.classList.remove('active'));
-        const activeBtn = $('tabBtn-' + tabName); if(activeBtn) activeBtn.classList.add('active');
-        document.body.setAttribute('data-mobile-tab', tabName);
-        
-        if (tabName === 'home') $('dashboardDrawer').style.display = 'flex';
-        else $('dashboardDrawer').style.display = 'none';
-        
-        renderCalendar();
-    }
+        if (window.innerWidth >= 768) return; 
+        document.querySelectorAll('.mobile-tab-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = $('tabBtn-' + tabName); if(activeBtn) activeBtn.classList.add('active');
+        document.body.setAttribute('data-mobile-tab', tabName);
+        
+        if (tabName === 'home') $('dashboardDrawer').style.display = 'flex';
+        else $('dashboardDrawer').style.display = 'none';
+        
+        // 탭 누를 때마다 화면 갱신
+        if (tabName === 'memo' && typeof renderMemoFolders === 'function') renderMemoFolders();
+        renderCalendar();
+    }
 
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 768) {
