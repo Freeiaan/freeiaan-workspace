@@ -1234,22 +1234,27 @@ function renderTimeGrid(dateKey) {
                 const rowStartIdx = (h - 5) * 6;
                 const rowEndIdx = rowStartIdx + 5;
 
-                // 해당 줄이 전체 일정의 중간 지점인 경우에만 텍스트 노출
                 if (midIdx >= rowStartIdx && midIdx <= rowEndIdx) {
                     const overlay = document.createElement('div'); 
-                    overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10 w-full';
+                    overlay.className = 'absolute top-0 bottom-0 flex items-center pointer-events-none z-10 w-full';
+                    
                     const midInRow = midIdx % 6;
                     const leftPercent = (midInRow / 6) * 100;
-                    overlay.style.left = `0`; 
-                    overlay.style.width = `100%`;
+                    
+                    // 🔥 화살표가 색칠된 영역의 실제 끝에 위치하도록 정밀 계산
+                    const startInRow = totalStartIdx % 6;
+                    const endInRow = totalEndIdx % 6;
+                    const startPos = (startInRow / 6) * 100;
+                    const endPos = ((endInRow + 1) / 6) * 100;
+
                     overlay.innerHTML = `
-                        <div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div>
-                        <div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}">
+                        <div class="absolute h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}; left: ${totalStartIdx >= rowStartIdx ? startPos : 0}%; right: ${totalEndIdx <= rowEndIdx ? (100 - endPos) : 0}%"></div>
+                        <div class="absolute flex justify-between items-center text-[10px] z-0" style="color: ${seg.color}; left: ${totalStartIdx >= rowStartIdx ? startPos : 0}%; right: ${totalEndIdx <= rowEndIdx ? (100 - endPos) : 0}%">
                             <span>${totalStartIdx >= rowStartIdx ? '◀' : ''}</span>
                             <span>${totalEndIdx <= rowEndIdx ? '▶' : ''}</span>
                         </div>
                         <div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" 
-                             style="color: ${seg.color}; border-color: ${seg.color}; margin-left: ${leftPercent}%">
+                             style="color: ${seg.color}; border-color: ${seg.color}; margin: 0 auto;">
                             ${segText}
                         </div>`;
                     cellContainer.appendChild(overlay);
