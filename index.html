@@ -1127,47 +1127,58 @@
       activeBrushColor = color; document.querySelectorAll('#plannerTaskList > div.brush-item').forEach(el => { el.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); el.classList.add('border-transparent'); }); element.classList.remove('border-transparent'); element.classList.add('bg-white', 'shadow-md', 'border-gray-200');
     }
 
-    function renderTimeGrid(dateKey) {
-      const container = $('timeGrid'); container.innerHTML = ''; const data = dailyRecords[dateKey].grid; const labels = dailyRecords[dateKey].labels || {};
+function renderTimeGrid(dateKey) {
+      const container = $('timeGrid'); 
+      container.innerHTML = ''; 
+      const data = dailyRecords[dateKey].grid; 
+      const labels = dailyRecords[dateKey].labels || {};
+
       for(let h = 5; h < 29; h++) {
-        const realH = h % 24; const row = document.createElement('div'); row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
-        const hourLabel = document.createElement('div'); hourLabel.className = 'w-10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 border-r border-[#e6e2d8] bg-[#fdfbf7]'; hourLabel.textContent = String(realH).padStart(2, '0'); row.appendChild(hourLabel);
-        const cellContainer = document.createElement('div'); cellContainer.className = 'flex flex-1 relative';
-        let currentSegment = null; let segments = [];
+        const realH = h % 24; 
+        const row = document.createElement('div'); 
+        row.className = 'flex border-b border-[#e6e2d8] h-[26px] relative';
+        
+        const hourLabel = document.createElement('div'); 
+        hourLabel.className = 'w-10 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 border-r border-[#e6e2d8] bg-[#fdfbf7]'; 
+        hourLabel.textContent = String(realH).padStart(2, '0'); 
+        row.appendChild(hourLabel);
+
+        const cellContainer = document.createElement('div'); 
+        cellContainer.className = 'flex flex-1 relative';
+        
+        let currentSegment = null; 
+        let segments = [];
         
         for(let m = 0; m < 6; m++) {
-          const idx = (h - 5) * 6 + m; const color = data[idx];
-          if (color) {
-              const hasLabel = labels && labels[idx];
-              // 🔥 [수정됨] 색이 다르거나, 새로운 라벨(텍스트)이 있으면 블록을 분리합니다!
-              if (!currentSegment || currentSegment.color !== color || hasLabel) {
-                  if (currentSegment) segments.push(currentSegment);
-                  currentSegment = { start: m, end: m, color: color, idxs: [idx] };
-              } else {
-                  currentSegment.end = m; currentSegment.idxs.push(idx);
-              }
-          } else {
-              if (currentSegment) { segments.push(currentSegment); currentSegment = null; }
+          const idx = (h - 5) * 6 + m; 
+          const color = data[idx];
+          const hasLabel = labels && labels[idx];
+
+          // 1. 색이 다르거나 새로운 라벨이 있으면 블록을 분리하는 로직
+          if (color) { 
+            if (!currentSegment || currentSegment.color !== color || hasLabel) { 
+              if (currentSegment) segments.push(currentSegment); 
+              currentSegment = { start: m, end: m, color: color, idxs: [idx] }; 
+            } else { 
+              currentSegment.end = m; 
+              currentSegment.idxs.push(idx); 
+            } 
+          } else { 
+            if (currentSegment) { segments.push(currentSegment); currentSegment = null; } 
           }
           
-          const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
+          const cell = document.createElement('div'); 
+          cell.id = `time-cell-${idx}`; 
+          cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; 
+          if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
           
           let pressTimer = null;
           
           cell.onpointerdown = (e) => { 
-              // PC 마우스 드래그 끊김 방지 (포인터 캡처 해제)
-              if (cell.hasPointerCapture(e.pointerId)) {
-                  cell.releasePointerCapture(e.pointerId);
-              }
-              
+              if (cell.hasPointerCapture(e.pointerId)) { cell.releasePointerCapture(e.pointerId); }
               dragStartIdx = idx; dragHasMoved = false; dragAction = data[idx] ? 'erase' : 'paint';
-              
-              if (e.pointerType === 'mouse') {
-                  e.preventDefault(); 
-                  isPainting = true;
-                  // ❌ 문제의 원인 제거! 누르자마자 강제로 칠하는 코드를 빼서 '클릭'과 '드래그'를 완벽히 구분하게 만듭니다.
-              } 
+              if (e.pointerType === 'mouse') { e.preventDefault(); isPainting = true; } 
               else {
                   pressTimer = setTimeout(() => { 
                       isPainting = true; 
@@ -1186,7 +1197,6 @@
           
           cell.onpointerenter = (e) => { 
               if(isPainting && e.pointerType === 'mouse') { 
-                  // 마우스가 옆 칸으로 넘어갈 때 비로소 '시작 칸'과 '현재 칸'을 칠합니다 (진짜 드래그 시작)
                   if (!dragHasMoved) { 
                       applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
                       dragHasMoved = true; 
@@ -1199,39 +1209,61 @@
               if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
               if (isPainting) { 
                   if (!dragHasMoved) { 
-                      // ✨ 바로 이 부분! 드래그 없이 제자리 클릭만 했을 때 ✨
-                      if (data[idx]) openTimeBlockModal(idx, dateKey); // 이미 색이 있으면 일정 입력 모달 열기!
-                      else applyBrushToCell(idx, cell); // 빈 칸이면 한 칸만 색칠하기
+                      if (data[idx]) openTimeBlockModal(idx, dateKey); 
+                      else applyBrushToCell(idx, cell); 
                   } 
                   isPainting = false; 
-                  setTimeout(() => {
-                      if (currentPlannerDateKey) { 
-                          renderTimeGrid(currentPlannerDateKey); 
-                          if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); 
-                      }
-                  }, 10);
+                  setTimeout(() => { if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); }, 10);
               } 
-          };
-          
-          cell.onpointercancel = () => { 
-              if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
-              isPainting = false; 
           };
           
           cellContainer.appendChild(cell);
         }
         
         if (currentSegment) segments.push(currentSegment);
+        
+        // 2. [중앙 정렬 로직 적용] 줄바꿈 시에도 전체 일정의 중앙에 글자가 오게 합니다.
         segments.forEach(seg => {
-           let segText = ''; seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
-           if(segText) {
-               const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10 w-full';
-               const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100; overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
-               overlay.innerHTML = `<div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
-               cellContainer.appendChild(overlay);
-           }
+            let segText = ''; 
+            seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
+            
+            if(segText) {
+                const totalStartIdx = seg.idxs[0];
+                const totalEndIdx = seg.idxs[seg.idxs.length - 1];
+                const midIdx = Math.floor((totalStartIdx + totalEndIdx) / 2);
+                const rowStartIdx = (h - 5) * 6;
+                const rowEndIdx = rowStartIdx + 5;
+
+                // 해당 줄이 전체 일정의 중간 지점인 경우에만 텍스트 노출
+                if (midIdx >= rowStartIdx && midIdx <= rowEndIdx) {
+                    const overlay = document.createElement('div'); 
+                    overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-10 w-full';
+                    const midInRow = midIdx % 6;
+                    const leftPercent = (midInRow / 6) * 100;
+                    overlay.style.left = `0`; 
+                    overlay.style.width = `100%`;
+                    overlay.innerHTML = `
+                        <div class="absolute w-full h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div>
+                        <div class="absolute w-full flex justify-between items-center text-[10px] z-0 px-0.5" style="color: ${seg.color}">
+                            <span>${totalStartIdx >= rowStartIdx ? '◀' : ''}</span>
+                            <span>${totalEndIdx <= rowEndIdx ? '▶' : ''}</span>
+                        </div>
+                        <div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" 
+                             style="color: ${seg.color}; border-color: ${seg.color}; margin-left: ${leftPercent}%">
+                            ${segText}
+                        </div>`;
+                    cellContainer.appendChild(overlay);
+                } else {
+                    // 글자가 없는 다른 줄에는 가이드 선만 표시
+                    const lineOnly = document.createElement('div');
+                    lineOnly.className = 'absolute top-0 bottom-0 flex items-center pointer-events-none z-10 w-full';
+                    lineOnly.innerHTML = `<div class="w-full h-[2px] opacity-30" style="background-color: ${seg.color}"></div>`;
+                    cellContainer.appendChild(lineOnly);
+                }
+            }
         });
-        row.appendChild(cellContainer); container.appendChild(row);
+        row.appendChild(cellContainer); 
+        container.appendChild(row);
       }
     }
 
