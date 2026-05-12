@@ -70,7 +70,7 @@
     .time-cell:hover { background-color: rgba(0,0,0,0.05); }
     @media (max-width: 768px) { .group-cell { min-height: 100px !important; } }
     
-    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-center; font-size: 10px; color: #9ca3af; padding: 4px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+    .mobile-tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #9ca3af; padding: 4px 0; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
     .mobile-tab-btn.active { color: #22741C; font-weight: 900; }
     .mobile-tab-btn.active span:first-child { transform: translateY(-2px); transition: transform 0.2s; }
 
@@ -87,7 +87,9 @@
       button[onclick="toggleDrawer()"] { display: none !important; }
 
       body[data-mobile-tab="home"] #dashboardDrawer { display: flex !important; position: relative !important; transform: none !important; width: 100% !important; height: 100vh !important; box-shadow: none !important; border: none !important; z-index: 10; }
-      body[data-mobile-tab="home"] #mainApp { display: none !important; }
+      body[data-mobile-tab="home"] #mainApp,
+      body[data-mobile-tab="habit"] #mainApp,
+      body[data-mobile-tab="memo"] #mainApp { display: none !important; }
       body[data-mobile-tab="home"] #dashboardDrawer > div:first-child { display: none !important; } 
       
       .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; height: 260px !important; overflow: hidden !important; }
@@ -1773,33 +1775,43 @@
     }, { passive: true });
 
     // 📁 모바일 폴더형 메모장 렌더링 함수
-    function renderMemoFolders() {
-        const grid = document.getElementById('memoFolderGrid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        
-        const colors = ['#DEFF9A', '#DAFFDE', '#BCC6D0', '#F9FAF1'];
-        
-        extendedMemos.forEach((memo, i) => {
-            const color = colors[i % colors.length];
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative cursor-pointer flex flex-col items-center justify-center transition-transform active:scale-95';
-            card.style.aspectRatio = '1 / 1';
-            
-            card.innerHTML = `
-                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style="background-color: ${hexToRgba(color, 0.4)}">
-                    <span class="text-2xl">📁</span>
-                </div>
-                <span class="font-bold text-gray-800 text-[13px] text-center w-full truncate px-1">${memo.title || '메모 ' + (i+1)}</span>
-                <button onclick="event.stopPropagation(); renameFolder(${i})" class="absolute top-4 right-4 p-2 text-gray-300 hover:text-gray-500 transition-colors">
-                    <span class="text-[12px]">✏️</span>
-                </button>
-            `;
-            
-            card.onclick = () => openExtendedMemo(i); 
-            grid.appendChild(card);
-        });
+function renderMemoFolders() {
+    const grid = document.getElementById('memoFolderGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    // 🔥 [추가된 안전장치] 데이터가 지워졌거나 비어있을 때 기본 폴더 4개를 강제로 생성합니다!
+    if (!extendedMemos || extendedMemos.length === 0) {
+        extendedMemos = [
+            {title:'메모 1', content:''},
+            {title:'메모 2', content:''},
+            {title:'메모 3', content:''},
+            {title:'메모 4', content:''}
+        ];
     }
+    
+    const colors = ['#DEFF9A', '#DAFFDE', '#BCC6D0', '#F9FAF1'];
+    
+    extendedMemos.forEach((memo, i) => {
+        const color = colors[i % colors.length];
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative cursor-pointer flex flex-col items-center justify-center transition-transform active:scale-95';
+        card.style.aspectRatio = '1 / 1';
+        
+        card.innerHTML = `
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style="background-color: ${hexToRgba(color, 0.4)}">
+                <span class="text-2xl">📁</span>
+            </div>
+            <span class="font-bold text-gray-800 text-[13px] text-center w-full truncate px-1">${memo.title || '메모 ' + (i+1)}</span>
+            <button onclick="event.stopPropagation(); renameFolder(${i})" class="absolute top-4 right-4 p-2 text-gray-300 hover:text-gray-500 transition-colors">
+                <span class="text-[12px]">✏️</span>
+            </button>
+        `;
+        
+        card.onclick = () => openExtendedMemo(i); 
+        grid.appendChild(card);
+    });
+}
 
     // ✏️ 폴더 이름 변경 함수
     function renameFolder(index) {
