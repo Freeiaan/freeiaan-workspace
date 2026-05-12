@@ -1803,7 +1803,7 @@
 
     // ✏️ 폴더 이름 변경 함수
     function renameFolder(index) {
-        const currentName = extendedMemos[index].title || \`메모 \${index + 1}\`;
+        const currentName = extendedMemos[index].title || `메모 ${index + 1}`;
         const newName = prompt("폴더 이름을 변경하세요:", currentName);
         if(newName !== null && newName.trim() !== '') {
             extendedMemos[index].title = newName.trim();
