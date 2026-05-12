@@ -881,11 +881,6 @@
             $('loadingScreen').classList.add('hidden'); 
         });
     }
-        
-        // 🔥 데이터를 완벽히 다 불러온 후에 공지사항 띄울지 말지 체크!
-        checkNotice(); 
-    }).catch(err => { console.error(err); initAppRenders(); $('loadingScreen').classList.add('hidden'); });
-}
 
     let currentWeekKey = null, currentExtMemoIndex = null, currentPlannerDateKey = null, isHabitEditMode = false;
     let selectedFilters = new Set(['all']), displayDate = new Date();
