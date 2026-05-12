@@ -827,14 +827,17 @@
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
     function initAppRenders() {
-        window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
-        renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
-        updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
-        renderTimerHistory(); renderHabits(); loadTimerState(); 
-        renderMemoFolders(); // 🔥 추가됨: 모바일 메모 폴더 그리기!
-        const memoArea = $('memoArea'); 
-        if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
-    }
+        window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
+        renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
+        updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
+        renderTimerHistory(); renderHabits(); loadTimerState(); 
+        
+        // 🔥 바로 이 부분! 이거 꼭 추가해야 모바일에서 예쁜 폴더 4개가 보입니다!
+        renderMemoFolders(); 
+
+        const memoArea = document.getElementById('memoArea'); 
+        if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
+    }
 
     function toggleDrawer() { const drawer = $('dashboardDrawer'); drawer.classList.toggle('translate-x-full'); }
     function openAnalytics() { analyticsDate = new Date(); analyticsMode = 'month'; $('analyticsModal').classList.remove('hidden'); renderAnalyticsTabs(); }
@@ -1771,17 +1774,15 @@
 
     // 📁 모바일 폴더형 메모장 렌더링 함수
     function renderMemoFolders() {
-        const grid = $('memoFolderGrid');
+        const grid = document.getElementById('memoFolderGrid');
         if (!grid) return;
         grid.innerHTML = '';
         
-        // 폴더 배경색 4가지 (이안님 스케줄러 컬러톤 맞춤)
         const colors = ['#DEFF9A', '#DAFFDE', '#BCC6D0', '#F9FAF1'];
         
         extendedMemos.forEach((memo, i) => {
             const color = colors[i % colors.length];
             const card = document.createElement('div');
-            // 정사각형 비율과 예쁜 그림자, 클릭 애니메이션 적용
             card.className = 'bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative cursor-pointer flex flex-col items-center justify-center transition-transform active:scale-95';
             card.style.aspectRatio = '1 / 1';
             
@@ -1795,7 +1796,6 @@
                 </button>
             `;
             
-            // 폴더 클릭 시 기존의 확장 메모 모달(PC버전 메모창) 띄우기
             card.onclick = () => openExtendedMemo(i); 
             grid.appendChild(card);
         });
@@ -1808,8 +1808,8 @@
         if(newName !== null && newName.trim() !== '') {
             extendedMemos[index].title = newName.trim();
             setLocal('ianExtendedMemos', extendedMemos);
-            renderMemoFolders();     // 모바일 탭 폴더 업데이트
-            renderExtMemoButtons();  // PC버전(대시보드) 메모 버튼 이름도 동시 업데이트
+            renderMemoFolders();     
+            renderExtMemoButtons();  
         }
     }
     
