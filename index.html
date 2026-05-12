@@ -1779,25 +1779,32 @@ function renderMemoFolders() {
     const grid = document.getElementById('memoFolderGrid');
     if (!grid) return;
     grid.innerHTML = '';
-    
-    // 🔥 [추가된 안전장치] 데이터가 지워졌거나 비어있을 때 기본 폴더 4개를 강제로 생성합니다!
-    if (!extendedMemos || extendedMemos.length === 0) {
-        extendedMemos = [
-            {title:'메모 1', content:''},
-            {title:'메모 2', content:''},
-            {title:'메모 3', content:''},
-            {title:'메모 4', content:''}
-        ];
+
+    // 🔥 [초강력 방어코드] 파이어베이스에서 배열이 객체로 변형되어 들어오는 오류 완벽 차단!
+    let safeMemos = [];
+    if (Array.isArray(extendedMemos)) {
+        safeMemos = [...extendedMemos];
+    } else if (extendedMemos && typeof extendedMemos === 'object') {
+        // 만약 데이터가 깨져서 객체형태로 들어왔다면 강제로 배열로 쫙 펴줍니다!
+        safeMemos = Object.values(extendedMemos);
     }
-    
+
+    // 모자란 폴더 4개까지 무조건 강제로 채워넣기
+    while (safeMemos.length < 4) {
+        safeMemos.push({ title: '메모 ' + (safeMemos.length + 1), content: '' });
+    }
+
+    // 고쳐진 정상 배열을 전역 변수에 다시 덮어쓰기
+    extendedMemos = safeMemos;
+
     const colors = ['#DEFF9A', '#DAFFDE', '#BCC6D0', '#F9FAF1'];
-    
+
     extendedMemos.forEach((memo, i) => {
         const color = colors[i % colors.length];
         const card = document.createElement('div');
         card.className = 'bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative cursor-pointer flex flex-col items-center justify-center transition-transform active:scale-95';
         card.style.aspectRatio = '1 / 1';
-        
+
         card.innerHTML = `
             <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style="background-color: ${hexToRgba(color, 0.4)}">
                 <span class="text-2xl">📁</span>
@@ -1807,7 +1814,7 @@ function renderMemoFolders() {
                 <span class="text-[12px]">✏️</span>
             </button>
         `;
-        
+
         card.onclick = () => openExtendedMemo(i); 
         grid.appendChild(card);
     });
