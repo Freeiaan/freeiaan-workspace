@@ -1774,52 +1774,57 @@
         }
     }, { passive: true });
 
-    // 📁 모바일 폴더형 메모장 렌더링 함수
+    // 📁 모바일 폴더형 메모장 렌더링 함수 (에러 추적기 탑재 버전)
 function renderMemoFolders() {
-    const grid = document.getElementById('memoFolderGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    // 🔥 [초강력 방어코드] 파이어베이스에서 배열이 객체로 변형되어 들어오는 오류 완벽 차단!
-    let safeMemos = [];
-    if (Array.isArray(extendedMemos)) {
-        safeMemos = [...extendedMemos];
-    } else if (extendedMemos && typeof extendedMemos === 'object') {
-        // 만약 데이터가 깨져서 객체형태로 들어왔다면 강제로 배열로 쫙 펴줍니다!
-        safeMemos = Object.values(extendedMemos);
+    try {
+        const grid = document.getElementById('memoFolderGrid');
+        if (!grid) return;
+        
+        grid.innerHTML = '';
+        
+        let safeMemos = [];
+        if (Array.isArray(extendedMemos)) {
+            safeMemos = [...extendedMemos];
+        } else if (extendedMemos && typeof extendedMemos === 'object') {
+            safeMemos = Object.values(extendedMemos);
+        }
+        
+        while (safeMemos.length < 4) {
+            safeMemos.push({ title: '메모 ' + (safeMemos.length + 1), content: '' });
+        }
+        
+        extendedMemos = safeMemos;
+        const colors = ['#DEFF9A', '#DAFFDE', '#BCC6D0', '#F9FAF1'];
+        
+        extendedMemos.forEach((memo, i) => {
+            const color = colors[i % colors.length];
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative cursor-pointer flex flex-col items-center justify-center transition-transform active:scale-95';
+            card.style.aspectRatio = '1 / 1';
+            
+            card.innerHTML = `
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style="background-color: ${hexToRgba(color, 0.4)}">
+                    <span class="text-2xl">📁</span>
+                </div>
+                <span class="font-bold text-gray-800 text-[13px] text-center w-full truncate px-1">${memo.title || '메모 ' + (i+1)}</span>
+                <button onclick="event.stopPropagation(); renameFolder(${i})" class="absolute top-4 right-4 p-2 text-gray-300 hover:text-gray-500 transition-colors">
+                    <span class="text-[12px]">✏️</span>
+                </button>
+            `;
+            
+            card.onclick = () => openExtendedMemo(i); 
+            grid.appendChild(card);
+        });
+    } catch (error) {
+        // 🔥 에러가 발생하면 멈추지 말고 화면에 빨간 박스로 에러 내용을 강제로 출력합니다!
+        const grid = document.getElementById('memoFolderGrid');
+        if (grid) {
+            grid.innerHTML = '<div style="grid-column: span 2; padding: 20px; background: #fee2e2; color: #991b1b; border-radius: 12px; font-size: 13px; font-weight: bold; word-break: keep-all;">🚨 에러 원인: ' + error.message + '</div>';
+        } else {
+            alert('🚨 메모장 렌더링 에러: ' + error.message);
+        }
     }
-
-    // 모자란 폴더 4개까지 무조건 강제로 채워넣기
-    while (safeMemos.length < 4) {
-        safeMemos.push({ title: '메모 ' + (safeMemos.length + 1), content: '' });
-    }
-
-    // 고쳐진 정상 배열을 전역 변수에 다시 덮어쓰기
-    extendedMemos = safeMemos;
-
-    const colors = ['#DEFF9A', '#DAFFDE', '#BCC6D0', '#F9FAF1'];
-
-    extendedMemos.forEach((memo, i) => {
-        const color = colors[i % colors.length];
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative cursor-pointer flex flex-col items-center justify-center transition-transform active:scale-95';
-        card.style.aspectRatio = '1 / 1';
-
-        card.innerHTML = `
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style="background-color: ${hexToRgba(color, 0.4)}">
-                <span class="text-2xl">📁</span>
-            </div>
-            <span class="font-bold text-gray-800 text-[13px] text-center w-full truncate px-1">${memo.title || '메모 ' + (i+1)}</span>
-            <button onclick="event.stopPropagation(); renameFolder(${i})" class="absolute top-4 right-4 p-2 text-gray-300 hover:text-gray-500 transition-colors">
-                <span class="text-[12px]">✏️</span>
-            </button>
-        `;
-
-        card.onclick = () => openExtendedMemo(i); 
-        grid.appendChild(card);
-    });
 }
-
     // ✏️ 폴더 이름 변경 함수
     function renameFolder(index) {
         const currentName = extendedMemos[index].title || `메모 ${index + 1}`;
