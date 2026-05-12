@@ -1154,7 +1154,6 @@ function renderTimeGrid(dateKey) {
           const color = data[idx];
           const hasLabel = labels && labels[idx];
 
-          // 1. 색이 다르거나 새로운 라벨이 있으면 블록을 분리하는 로직
           if (color) { 
             if (!currentSegment || currentSegment.color !== color || hasLabel) { 
               if (currentSegment) segments.push(currentSegment); 
@@ -1222,50 +1221,57 @@ function renderTimeGrid(dateKey) {
         
         if (currentSegment) segments.push(currentSegment);
         
-        // 2. [중앙 정렬 로직 적용] 줄바꿈 시에도 전체 일정의 중앙에 글자가 오게 합니다.
+        // 🔥 [완벽 수정본] 전체 일정을 스캔해서 진짜 시작과 끝을 찾아냅니다!
         segments.forEach(seg => {
-            let segText = ''; 
-            seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
-            
-            if(segText) {
-                const totalStartIdx = seg.idxs[0];
-                const totalEndIdx = seg.idxs[seg.idxs.length - 1];
-                const midIdx = Math.floor((totalStartIdx + totalEndIdx) / 2);
-                const rowStartIdx = (h - 5) * 6;
-                const rowEndIdx = rowStartIdx + 5;
-
-                if (midIdx >= rowStartIdx && midIdx <= rowEndIdx) {
-                    const overlay = document.createElement('div'); 
-                    overlay.className = 'absolute top-0 bottom-0 flex items-center pointer-events-none z-10 w-full';
-                    
-                    const midInRow = midIdx % 6;
-                    const leftPercent = (midInRow / 6) * 100;
-                    
-                    // 🔥 화살표가 색칠된 영역의 실제 끝에 위치하도록 정밀 계산
-                    const startInRow = totalStartIdx % 6;
-                    const endInRow = totalEndIdx % 6;
-                    const startPos = (startInRow / 6) * 100;
-                    const endPos = ((endInRow + 1) / 6) * 100;
-
-                    overlay.innerHTML = `
-                        <div class="absolute h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}; left: ${totalStartIdx >= rowStartIdx ? startPos : 0}%; right: ${totalEndIdx <= rowEndIdx ? (100 - endPos) : 0}%"></div>
-                        <div class="absolute flex justify-between items-center text-[10px] z-0" style="color: ${seg.color}; left: ${totalStartIdx >= rowStartIdx ? startPos : 0}%; right: ${totalEndIdx <= rowEndIdx ? (100 - endPos) : 0}%">
-                            <span>${totalStartIdx >= rowStartIdx ? '◀' : ''}</span>
-                            <span>${totalEndIdx <= rowEndIdx ? '▶' : ''}</span>
-                        </div>
-                        <div class="relative bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" 
-                             style="color: ${seg.color}; border-color: ${seg.color}; margin: 0 auto;">
-                            ${segText}
-                        </div>`;
-                    cellContainer.appendChild(overlay);
-                } else {
-                    // 글자가 없는 다른 줄에는 가이드 선만 표시
-                    const lineOnly = document.createElement('div');
-                    lineOnly.className = 'absolute top-0 bottom-0 flex items-center pointer-events-none z-10 w-full';
-                    lineOnly.innerHTML = `<div class="w-full h-[2px] opacity-30" style="background-color: ${seg.color}"></div>`;
-                    cellContainer.appendChild(lineOnly);
-                }
+            // 1. 현재 색상 블록의 '진짜 시작점'과 '진짜 끝점'을 전체 데이터에서 찾습니다.
+            let trueStart = seg.idxs[0];
+            while (trueStart > 0 && data[trueStart - 1] === seg.color && !(labels && labels[trueStart])) {
+                trueStart--;
             }
+            let trueEnd = seg.idxs[seg.idxs.length - 1];
+            while (trueEnd < 143 && data[trueEnd + 1] === seg.color && !(labels && labels[trueEnd + 1])) {
+                trueEnd++;
+            }
+
+            // 진짜 라벨 텍스트 가져오기
+            let segText = labels[trueStart] ? labels[trueStart].text : '';
+            if (!segText) return;
+
+            const midIdx = Math.floor((trueStart + trueEnd) / 2);
+            const rowStartIdx = (h - 5) * 6;
+            const rowEndIdx = rowStartIdx + 5;
+
+            // 2. 현재 줄에서 그려질 선과 화살표의 위치를 계산합니다.
+            const startPos = (trueStart >= rowStartIdx) ? ((trueStart % 6) / 6 * 100) : 0;
+            const endPos = (trueEnd <= rowEndIdx) ? (((trueEnd % 6) + 1) / 6 * 100) : 100;
+            const widthPos = endPos - startPos;
+
+            const overlay = document.createElement('div'); 
+            overlay.className = 'absolute top-0 bottom-0 flex items-center pointer-events-none z-10 w-full';
+            
+            let innerHTML = `
+                <div class="absolute h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}; left: ${startPos}%; width: ${widthPos}%"></div>
+                <div class="absolute flex justify-between items-center text-[10px] z-0" style="color: ${seg.color}; left: ${startPos}%; width: ${widthPos}%">
+                    <span style="transform: translateX(-2px)">${trueStart >= rowStartIdx ? '◀' : ''}</span>
+                    <span style="transform: translateX(2px)">${trueEnd <= rowEndIdx ? '▶' : ''}</span>
+                </div>
+            `;
+
+            // 3. 텍스트는 오직 '전체 블록의 정중앙'이 속한 줄에만 그립니다.
+            if (midIdx >= rowStartIdx && midIdx <= rowEndIdx) {
+                const midInRow = midIdx % 6;
+                // 칸의 중앙에 정확히 위치하도록 절대 위치로 계산
+                const leftPercent = (midInRow / 6) * 100 + (100 / 12);
+                
+                innerHTML += `
+                    <div class="absolute bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" 
+                         style="color: ${seg.color}; border-color: ${seg.color}; left: ${leftPercent}%; transform: translateX(-50%);">
+                        ${segText}
+                    </div>`;
+            }
+
+            overlay.innerHTML = innerHTML;
+            cellContainer.appendChild(overlay);
         });
         row.appendChild(cellContainer); 
         container.appendChild(row);
