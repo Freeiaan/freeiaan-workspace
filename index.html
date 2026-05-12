@@ -909,6 +909,9 @@
     function toggleDrawer() { const drawer = $('dashboardDrawer'); drawer.classList.toggle('translate-x-full'); }
     function openAnalytics() { analyticsDate = new Date(); analyticsMode = 'month'; $('analyticsModal').classList.remove('hidden'); renderAnalyticsTabs(); }
     function closeAnalytics() { $('analyticsModal').classList.add('hidden'); }
+    function openLedger() { 
+        $('ledgerModal').classList.remove('hidden'); 
+    }
     window.changeAnalyticsMonth = function(dir) { analyticsDate.setMonth(analyticsDate.getMonth() + dir); analyticsMode = 'month'; renderAnalyticsTabs(); }
 
     function getMonthWeeks(year, month) {
