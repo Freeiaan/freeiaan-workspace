@@ -662,8 +662,11 @@
             loadFromCloud(); 
             checkNotice();
             
-            // 모바일일 경우 로그인 직후에 홈 화면을 명시적으로 다시 그려주기
-            if (window.innerWidth < 768) switchMobileTab('home');
+            // 🔥 [수정됨] 로그인/새로고침 직후, 마지막으로 보던 탭을 열어줍니다! (없으면 home)
+            if (window.innerWidth < 768) {
+                const lastTab = localStorage.getItem('ianLastTab') || 'home';
+                switchMobileTab(lastTab);
+            }
 
         } else {
             currentUser = null;
@@ -1626,19 +1629,21 @@
     };
 
     function switchMobileTab(tabName) {
-        if (window.innerWidth >= 768) return; 
-        document.querySelectorAll('.mobile-tab-btn').forEach(btn => btn.classList.remove('active'));
-        const activeBtn = $('tabBtn-' + tabName); if(activeBtn) activeBtn.classList.add('active');
-        document.body.setAttribute('data-mobile-tab', tabName);
-        
-        if (tabName === 'home') $('dashboardDrawer').style.display = 'flex';
-        else $('dashboardDrawer').style.display = 'none';
-        
+        if (window.innerWidth >= 768) return; 
+        document.querySelectorAll('.mobile-tab-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = $('tabBtn-' + tabName); if(activeBtn) activeBtn.classList.add('active');
+        document.body.setAttribute('data-mobile-tab', tabName);
+        
+        // 🔥 [추가됨] 현재 보고 있는 탭의 이름을 브라우저에 꾹 저장합니다!
+        localStorage.setItem('ianLastTab', tabName);
+        
+        if (tabName === 'home') $('dashboardDrawer').style.display = 'flex';
+        else $('dashboardDrawer').style.display = 'none';
+        
         // 탭 누를 때마다 화면 갱신
         if (tabName === 'memo' && typeof renderMemoFolders === 'function') renderMemoFolders();
-        renderCalendar();
-    }
-
+        renderCalendar();
+    }
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 768) {
             document.body.removeAttribute('data-mobile-tab');
@@ -1646,10 +1651,16 @@
             const secT = $('dpSectionTracker'), secN = $('dpSectionNotes');
             if(secT && secN) { secT.classList.replace('hidden', 'flex'); secN.classList.replace('hidden', 'flex'); }
         } else if (window.innerWidth < 768 && !document.body.getAttribute('data-mobile-tab')) {
-            switchMobileTab('home');
+            // 🔥 [수정됨] 화면 크기가 변할 때도 마지막 탭 기억하기
+            const lastTab = localStorage.getItem('ianLastTab') || 'home';
+            switchMobileTab(lastTab);
         }
     });
-    if (window.innerWidth < 768) switchMobileTab('home');
+    // 🔥 [수정됨] 맨 처음 로드될 때 무조건 home이 아니라 마지막 탭으로 이동!
+    if (window.innerWidth < 768) {
+        const lastTab = localStorage.getItem('ianLastTab') || 'home';
+        switchMobileTab(lastTab);
+    }
 
     // 🔥 전역 pointermove 수정완료: 터치 드래그 정확히 인식
     window.addEventListener('pointermove', (e) => { 
