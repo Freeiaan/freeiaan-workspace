@@ -1137,7 +1137,18 @@
         
         for(let m = 0; m < 6; m++) {
           const idx = (h - 5) * 6 + m; const color = data[idx];
-          if (color) { if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
+          if (color) {
+              const hasLabel = labels && labels[idx];
+              // 🔥 [수정됨] 색이 다르거나, 새로운 라벨(텍스트)이 있으면 블록을 분리합니다!
+              if (!currentSegment || currentSegment.color !== color || hasLabel) {
+                  if (currentSegment) segments.push(currentSegment);
+                  currentSegment = { start: m, end: m, color: color, idxs: [idx] };
+              } else {
+                  currentSegment.end = m; currentSegment.idxs.push(idx);
+              }
+          } else {
+              if (currentSegment) { segments.push(currentSegment); currentSegment = null; }
+          }
           
           const cell = document.createElement('div'); cell.id = `time-cell-${idx}`; cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; if (m === 5) cell.classList.remove('border-dashed'); 
           if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
@@ -1233,7 +1244,13 @@
 
     function openTimeBlockModal(idx, dateKey) {
         tbCurrentIdx = idx; currentPlannerDateKey = dateKey; const data = dailyRecords[dateKey]; const blockColor = data.grid[idx];
-        let startIdx = idx; if (blockColor) { while (startIdx > 0 && data.grid[startIdx - 1] === blockColor) startIdx--; }
+        let startIdx = idx;
+        if (blockColor) {
+            // 🔥 [수정됨] 색이 같더라도, 다른 라벨이 적혀있는 곳을 만나면 거기서 후진을 멈춤!
+            while (startIdx > 0 && data.grid[startIdx - 1] === blockColor && !(data.labels && data.labels[startIdx])) {
+                startIdx--;
+            }
+        }
         if (!data.labels) data.labels = {}; $('tbLabelInput').value = data.labels[startIdx] ? data.labels[startIdx].text : '';
         const colorContainer = $('tbColorContainer'); colorContainer.dataset.selectedColor = blockColor || trackerColors[0].color;
         isTbColorEditMode = false; $('tbEditColorBtn').textContent = '수정'; renderTbColors(); $('timeBlockModal').classList.remove('hidden');
@@ -1242,7 +1259,11 @@
     $('tbSaveBtn').onclick = () => {
         const newText = $('tbLabelInput').value.trim(); const newColor = $('tbColorContainer').dataset.selectedColor; const data = dailyRecords[currentPlannerDateKey];
         const oldColor = data.grid[tbCurrentIdx]; let start = tbCurrentIdx, end = tbCurrentIdx;
-        if (oldColor) { while(start > 0 && data.grid[start - 1] === oldColor) start--; while(end < 143 && data.grid[end + 1] === oldColor) end++; }
+        if (oldColor) {
+            // 🔥 [수정됨] 저장할 때도 텍스트가 있는 경계선을 넘지 않도록 제한!
+            while (start > 0 && data.grid[start - 1] === oldColor && !(data.labels && data.labels[start])) { start--; }
+            while (end < 143 && data.grid[end + 1] === oldColor && !(data.labels && data.labels[end + 1])) { end++; }
+        }
         for(let i = start; i <= end; i++) { data.grid[i] = newColor; if(data.labels) delete data.labels[i]; }
         if (newText) { if (!data.labels) data.labels = {}; data.labels[start] = { text: newText, color: newColor }; }
         savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); 
@@ -1250,7 +1271,11 @@
 
     $('tbDeleteBtn').onclick = () => {
         const data = dailyRecords[currentPlannerDateKey]; const oldColor = data.grid[tbCurrentIdx]; let start = tbCurrentIdx, end = tbCurrentIdx;
-        if (oldColor) { while(start > 0 && data.grid[start - 1] === oldColor) start--; while(end < 143 && data.grid[end + 1] === oldColor) end++; }
+        if (oldColor) {
+            // 🔥 [수정됨] 삭제할 때도 남의 텍스트가 있는 블록은 건드리지 않고 삭제!
+            while (start > 0 && data.grid[start - 1] === oldColor && !(data.labels && data.labels[start])) { start--; }
+            while (end < 143 && data.grid[end + 1] === oldColor && !(data.labels && data.labels[end + 1])) { end++; }
+        }
         for(let i = start; i <= end; i++) { data.grid[i] = null; if (data.labels && data.labels[i]) delete data.labels[i]; }
         savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); 
     };
@@ -1427,7 +1452,19 @@
              let currentSegment = null; let segments = [];
              for(let m = 0; m < 6; m++) {
                  const idx = (h - 5) * 6 + m; const color = gridData ? gridData[idx] : null; const cell = document.createElement('div'); cell.className = 'flex-1 h-full box-border';
-                 if (color) { cell.style.backgroundColor = hexToRgba(color, 0.3); if (!currentSegment || currentSegment.color !== color) { if (currentSegment) segments.push(currentSegment); currentSegment = { start: m, end: m, color: color, idxs: [idx] }; } else { currentSegment.end = m; currentSegment.idxs.push(idx); } } else { if (currentSegment) { segments.push(currentSegment); currentSegment = null; } }
+                 if (color) {
+                     cell.style.backgroundColor = hexToRgba(color, 0.3);
+                     const hasLabel = labels && labels[idx];
+                     // 🔥 [수정됨] 위클리에서도 라벨이 있으면 블록을 분리!
+                     if (!currentSegment || currentSegment.color !== color || hasLabel) {
+                         if (currentSegment) segments.push(currentSegment);
+                         currentSegment = { start: m, end: m, color: color, idxs: [idx] };
+                     } else {
+                         currentSegment.end = m; currentSegment.idxs.push(idx);
+                     }
+                 } else {
+                     if (currentSegment) { segments.push(currentSegment); currentSegment = null; }
+                 }
                  cellContainer.appendChild(cell);
              }
              if (currentSegment) segments.push(currentSegment); 
