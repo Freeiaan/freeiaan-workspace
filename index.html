@@ -861,42 +861,60 @@
     }
 
     // ☁️ 클라우드에서 데이터를 불러오는 함수
-    function loadFromCloud() {
-        if (!currentUser) return;
-        
-        db.collection("users").doc(currentUser.email).get().then((doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                if(data.categories) categories = data.categories;
-                if(data.trackerColors) trackerColors = data.trackerColors;
-                if(data.allTasks) allTasks = data.allTasks;
-                if(data.multiTasks) multiTasks = data.multiTasks;
-                if(data.dailyRecords) dailyRecords = data.dailyRecords;
-                if(data.inboxTasks) inboxTasks = data.inboxTasks;
-                if(data.weeklyMemos) weeklyMemos = data.weeklyMemos;
-                if(data.weeklyHabits) weeklyHabits = data.weeklyHabits;
-                if(data.extendedMemos) extendedMemos = data.extendedMemos;
-                if(data.memo !== undefined) {
-                    localStorage.setItem('ianMemo', data.memo);
-                    if($('memoArea')) $('memoArea').value = data.memo;
-                }
-                if(data.lastNoticeVersion) localStorage.setItem('ianLastNoticeVersion', data.lastNoticeVersion);
-                
-                // 🔥 클라우드에 저장된 가계부 데이터를 가져와서 변수에 담아줍니다!
-                if(data.ledgerData) ledgerData = data.ledgerData; 
+function loadFromCloud() {
+    if (!currentUser) return;
 
-                initAppRenders();
-            } else {
-                syncToCloud();
-            }
-            $('loadingScreen').classList.add('hidden');
-            checkNotice();
-        }).catch((err) => { 
-            console.error(err); 
-            initAppRenders(); 
-            $('loadingScreen').classList.add('hidden'); 
-        });
+    // 🌟 1. 빙글빙글 도는 동안 유저 이름 띄워주기!
+    if (document.getElementById('loadingUserName')) {
+        // 구글 닉네임이 없으면 이메일 앞자리라도 보여줍니다
+        let userName = currentUser.displayName || currentUser.email.split('@')[0];
+        document.getElementById('loadingUserName').innerText = userName;
     }
+
+    db.collection("users").doc(currentUser.email).get().then((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            if(data.categories) categories = data.categories;
+            if(data.trackerColors) trackerColors = data.trackerColors;
+            if(data.allTasks) allTasks = data.allTasks;
+            if(data.multiTasks) multiTasks = data.multiTasks;
+            if(data.dailyRecords) dailyRecords = data.dailyRecords;
+            if(data.inboxTasks) inboxTasks = data.inboxTasks;
+            if(data.weeklyMemos) weeklyMemos = data.weeklyMemos;
+            if(data.weeklyHabits) weeklyHabits = data.weeklyHabits;
+            if(data.extendedMemos) extendedMemos = data.extendedMemos;
+            if(data.memo !== undefined) {
+                localStorage.setItem('ianMemo', data.memo);
+                if(document.getElementById('memoArea')) document.getElementById('memoArea').value = data.memo;
+            }
+            if(data.lastNoticeVersion) localStorage.setItem('ianLastNoticeVersion', data.lastNoticeVersion);
+            
+            // 🔥 클라우드에 저장된 가계부 데이터를 가져와서 변수에 담아줍니다!
+            if(data.ledgerData) ledgerData = data.ledgerData;
+
+            initAppRenders();
+        } else {
+            syncToCloud();
+        }
+        
+        // 🌟 2. 데이터 도착 완료! 철벽 가림막 스르륵 치우기
+        let shield = document.getElementById('loadingShield');
+        if (shield) {
+            shield.classList.add('opacity-0'); // 스르륵 투명하게 만드는 애니메이션
+            setTimeout(() => shield.classList.add('hidden'), 500); // 0.5초 뒤에 아예 숨기기
+        }
+        
+        checkNotice();
+
+    }).catch((err) => {
+        console.error(err);
+        initAppRenders();
+        
+        // 🌟 에러가 나도 화면은 볼 수 있게 가림막 치워주기
+        let shield = document.getElementById('loadingShield');
+        if (shield) shield.classList.add('hidden');
+    });
+}
 
     let currentWeekKey = null, currentExtMemoIndex = null, currentPlannerDateKey = null, isHabitEditMode = false;
     let selectedFilters = new Set(['all']), displayDate = new Date();
