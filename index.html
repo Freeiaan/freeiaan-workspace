@@ -669,34 +669,51 @@
     let extendedMemos = getLocal('ianExtendedMemos', [{title:'메모 1', content:''},{title:'메모 2', content:''},{title:'메모 3', content:''},{title:'메모 4', content:''}]);
     let ledgerData = getLocal('ianLedgerData', {});
     let syncTimeout = null;
-    
-    // ☁️ 데이터를 클라우드에 저장하는 함수
-    function syncToCloud() {
-        if (!currentUser) return;
-        
-        clearTimeout(syncTimeout);
-        syncTimeout = setTimeout(() => {
-            const dataToSave = { 
-                categories, 
-                trackerColors, 
-                allTasks, 
-                multiTasks, 
-                dailyRecords, 
-                inboxTasks, 
-                weeklyMemos, 
-                weeklyHabits, 
-                extendedMemos, 
-                memo: $('memoArea') ? $('memoArea').value : '',
-                lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '',
-                ledgerData // 🔥 가계부 데이터 저장!
-            };
-            
-            db.collection("users").doc(currentUser.email).set(dataToSave)
-                .then(() => { console.log("Cloud Sync Success!"); })
-                .catch((error) => { console.error("Error syncing to cloud: ", error); });
-        }, 1000); // 1초 모아서 한 번에 저장 (과부하 방지)
-    }
+let isSyncing = false; // 🔒 1. 동기화 상태를 추적하는 마법의 자물쇠 변수 추가!
 
+// 🛡️ 2. 유저가 창을 닫거나 새로고침하려고 할 때 자물쇠 확인하기
+window.addEventListener('beforeunload', (event) => {
+    if (isSyncing) {
+        // 자물쇠가 잠겨있으면(저장 중이면) 브라우저 기본 경고창을 띄워 못 나가게 막습니다!
+        event.preventDefault();
+        event.returnValue = ''; // 크롬 등에서 경고창을 띄우기 위한 필수 주문
+    }
+});
+
+// ☁️ 데이터를 클라우드에 저장하는 함수
+function syncToCloud() {
+    if (!currentUser) return;
+
+    isSyncing = true; // 🔒 3. 글씨 입력 감지! 동기화 시작 대기 중이니까 방문 꽉 잠그기!
+
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => {
+        const dataToSave = {
+            categories,
+            trackerColors,
+            allTasks,
+            multiTasks,
+            dailyRecords,
+            inboxTasks,
+            weeklyMemos,
+            weeklyHabits,
+            extendedMemos,
+            memo: document.getElementById('memoArea') ? document.getElementById('memoArea').value : '',
+            lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '',
+            ledgerData // 🔥 가계부 데이터 저장!
+        };
+
+        db.collection("users").doc(currentUser.email).set(dataToSave)
+            .then(() => { 
+                console.log("Cloud Sync Success!"); 
+                isSyncing = false; // 🔓 4. 구글에 저장 완료! 방문 활짝 열어주기!
+            })
+            .catch((error) => { 
+                console.error("Error syncing to cloud: ", error); 
+                isSyncing = false; // 🔓 에러가 났을 때도 일단 문은 열어줍니다.
+            });
+    }, 1000); // 1초 모아서 한 번에 저장 (과부하 방지)
+}
     function setLocal(key, data) { localStorage.setItem(key, JSON.stringify(data)); syncToCloud(); }
 
     function loginWithGoogle() {
