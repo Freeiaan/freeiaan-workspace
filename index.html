@@ -126,10 +126,17 @@
 </head>
 <body class="bg-slate-50 min-h-screen relative overflow-x-hidden">
 
-  <div id="loadingScreen" class="fixed inset-0 z-[2000] bg-white flex flex-col items-center justify-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#22741C] mb-4"></div>
-      <p class="text-gray-500 font-bold text-sm">데이터를 동기화 중입니다...</p>
-  </div>
+  <!-- 🛡️ 전체 화면 로딩 방어막 (데이터 보호용) -->
+    <div id="loadingShield" class="fixed inset-0 z-[9999] bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-500">
+        <!-- 빙글빙글 도는 로딩 아이콘 (이안님 시그니처 초록색 적용) -->
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#22741C] mb-6"></div>
+        
+        <!-- 로딩 문구 (이름 들어갈 자리 뚫어둠!) -->
+        <h2 class="text-xl md:text-2xl font-extrabold text-gray-800 mb-2 tracking-tight">
+            <span id="loadingUserName" class="text-[#22741C]">사용자</span>님의 소중한 데이터를
+        </h2>
+        <p class="text-sm md:text-base text-gray-500 font-bold animate-pulse">안전하게 불러오는 중입니다... 🚀</p>
+    </div>
 
   <div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4">
       <div class="bg-white p-10 rounded-3xl shadow-xl border border-gray-200 flex flex-col items-center max-w-md w-full text-center">
