@@ -864,12 +864,7 @@
 function loadFromCloud() {
     if (!currentUser) return;
 
-    // 🌟 1. 빙글빙글 도는 동안 유저 이름 띄워주기!
-    if (document.getElementById('loadingUserName')) {
-        // 구글 닉네임이 없으면 이메일 앞자리라도 보여줍니다
-        let userName = currentUser.displayName || currentUser.email.split('@')[0];
-        document.getElementById('loadingUserName').innerText = userName;
-    }
+    // (이름 바꿔치기 하는 코드는 깔끔하게 삭제했습니다!)
 
     db.collection("users").doc(currentUser.email).get().then((doc) => {
         if (doc.exists) {
@@ -897,7 +892,7 @@ function loadFromCloud() {
             syncToCloud();
         }
         
-        // 🌟 2. 데이터 도착 완료! 철벽 가림막 스르륵 치우기
+        // 🌟 데이터 도착 완료! 철벽 가림막 스르륵 치우기
         let shield = document.getElementById('loadingShield');
         if (shield) {
             shield.classList.add('opacity-0'); // 스르륵 투명하게 만드는 애니메이션
