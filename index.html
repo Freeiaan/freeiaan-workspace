@@ -2751,8 +2751,12 @@ function renderMemoFolders() {
             $('feedbackModalTitle').textContent = "📩 내 쪽지함";
             $('tabListFeedback').className = "flex-1 py-4 text-sm font-black text-blue-600 border-b-2 border-blue-600";
             $('tabWriteFeedback').className = "flex-1 py-4 text-sm font-black text-gray-400 hover:text-blue-600";
+            
             loadMyFeedbacks(); // 내 글 목록 불러오기
-            $('feedbackNotification').classList.add('hidden'); // 쪽지함 보면 빨간 점 없애기
+            
+            // 🔥 쪽지함을 열었을 때의 '현재 시간'을 브라우저에 도장 쾅! 찍어둡니다.
+            localStorage.setItem('ianLastCheckedInbox', Date.now().toString());
+            $('feedbackNotification').classList.add('hidden'); // 쪽지함 보는 순간 빨간 점 끄기
         }
     }
 
@@ -2812,17 +2816,35 @@ function renderMemoFolders() {
         });
     }
 
-    // 🔴 실시간 답장 알림 체크 (앱 켜질 때 실행됨)
+    // 🔴 실시간 답장 알림 체크 (똑똑한 알림 버전!)
     function checkNewReplies() {
         if (!currentUser) return;
         db.collection('feedbacks')
           .where('userEmail', '==', currentUser.email)
           .where('status', 'in', ['read', 'replied'])
           .onSnapshot(snapshot => {
-              // 아직 안 읽은 답장이 있는지 확인하는 로직 (나중에 보완 가능)
               if (!snapshot.empty) {
-                  // 유저가 쪽지함을 열기 전까지 버튼에 빨간 점 표시!
-                  $('feedbackNotification').classList.remove('hidden');
+                  // 1. 유저가 마지막으로 쪽지함을 열어본 시간 가져오기 (본 적 없으면 0)
+                  const lastChecked = parseInt(localStorage.getItem('ianLastCheckedInbox') || '0');
+                  let hasNewReply = false;
+
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      // 2. 이안님이 답장(또는 확인)을 누른 시간 확인
+                      const replyTime = data.repliedAt ? data.repliedAt.toMillis() : (data.readAt ? data.readAt.toMillis() : 0);
+                      
+                      // 3. 유저가 쪽지함을 본 시간보다 '더 최근에' 이안님이 답장을 했다면?
+                      if (replyTime > lastChecked) {
+                          hasNewReply = true;
+                      }
+                  });
+
+                  // 4. 진짜 새로 온 답장이 있을 때만 빨간 점 표시!
+                  if (hasNewReply) {
+                      $('feedbackNotification').classList.remove('hidden');
+                  } else {
+                      $('feedbackNotification').classList.add('hidden');
+                  }
               }
           });
     }
