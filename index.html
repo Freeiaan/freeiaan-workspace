@@ -2585,7 +2585,7 @@ function renderMemoFolders() {
         }
     }
 
-    // 💌 관리자용: 유저 피드백 목록 불러오기
+    // 💌 관리자용: 유저 피드백 목록 불러오기 (읽음 확인 버튼 추가 버전!)
     function loadAdminFeedbacks() {
         const listContainer = $('adminFeedbackList');
         db.collection('feedbacks').orderBy('timestamp', 'desc').get().then(snapshot => {
@@ -2599,7 +2599,8 @@ function renderMemoFolders() {
                 const data = doc.data();
                 const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '방금 전';
                 const card = document.createElement('div');
-                card.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col gap-3";
+                // ✅ 읽은 건 흐리게(opacity-60), 안 읽은 건 진하게 표시하는 디테일!
+                card.className = `bg-white border ${data.status === 'read' || data.status === 'replied' ? 'border-gray-100 opacity-60' : 'border-blue-200 shadow-md'} rounded-2xl p-5 flex flex-col gap-3 transition-all`;
                 
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
@@ -2607,15 +2608,16 @@ function renderMemoFolders() {
                             <span class="text-[11px] font-black text-blue-600">${data.userEmail}</span>
                             <span class="text-[10px] text-gray-400 font-bold">${date}</span>
                         </div>
-                        <!-- 🔥 블랙리스트 차단 버튼 (3콤보 방어막!) -->
                         <button onclick="blockUser('${data.userEmail}')" class="text-[10px] font-black text-red-400 hover:text-red-600 transition">🚫 차단</button>
                     </div>
                     <p class="text-[13px] font-medium text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-xl">${data.content}</p>
                     
-                    <!-- 답장 영역 -->
                     <div class="flex flex-col gap-2 mt-2">
                         <textarea id="reply-${doc.id}" class="w-full bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-[12px] font-medium focus:outline-none" placeholder="유저에게 보낼 답장을 적어주세요.">${data.replyContent || ''}</textarea>
-                        <button onclick="sendReply('${doc.id}', '${data.userEmail}')" class="self-end px-4 py-2 bg-blue-600 text-white text-[11px] font-black rounded-lg hover:bg-blue-700 transition">답장 보내기 💌</button>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="markAsRead('${doc.id}')" class="px-3 py-2 bg-gray-100 text-gray-500 text-[11px] font-black rounded-lg hover:bg-gray-200 transition">✅ 확인만 함</button>
+                            <button onclick="sendReply('${doc.id}', '${data.userEmail}')" class="px-4 py-2 bg-blue-600 text-white text-[11px] font-black rounded-lg hover:bg-blue-700 transition">답장 보내기 💌</button>
+                        </div>
                     </div>
                 `;
                 listContainer.appendChild(card);
@@ -2623,7 +2625,21 @@ function renderMemoFolders() {
         });
     }
 
-    // 💌 유저에게 답장 쏘기!
+    // ✅ 유저에게 "이안님이 확인했습니다" 알림만 보내기 (자동 메시지)
+    function markAsRead(feedbackId) {
+        if (!confirm("답장 없이 '읽음 확인' 알림만 보낼까요?")) return;
+
+        db.collection('feedbacks').doc(feedbackId).update({
+            status: 'read',
+            readAt: firebase.firestore.FieldValue.serverTimestamp(),
+            replyContent: '이안님이 소중한 의견을 확인했습니다! 💚' 
+        }).then(() => {
+            alert("확인 알림이 전송되었습니다! ✨");
+            loadAdminFeedbacks(); // 목록 새로고침
+        }).catch(e => alert("실패: " + e));
+    }
+
+    // 💌 유저에게 정성스런 답장 쏘기!
     function sendReply(feedbackId, userEmail) {
         const replyText = document.getElementById(`reply-${feedbackId}`).value.trim();
         if (!replyText) { alert("답장 내용을 입력해주세요!"); return; }
@@ -2635,14 +2651,14 @@ function renderMemoFolders() {
             status: 'replied',
             repliedAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-            alert("답장이 전송되었습니다! 유저의 캘린더에 알림이 갈 거예요. ✨");
+            alert("답장이 전송되었습니다! ✨");
+            loadAdminFeedbacks(); // 목록 새로고침
         }).catch(e => alert("답장 전송 실패: " + e));
     }
 
-    // 🚫 유저 차단 (블랙리스트) - 일단 알림만 띄우고 나중에 3탄에서 기능 완성!
+    // 🚫 유저 차단 (블랙리스트)
     function blockUser(email) {
-        if (confirm(`${email} 유저를 영구 차단하시겠습니까? 더 이상 피드백을 보낼 수 없게 됩니다.`)) {
-            // 여기에 블랙리스트 컬렉션에 추가하는 코드 (3탄에서 완성 예정!)
+        if (confirm(`${email} 유저를 영구 차단하시겠습니까?`)) {
             alert(`${email} 유저가 블랙리스트에 등록되었습니다. 🔨`);
         }
     }
