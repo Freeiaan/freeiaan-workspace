@@ -146,6 +146,10 @@
 
         <!-- 🖱️ 우클릭 커스텀 메뉴 (노션 스타일) -->
       <div id="contextMenu" class="fixed hidden z-[9999] bg-white shadow-xl border border-gray-200 rounded-lg py-1.5 min-w-[160px] text-sm animate-in fade-in zoom-in duration-200">
+          <button id="btnCtxAdd" onclick="handleContextAdd()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
+              <span>✨</span>
+              <span class="font-bold text-gray-700">일정 추가</span>
+          </button>
           <button id="btnCtxCopy" onclick="handleContextCopy()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
               <span>📄</span>
               <span class="font-bold text-gray-700">복사</span>
@@ -787,6 +791,7 @@ document.addEventListener('contextmenu', function(e) {
     const cellElement = e.target.closest('.group-cell'); // 달력 빈칸 인식!
     
     const menu = document.getElementById('contextMenu');
+    const btnAdd = document.getElementById('btnCtxAdd'); // ✨ 추가됨!
     const btnCopy = document.getElementById('btnCtxCopy');
     const btnPaste = document.getElementById('btnCtxPaste');
     const divider = document.getElementById('ctxDivider');
@@ -797,41 +802,49 @@ document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
         selectedTaskDateKey = taskElement.getAttribute('data-datekey');
         selectedTaskIndex = taskElement.getAttribute('data-index');
-        targetPasteDateKey = selectedTaskDateKey; // 같은 날짜에도 붙여넣기 가능하게!
+        targetPasteDateKey = selectedTaskDateKey; 
 
-        // 일정 위에서는 복사, 복제, 삭제 보이기
+        // 일정 위에서는: '일정 추가' 숨기고, 나머지 보이기
+        btnAdd.style.display = 'none';
         btnCopy.style.display = 'flex';
         btnDup.style.display = 'flex';
         btnDel.style.display = 'flex';
         divider.style.display = 'block';
         
-        // 클립보드에 들고 있는 게 있으면 붙여넣기도 활성화!
+        // 붙여넣기는 클립보드에 있을 때만 활성화!
         btnPaste.style.display = clipboardTask ? 'flex' : 'none';
 
         menu.classList.remove('hidden');
         menu.style.left = e.pageX + 'px';
         menu.style.top = e.pageY + 'px';
+        
     } else if (cellElement) {
-        // 달력의 "빈 칸"을 우클릭했을 때!
+        // 달력 "빈 공간" 위에서는!
         e.preventDefault();
         targetPasteDateKey = cellElement.getAttribute('data-date');
         selectedTaskDateKey = null;
         selectedTaskIndex = null;
 
-        // 클립보드에 복사해 둔 일정이 있을 때만 "붙여넣기" 메뉴 띄우기!
+        // '일정 추가' 버튼 항상 보이기
+        btnAdd.style.display = 'flex';
+        
+        // 복사, 복제, 삭제 숨기기
+        btnCopy.style.display = 'none';
+        btnDup.style.display = 'none';
+        btnDel.style.display = 'none';
+        
+        // 붙여넣기는 클립보드에 복사해둔 게 있을 때만 띄우기
         if (clipboardTask) {
-            btnCopy.style.display = 'none';
-            btnDup.style.display = 'none';
-            btnDel.style.display = 'none';
-            divider.style.display = 'none';
-            btnPaste.style.display = 'flex'; // 오직 붙여넣기만!
-            
-            menu.classList.remove('hidden');
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
+            btnPaste.style.display = 'flex';
+            divider.style.display = 'block'; // '추가'랑 '붙여넣기' 사이에 깔끔한 선 긋기
         } else {
-            menu.classList.add('hidden'); // 들고 있는 게 없으면 안 띄움
+            btnPaste.style.display = 'none';
+            divider.style.display = 'none';
         }
+        
+        menu.classList.remove('hidden');
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
     } else {
         menu.classList.add('hidden');
     }
@@ -900,6 +913,17 @@ function handleContextDelete() {
         syncToCloud();
         initAppRenders();
     }
+}
+
+    // ✨ 일정 추가 기능 (달력 빈 공간 우클릭)
+function handleContextAdd() {
+    if (!targetPasteDateKey) return;
+    
+    // 이안님의 기존 일정 추가 창(모달)을 띄우는 마법 주문!
+    openModal('createSingle', { dateKey: targetPasteDateKey });
+    
+    // 볼일 끝난 우클릭 메뉴는 스르륵 숨기기
+    document.getElementById('contextMenu').classList.add('hidden');
 }
     
     function setLocal(key, data) { localStorage.setItem(key, JSON.stringify(data)); syncToCloud(); }
