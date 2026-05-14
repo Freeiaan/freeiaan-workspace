@@ -648,11 +648,16 @@
               </div>
 
               <!-- 2️⃣ [유저 피드백] 탭 활성화 시 보일 영역 -->
-              <div id="adminFeedbackSection" class="hidden w-full h-full p-6 overflow-y-auto custom-scrollbar">
-                  <h4 class="text-sm font-black text-gray-800 mb-4">💌 도착한 유저 피드백</h4>
-                  <div id="adminFeedbackList" class="flex flex-col gap-4">
-                      <!-- 피드백 목록이 들어올 자리 -->
-                      <p class="text-center text-gray-400 py-20 font-bold">피드백을 불러오는 중... 💌</p>
+              <div id="adminFeedbackSection" class="hidden w-full h-full flex flex-col bg-gray-50">
+                  <div class="flex border-b border-gray-200 bg-white px-6 pt-4 flex-shrink-0 gap-6">
+                      <button onclick="switchFeedbackSubTab('new')" id="subTabNewFeedback" class="pb-3 text-[13px] font-black text-blue-600 border-b-2 border-blue-600 transition-all">🚨 새 피드백</button>
+                      <button onclick="switchFeedbackSubTab('done')" id="subTabDoneFeedback" class="pb-3 text-[13px] font-black text-gray-400 hover:text-blue-600 transition-all">✅ 처리 완료</button>
+                  </div>
+                  
+                  <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                      <div id="adminFeedbackList" class="flex flex-col gap-4">
+                          <p class="text-center text-gray-400 py-20 font-bold">피드백을 불러오는 중... 💌</p>
+                      </div>
                   </div>
               </div>
 
@@ -2592,39 +2597,92 @@ function renderMemoFolders() {
         });
     }
 
-// 👑 관리자 탭 전환 (공지사항 vs 피드백)
+// 👑 관리자용: 피드백 내부 탭 상태 저장 변수 ('new' 또는 'done')
+    let currentFeedbackStatusTab = 'new';
+
+    // 👑 관리자용: 전체 탭 전환 (공지 vs 피드백)
     function switchAdminTab(tab) {
         if (tab === 'notice') {
             $('adminNoticeSection').classList.remove('hidden');
             $('adminFeedbackSection').classList.add('hidden');
-            $('tabNotice').className = "flex-1 py-4 text-sm font-black text-blue-600 border-b-2 border-blue-600";
-            $('tabFeedback').className = "flex-1 py-4 text-sm font-black text-gray-400 hover:text-blue-600 transition-all";
+            $('tabNotice').className = "py-4 px-6 text-sm font-black text-blue-600 border-b-4 border-blue-600 transition-all";
+            $('tabFeedback').className = "py-4 px-6 text-sm font-black text-gray-400 hover:text-blue-600 transition-all";
         } else {
             $('adminNoticeSection').classList.add('hidden');
             $('adminFeedbackSection').classList.remove('hidden');
-            $('tabFeedback').className = "flex-1 py-4 text-sm font-black text-blue-600 border-b-2 border-blue-600";
-            $('tabNotice').className = "flex-1 py-4 text-sm font-black text-gray-400 hover:text-blue-600 transition-all";
-            loadAdminFeedbacks(); // 피드백 목록 불러오기
+            $('tabFeedback').className = "py-4 px-6 text-sm font-black text-blue-600 border-b-4 border-blue-600 transition-all";
+            $('tabNotice').className = "py-4 px-6 text-sm font-black text-gray-400 hover:text-blue-600 transition-all";
+            loadAdminFeedbacks(); // 피드백 탭 누르면 목록 불러오기
         }
     }
 
-    // 💌 관리자용: 유저 피드백 목록 불러오기 (읽음 확인 버튼 추가 버전!)
+    // 👑 관리자용: 피드백 내부 소그룹 탭 전환 (새 피드백 <-> 처리 완료)
+    function switchFeedbackSubTab(tab) {
+        currentFeedbackStatusTab = tab;
+        if(tab === 'new') {
+            $('subTabNewFeedback').className = "pb-3 text-[13px] font-black text-blue-600 border-b-2 border-blue-600 transition-all";
+            $('subTabDoneFeedback').className = "pb-3 text-[13px] font-black text-gray-400 hover:text-blue-600 transition-all";
+        } else {
+            $('subTabDoneFeedback').className = "pb-3 text-[13px] font-black text-blue-600 border-b-2 border-blue-600 transition-all";
+            $('subTabNewFeedback').className = "pb-3 text-[13px] font-black text-gray-400 hover:text-blue-600 transition-all";
+        }
+        loadAdminFeedbacks(); // 탭 바꿀 때마다 리스트 다시 그리기
+    }
+
+    // 💌 관리자용: 유저 피드백 목록 불러오기 (분류 및 탭 적용 버전)
     function loadAdminFeedbacks() {
         const listContainer = $('adminFeedbackList');
+        listContainer.innerHTML = '<p class="text-center text-gray-400 py-20 font-bold">불러오는 중... 💌</p>';
+
         db.collection('feedbacks').orderBy('timestamp', 'desc').get().then(snapshot => {
             listContainer.innerHTML = '';
-            if (snapshot.empty) {
-                listContainer.innerHTML = '<p class="text-center text-gray-400 py-20 font-bold">도착한 피드백이 없습니다. 텅~ 💨</p>';
-                return;
-            }
+            
+            let newFeedbacks = [];
+            let doneFeedbacks = [];
 
             snapshot.forEach(doc => {
                 const data = doc.data();
+                if (data.status === 'read' || data.status === 'replied') {
+                    doneFeedbacks.push({id: doc.id, ...data});
+                } else {
+                    newFeedbacks.push({id: doc.id, ...data});
+                }
+            });
+
+            const targetList = currentFeedbackStatusTab === 'new' ? newFeedbacks : doneFeedbacks;
+
+            if (targetList.length === 0) {
+                listContainer.innerHTML = `<p class="text-center text-gray-400 py-20 font-bold">${currentFeedbackStatusTab === 'new' ? '새로 도착한 피드백이 없습니다! ✨' : '아직 처리 완료된 내역이 없습니다.'}</p>`;
+                return;
+            }
+
+            targetList.forEach(data => {
                 const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '방금 전';
                 const card = document.createElement('div');
-                // ✅ 읽은 건 흐리게(opacity-60), 안 읽은 건 진하게 표시하는 디테일!
-                card.className = `bg-white border ${data.status === 'read' || data.status === 'replied' ? 'border-gray-100 opacity-60' : 'border-blue-200 shadow-md'} rounded-2xl p-5 flex flex-col gap-3 transition-all`;
+                const isDone = currentFeedbackStatusTab === 'done';
                 
+                card.className = `bg-white border ${isDone ? 'border-gray-100 opacity-80' : 'border-blue-200 shadow-md'} rounded-2xl p-5 flex flex-col gap-3 transition-all`;
+                
+                let replyActionHTML = '';
+                if (isDone) {
+                    replyActionHTML = `
+                        <div class="bg-green-50/50 border border-green-100 rounded-xl p-3 mt-2">
+                            <span class="text-[10px] font-black text-green-600 mb-1 block">이안님의 답변/상태 ✅</span>
+                            <p class="text-[12px] font-bold text-gray-700">${data.replyContent || '확인만 완료함'}</p>
+                        </div>
+                    `;
+                } else {
+                    replyActionHTML = `
+                        <div class="flex flex-col gap-2 mt-2">
+                            <textarea id="reply-${data.id}" class="w-full bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-[12px] font-medium focus:outline-none" placeholder="유저에게 보낼 답장을 적어주세요."></textarea>
+                            <div class="flex gap-2 justify-end">
+                                <button onclick="markAsRead('${data.id}')" class="px-3 py-2 bg-gray-100 text-gray-500 text-[11px] font-black rounded-lg hover:bg-gray-200 transition">✅ 확인만 함</button>
+                                <button onclick="sendReply('${data.id}', '${data.userEmail}')" class="px-4 py-2 bg-blue-600 text-white text-[11px] font-black rounded-lg hover:bg-blue-700 transition">답장 보내기 💌</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div class="flex flex-col">
@@ -2633,32 +2691,27 @@ function renderMemoFolders() {
                         </div>
                         <button onclick="blockUser('${data.userEmail}')" class="text-[10px] font-black text-red-400 hover:text-red-600 transition">🚫 차단</button>
                     </div>
-                    <p class="text-[13px] font-medium text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-xl">${data.content}</p>
-                    
-                    <div class="flex flex-col gap-2 mt-2">
-                        <textarea id="reply-${doc.id}" class="w-full bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-[12px] font-medium focus:outline-none" placeholder="유저에게 보낼 답장을 적어주세요.">${data.replyContent || ''}</textarea>
-                        <div class="flex gap-2 justify-end">
-                            <button onclick="markAsRead('${doc.id}')" class="px-3 py-2 bg-gray-100 text-gray-500 text-[11px] font-black rounded-lg hover:bg-gray-200 transition">✅ 확인만 함</button>
-                            <button onclick="sendReply('${doc.id}', '${data.userEmail}')" class="px-4 py-2 bg-blue-600 text-white text-[11px] font-black rounded-lg hover:bg-blue-700 transition">답장 보내기 💌</button>
-                        </div>
-                    </div>
+                    <p class="text-[13px] font-medium text-gray-800 leading-relaxed bg-gray-50 p-3 rounded-xl">${data.content}</p>
+                    ${replyActionHTML}
                 `;
                 listContainer.appendChild(card);
             });
+        }).catch(e => {
+            console.error("피드백 로드 실패:", e);
+            listContainer.innerHTML = '<p class="text-center text-red-400 py-20 font-bold">오류가 발생했습니다.</p>';
         });
     }
 
     // ✅ 유저에게 "이안님이 확인했습니다" 알림만 보내기 (자동 메시지)
     function markAsRead(feedbackId) {
         if (!confirm("답장 없이 '읽음 확인' 알림만 보낼까요?")) return;
-
         db.collection('feedbacks').doc(feedbackId).update({
             status: 'read',
             readAt: firebase.firestore.FieldValue.serverTimestamp(),
             replyContent: '이안님이 소중한 의견을 확인했습니다! 💚' 
         }).then(() => {
             alert("확인 알림이 전송되었습니다! ✨");
-            loadAdminFeedbacks(); // 목록 새로고침
+            loadAdminFeedbacks();
         }).catch(e => alert("실패: " + e));
     }
 
@@ -2666,16 +2719,14 @@ function renderMemoFolders() {
     function sendReply(feedbackId, userEmail) {
         const replyText = document.getElementById(`reply-${feedbackId}`).value.trim();
         if (!replyText) { alert("답장 내용을 입력해주세요!"); return; }
-
         if (!confirm(`${userEmail} 님께 답장을 보내시겠습니까?`)) return;
-
         db.collection('feedbacks').doc(feedbackId).update({
             replyContent: replyText,
             status: 'replied',
             repliedAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
             alert("답장이 전송되었습니다! ✨");
-            loadAdminFeedbacks(); // 목록 새로고침
+            loadAdminFeedbacks();
         }).catch(e => alert("답장 전송 실패: " + e));
     }
 
