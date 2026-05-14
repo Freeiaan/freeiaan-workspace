@@ -689,6 +689,38 @@
       </div>
   </div>
 
+  <!-- 💬 피드백 (미니 쪽지함) 플로팅 버튼 -->
+  <button onclick="openFeedbackModal()" class="fixed bottom-6 right-6 z-[6000] bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 hover:scale-110 transition-all duration-300">
+      <span class="text-2xl">💬</span>
+      <!-- 🔴 나중에 3탄에서 쓰일 '답장 알림' 빨간 점 (일단 숨겨둠!) -->
+      <span id="feedbackNotification" class="hidden absolute top-0 right-0 flex h-4 w-4">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
+      </span>
+  </button>
+
+  <!-- 💌 피드백 작성 모달 -->
+  <div id="feedbackModal" class="hidden fixed inset-0 z-[7000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden transform transition-all translate-y-0 relative border border-gray-200">
+          <div class="bg-gray-50 px-6 py-5 border-b border-gray-100 flex justify-between items-center">
+              <h3 class="text-lg font-black text-gray-800 flex items-center gap-2">💡 스케줄러 의견 보내기</h3>
+              <button onclick="closeFeedbackModal()" class="text-3xl text-gray-400 hover:text-black transition leading-none">&times;</button>
+          </div>
+          <div class="p-6">
+              <!-- 🚨 이안님이 요청하신 강력한 실명제 경고문 -->
+              <div class="bg-red-50 text-red-600 text-[12px] font-bold p-3.5 rounded-xl mb-5 flex gap-2.5 items-start">
+                  <span class="text-sm">🚨</span>
+                  <span id="feedbackWarningText" class="leading-relaxed">접속하신 구글 이메일(유저이메일@gmail.com)이 함께 전송됩니다. 악의적인 비방 시 서비스 이용이 제한됩니다.</span>
+              </div>
+              
+              <textarea id="feedbackContent" rows="5" class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-[14px] focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none mb-5 font-medium text-gray-700" placeholder="스케줄러를 쓰면서 불편했던 점, 추가되었으면 하는 기능, 혹은 따뜻한 응원의 한마디를 남겨주세요! 💚"></textarea>
+              
+              <button onclick="submitFeedback()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 text-[15px]">
+                  이안님께 전송하기 🚀
+              </button>
+          </div>
+      </div>
+  </div>
 
   <script>
     // 🚨 중요: 여기에 이안님이 구글 로그인에 사용하시는 실제 이메일을 적어주세요!
@@ -2457,6 +2489,53 @@ function renderMemoFolders() {
             renderMemoFolders();     
             renderExtMemoButtons();  
         }
+    }
+// 💬 피드백 모달 열기 (경고문에 진짜 이메일 꽂아 넣기!)
+    function openFeedbackModal() {
+        if (!currentUser) {
+            alert("로그인이 필요합니다!");
+            return;
+        }
+        
+        // ✨ 이안님 요청 문구 + 유저의 진짜 이메일을 합성해서 띄워주는 마법!
+        $('feedbackWarningText').textContent = `접속하신 구글 이메일(${currentUser.email})이 함께 전송됩니다. 악의적인 비방 시 서비스 이용이 제한됩니다.`;
+        
+        $('feedbackContent').value = ''; // 창 열 때마다 내용 깔끔하게 비우기
+        $('feedbackModal').classList.remove('hidden');
+    }
+
+    // ❌ 피드백 모달 닫기
+    function closeFeedbackModal() {
+        $('feedbackModal').classList.add('hidden');
+    }
+
+    // 🚀 피드백 파이어베이스로 쏘기!
+    function submitFeedback() {
+        const content = $('feedbackContent').value.trim();
+        if (!content) {
+            alert("내용을 입력해 주세요! 💚");
+            return;
+        }
+
+        if (!confirm("이안님에게 의견을 전송하시겠습니까?")) return;
+
+        // 파이어베이스로 보낼 택배 상자 포장
+        const feedbackData = {
+            userEmail: currentUser.email,
+            content: content,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'unread', // 나중에 이안님이 읽으면 상태가 바뀜!
+            replyContent: ''  // 이안님이 써줄 답장 칸 미리 만들어두기
+        };
+
+        // 'feedbacks' 라는 새로운 파이어베이스 창고에 저장!
+        db.collection('feedbacks').add(feedbackData).then(() => {
+            alert("성공적으로 전송되었습니다! 소중한 의견 감사합니다🥰");
+            closeFeedbackModal();
+        }).catch(error => {
+            console.error("피드백 전송 에러:", error);
+            alert("전송 중 오류가 발생했습니다. 다시 시도해 주세요.");
+        });
     }
     
   </script>
