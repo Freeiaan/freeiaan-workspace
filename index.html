@@ -730,25 +730,47 @@
       </span>
   </button>
 
-  <!-- 💌 피드백 작성 모달 -->
+  <!-- 💌 피드백 모달 (경고문 유지 + 쪽지함 통합 버전) -->
   <div id="feedbackModal" class="hidden fixed inset-0 z-[7000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden transform transition-all translate-y-0 relative border border-gray-200">
-          <div class="bg-gray-50 px-6 py-5 border-b border-gray-100 flex justify-between items-center">
-              <h3 class="text-lg font-black text-gray-800 flex items-center gap-2">💡 스케줄러 의견 보내기</h3>
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden h-[600px] flex flex-col relative border border-gray-200">
+          
+          <!-- 헤더 -->
+          <div class="bg-gray-50 px-6 py-5 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+              <h3 id="feedbackModalTitle" class="text-lg font-black text-gray-800 flex items-center gap-2">💡 의견 보내기</h3>
               <button onclick="closeFeedbackModal()" class="text-3xl text-gray-400 hover:text-black transition leading-none">&times;</button>
           </div>
-          <div class="p-6">
-              <!-- 🚨 이안님이 요청하신 강력한 실명제 경고문 -->
-              <div class="bg-red-50 text-red-600 text-[12px] font-bold p-3.5 rounded-xl mb-5 flex gap-2.5 items-start">
-                  <span class="text-sm">🚨</span>
-                  <span id="feedbackWarningText" class="leading-relaxed">접속하신 구글 이메일(유저이메일@gmail.com)이 함께 전송됩니다. 악의적인 비방 시 서비스 이용이 제한됩니다.</span>
+
+          <!-- 상단 탭 (의견 쓰기 vs 내 쪽지함) -->
+          <div class="flex border-b border-gray-100 bg-white flex-shrink-0 font-black">
+              <button onclick="switchFeedbackTab('write')" id="tabWriteFeedback" class="flex-1 py-4 text-sm text-blue-600 border-b-2 border-blue-600 transition-all">의견 쓰기</button>
+              <button onclick="switchFeedbackTab('list')" id="tabListFeedback" class="flex-1 py-4 text-sm text-gray-400 hover:text-blue-600 transition-all">내 쪽지함</button>
+          </div>
+          
+          <!-- 내용 영역 -->
+          <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white">
+              <!-- ✍️ 의견 쓰기 섹션 -->
+              <div id="feedbackWriteSection" class="">
+                  <!-- 🚨 이안님의 강력한 실명제 경고문 (그대로 유지!) -->
+                  <div class="bg-red-50 text-red-600 text-[12px] font-bold p-3.5 rounded-xl mb-5 flex gap-2.5 items-start">
+                      <span class="text-sm">🚨</span>
+                      <span id="feedbackWarningText" class="leading-relaxed">접속하신 구글 이메일(유저이메일@gmail.com)이 함께 전송됩니다. 악의적인 비방 시 서비스 이용이 제한됩니다.</span>
+                  </div>
+                  
+                  <!-- ✍️ 이안님이 수정한 문구 적용! -->
+                  <textarea id="feedbackContent" rows="8" class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-[14px] focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none mb-5 font-medium text-gray-700" placeholder="스케줄러를 쓰면서 불편했던 점, 작동이 안되는 부분, 추가되었으면 하는 기능을 남겨주세요! 💚"></textarea>
+                  
+                  <button onclick="submitFeedback()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 text-[15px]">
+                      이안님께 전송하기 🚀
+                  </button>
               </div>
-              
-              <textarea id="feedbackContent" rows="5" class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-[14px] focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none mb-5 font-medium text-gray-700" placeholder="스케줄러를 쓰면서 불편했던 점, 작동이 안되는 부분, 추가되었으면 하는 기능을 남겨주세요! 💚"></textarea>
-              
-              <button onclick="submitFeedback()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 text-[15px]">
-                  이안님께 전송하기 🚀
-              </button>
+
+              <!-- 📩 내 쪽지함 섹션 -->
+              <div id="feedbackListSection" class="hidden flex flex-col gap-4">
+                  <div id="myFeedbackList" class="flex flex-col gap-4">
+                      <!-- 자바스크립트로 내 글과 답장이 들어올 자리 -->
+                      <p class="text-center text-gray-400 py-20 font-bold">내역을 불러오는 중... 💌</p>
+                  </div>
+              </div>
           </div>
       </div>
   </div>
@@ -2661,6 +2683,84 @@ function renderMemoFolders() {
         if (confirm(`${email} 유저를 영구 차단하시겠습니까?`)) {
             alert(`${email} 유저가 블랙리스트에 등록되었습니다. 🔨`);
         }
+    }
+
+    // 💬 유저용 피드백 탭 전환
+    function switchFeedbackTab(tab) {
+        if (tab === 'write') {
+            $('feedbackWriteSection').classList.remove('hidden');
+            $('feedbackListSection').classList.add('hidden');
+            $('feedbackModalTitle').textContent = "💡 의견 보내기";
+            $('tabWriteFeedback').className = "flex-1 py-4 text-sm font-black text-blue-600 border-b-2 border-blue-600";
+            $('tabListFeedback').className = "flex-1 py-4 text-sm font-black text-gray-400 hover:text-blue-600";
+        } else {
+            $('feedbackWriteSection').classList.add('hidden');
+            $('feedbackListSection').classList.remove('hidden');
+            $('feedbackModalTitle').textContent = "📩 내 쪽지함";
+            $('tabListFeedback').className = "flex-1 py-4 text-sm font-black text-blue-600 border-b-2 border-blue-600";
+            $('tabWriteFeedback').className = "flex-1 py-4 text-sm font-black text-gray-400 hover:text-blue-600";
+            loadMyFeedbacks(); // 내 글 목록 불러오기
+            $('feedbackNotification').classList.add('hidden'); // 쪽지함 보면 빨간 점 없애기
+        }
+    }
+
+    // 📩 유저용: 내 피드백 & 답장 목록 불러오기
+    function loadMyFeedbacks() {
+        if (!currentUser) return;
+        const listContainer = $('myFeedbackList');
+        
+        db.collection('feedbacks')
+          .where('userEmail', '==', currentUser.email)
+          .orderBy('timestamp', 'desc')
+          .get().then(snapshot => {
+            listContainer.innerHTML = '';
+            if (snapshot.empty) {
+                listContainer.innerHTML = '<p class="text-center text-gray-400 py-20 font-bold">보낸 쪽지가 없습니다. 💨</p>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : '방금 전';
+                const card = document.createElement('div');
+                card.className = "flex flex-col gap-2";
+
+                let replyHTML = '';
+                if (data.replyContent) {
+                    replyHTML = `
+                        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 ml-4 relative">
+                            <div class="absolute -left-2 top-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-100 rotate-[-45deg]"></div>
+                            <span class="text-[10px] font-black text-blue-600 mb-1 block">이안님의 답장 ✨</span>
+                            <p class="text-[13px] font-bold text-gray-800 leading-relaxed">${data.replyContent}</p>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                        <span class="text-[10px] text-gray-400 font-bold mb-1 block">${date} 내 제보</span>
+                        <p class="text-[13px] font-medium text-gray-700">${data.content}</p>
+                    </div>
+                    ${replyHTML}
+                `;
+                listContainer.appendChild(card);
+            });
+        });
+    }
+
+    // 🔴 실시간 답장 알림 체크 (앱 켜질 때 실행됨)
+    function checkNewReplies() {
+        if (!currentUser) return;
+        db.collection('feedbacks')
+          .where('userEmail', '==', currentUser.email)
+          .where('status', 'in', ['read', 'replied'])
+          .onSnapshot(snapshot => {
+              // 아직 안 읽은 답장이 있는지 확인하는 로직 (나중에 보완 가능)
+              if (!snapshot.empty) {
+                  // 유저가 쪽지함을 열기 전까지 버튼에 빨간 점 표시!
+                  $('feedbackNotification').classList.remove('hidden');
+              }
+          });
     }
     
   </script>
