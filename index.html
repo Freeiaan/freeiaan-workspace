@@ -1054,6 +1054,8 @@ function handleContextAdd() {
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
+            loadData();
+            checkNewReplies(); 
             $('userProfileName').textContent = user.displayName ? `${user.displayName}님` : '사용님';
             $('loginScreen').classList.add('hidden');
             $('mainApp').classList.remove('hidden');
