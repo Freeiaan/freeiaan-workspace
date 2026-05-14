@@ -190,6 +190,9 @@
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
             <span id="userProfileName" class="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg"></span>
+            <!-- 📢 공지사항 다시 보기 버튼 추가! -->
+            <button onclick="showLatestNotice()" class="flex items-center justify-center w-7 h-7 bg-blue-50 text-blue-500 rounded-full hover:bg-blue-100 transition shadow-sm text-sm" title="최신 공지사항 보기">📢</button>
+            
             <button id="adminBtn" onclick="openAdminModal()" class="hidden text-[10px] md:text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200 px-2.5 py-1.5 rounded-lg hover:bg-purple-200 transition shadow-sm">👑 관리자</button>
             <button onclick="logout()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition px-2">로그아웃</button>
         </div>
@@ -1088,7 +1091,24 @@ function handleContextAdd() {
         }
         $('noticeModal').classList.add('hidden');
     }
+    
+    // 📢 수동으로 최신 공지사항 다시 띄우기
+        function showLatestNotice() {
+            db.collection('system').doc('notice').get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    $('noticeVersionBadge').textContent = data.version || '공지';
+                    $('noticeTitle').textContent = data.title || '';
+                    $('noticeContent').textContent = data.content || '';
+                    $('noticeModal').classList.remove('hidden');
+                    $('noticeModal').dataset.currentVersion = data.version;
+                } else {
+                    alert("아직 등록된 공지사항이 없습니다. 텅~ 💨");
+                }
+            }).catch(e => console.log("공지사항 불러오기 실패:", e));
+        }
 
+    
     // ☁️ 클라우드에서 데이터를 불러오는 함수
 function loadFromCloud() {
     if (!currentUser) return;
