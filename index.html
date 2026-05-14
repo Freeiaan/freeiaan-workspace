@@ -2705,14 +2705,15 @@ function renderMemoFolders() {
         }
     }
 
-    // 📩 유저용: 내 피드백 & 답장 목록 불러오기
+    // 📩 유저용: 내 피드백 & 답장 목록 불러오기 (파이어베이스 에러 완벽 차단 버전!)
     function loadMyFeedbacks() {
         if (!currentUser) return;
         const listContainer = $('myFeedbackList');
+        listContainer.innerHTML = '<p class="text-center text-gray-400 py-20 font-bold">내역을 불러오는 중... 💌</p>';
         
+        // orderBy를 빼서 파이어베이스 에러를 막고, 아래에서 직접 정렬합니다!
         db.collection('feedbacks')
           .where('userEmail', '==', currentUser.email)
-          .orderBy('timestamp', 'desc')
           .get().then(snapshot => {
             listContainer.innerHTML = '';
             if (snapshot.empty) {
@@ -2720,18 +2721,26 @@ function renderMemoFolders() {
                 return;
             }
 
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : '방금 전';
+            // 🌟 가져온 데이터를 자바스크립트가 직접 최신순으로 정렬!
+            let feedbacks = [];
+            snapshot.forEach(doc => feedbacks.push({ id: doc.id, ...doc.data() }));
+            feedbacks.sort((a, b) => {
+                const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+                const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+                return timeB - timeA; // 내림차순(최신순)
+            });
+
+            feedbacks.forEach(data => {
+                const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '방금 전';
                 const card = document.createElement('div');
-                card.className = "flex flex-col gap-2";
+                card.className = "flex flex-col gap-2 mb-4";
 
                 let replyHTML = '';
                 if (data.replyContent) {
                     replyHTML = `
                         <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 ml-4 relative">
-                            <div class="absolute -left-2 top-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-100 rotate-[-45deg]"></div>
-                            <span class="text-[10px] font-black text-blue-600 mb-1 block">이안님의 답장 ✨</span>
+                            <div class="absolute -left-1.5 top-4 w-3 h-3 bg-blue-50 border-l border-t border-blue-100 rotate-[-45deg]"></div>
+                            <span class="text-[10px] font-black text-blue-600 mb-1 block">이안님의 메시지 ✨</span>
                             <p class="text-[13px] font-bold text-gray-800 leading-relaxed">${data.replyContent}</p>
                         </div>
                     `;
@@ -2746,6 +2755,9 @@ function renderMemoFolders() {
                 `;
                 listContainer.appendChild(card);
             });
+        }).catch(e => {
+            console.error("목록 불러오기 실패:", e);
+            listContainer.innerHTML = '<p class="text-center text-red-400 py-20 font-bold">데이터를 불러오지 못했습니다.</p>';
         });
     }
 
