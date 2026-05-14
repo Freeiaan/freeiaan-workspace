@@ -146,12 +146,23 @@
 
         <!-- 🖱️ 우클릭 커스텀 메뉴 (노션 스타일) -->
       <div id="contextMenu" class="fixed hidden z-[9999] bg-white shadow-xl border border-gray-200 rounded-lg py-1.5 min-w-[160px] text-sm animate-in fade-in zoom-in duration-200">
-          <button onclick="handleContextDuplicate()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
+          <button id="btnCtxCopy" onclick="handleContextCopy()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
+              <span>📄</span>
+              <span class="font-bold text-gray-700">복사</span>
+              <span class="ml-auto text-xs text-gray-400">Ctrl+C</span>
+          </button>
+          <button id="btnCtxPaste" onclick="handleContextPaste()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
+              <span>📋</span>
+              <span class="font-bold text-gray-700">붙여넣기</span>
+              <span class="ml-auto text-xs text-gray-400">Ctrl+V</span>
+          </button>
+          <div id="ctxDivider" class="h-px bg-gray-200 my-1 mx-2"></div>
+          <button id="btnCtxDuplicate" onclick="handleContextDuplicate()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
               <span>👯</span>
               <span class="font-bold text-gray-700">복제</span>
               <span class="ml-auto text-xs text-gray-400">Ctrl+D</span>
           </button>
-          <button onclick="handleContextDelete()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 text-red-500 transition-colors">
+          <button id="btnCtxDelete" onclick="handleContextDelete()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 text-red-500 transition-colors">
               <span>🗑️</span>
               <span class="font-bold">삭제</span>
               <span class="ml-auto text-xs text-red-300">Del</span>
@@ -766,46 +777,115 @@ function syncToCloud() {
 }
 
           // 🖱️ 우클릭 커스텀 메뉴 기능
-let selectedTaskDateKey = null;
-let selectedTaskIndex = null;
+let selectedTaskDateKey = null; // 선택된 일정의 날짜 방
+let selectedTaskIndex = null;   // 선택된 일정의 순서
+let targetPasteDateKey = null;  // 붙여넣기 할 달력의 날짜 방
+let clipboardTask = null;       // 복사한 일정을 들고 있을 메모리(클립보드)
 
 document.addEventListener('contextmenu', function(e) {
     const taskElement = e.target.closest('.todo-item'); 
+    const cellElement = e.target.closest('.group-cell'); // 달력 빈칸 인식!
     
+    const menu = document.getElementById('contextMenu');
+    const btnCopy = document.getElementById('btnCtxCopy');
+    const btnPaste = document.getElementById('btnCtxPaste');
+    const divider = document.getElementById('ctxDivider');
+    const btnDup = document.getElementById('btnCtxDuplicate');
+    const btnDel = document.getElementById('btnCtxDelete');
+
     if (taskElement) {
         e.preventDefault();
-        
-        // 🆔 "어느 날짜"의 "몇 번째" 일정인지 정확한 주소를 낚아챕니다!
         selectedTaskDateKey = taskElement.getAttribute('data-datekey');
         selectedTaskIndex = taskElement.getAttribute('data-index');
+        targetPasteDateKey = selectedTaskDateKey; // 같은 날짜에도 붙여넣기 가능하게!
+
+        // 일정 위에서는 복사, 복제, 삭제 보이기
+        btnCopy.style.display = 'flex';
+        btnDup.style.display = 'flex';
+        btnDel.style.display = 'flex';
+        divider.style.display = 'block';
         
-        const menu = document.getElementById('contextMenu');
+        // 클립보드에 들고 있는 게 있으면 붙여넣기도 활성화!
+        btnPaste.style.display = clipboardTask ? 'flex' : 'none';
+
         menu.classList.remove('hidden');
         menu.style.left = e.pageX + 'px';
         menu.style.top = e.pageY + 'px';
+    } else if (cellElement) {
+        // 달력의 "빈 칸"을 우클릭했을 때!
+        e.preventDefault();
+        targetPasteDateKey = cellElement.getAttribute('data-date');
+        selectedTaskDateKey = null;
+        selectedTaskIndex = null;
+
+        // 클립보드에 복사해 둔 일정이 있을 때만 "붙여넣기" 메뉴 띄우기!
+        if (clipboardTask) {
+            btnCopy.style.display = 'none';
+            btnDup.style.display = 'none';
+            btnDel.style.display = 'none';
+            divider.style.display = 'none';
+            btnPaste.style.display = 'flex'; // 오직 붙여넣기만!
+            
+            menu.classList.remove('hidden');
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+        } else {
+            menu.classList.add('hidden'); // 들고 있는 게 없으면 안 띄움
+        }
     } else {
-        document.getElementById('contextMenu').classList.add('hidden');
+        menu.classList.add('hidden');
     }
 });
 
 document.addEventListener('click', () => {
-    document.getElementById('contextMenu').classList.add('hidden');
+    const menu = document.getElementById('contextMenu');
+    if(menu) menu.classList.add('hidden');
 });
 
-// 👯 복제 기능
+// 📄 복사 기능
+function handleContextCopy() {
+    if (!selectedTaskDateKey || selectedTaskIndex === null) return;
+    const tasks = allTasks[selectedTaskDateKey];
+    
+    if (tasks && tasks[selectedTaskIndex]) {
+        clipboardTask = { ...tasks[selectedTaskIndex] }; 
+        clipboardTask.isChecked = false; // 복사할 땐 완료(줄그음) 상태는 풀어서 깔끔하게 복사!
+        
+        // 시각적인 피드백 (버튼 글씨가 잠깐 바뀜)
+        const span = document.querySelector('#btnCtxCopy span:nth-child(2)');
+        if(span) {
+            span.innerText = "복사 완료!";
+            setTimeout(() => { span.innerText = "복사"; }, 1000);
+        }
+    }
+}
+
+// 📋 붙여넣기 기능
+function handleContextPaste() {
+    if (!targetPasteDateKey || !clipboardTask) return;
+    
+    if (!allTasks[targetPasteDateKey]) {
+        allTasks[targetPasteDateKey] = [];
+    }
+    
+    // 똑같은 내용에 고유 ID만 새롭게 부여해서 붙여넣기!
+    const newTask = { ...clipboardTask, id: Date.now() };
+    allTasks[targetPasteDateKey].push(newTask);
+    
+    syncToCloud();
+    initAppRenders();
+}
+
+// 👯 복제 기능 (같은 날짜에 하나 더 만들기)
 function handleContextDuplicate() {
     if (!selectedTaskDateKey || selectedTaskIndex === null) return;
-    
     const tasks = allTasks[selectedTaskDateKey];
+    
     if (tasks && tasks[selectedTaskIndex]) {
-        // 똑같은 내용을 복사해서 그 날짜 방의 맨 끝에 추가!
-        const newTask = { ...tasks[selectedTaskIndex] }; 
+        const newTask = { ...tasks[selectedTaskIndex], id: Date.now() }; 
         tasks.push(newTask);
-        
         syncToCloud(); 
         initAppRenders();
-    } else {
-        alert("일정을 찾을 수 없습니다.");
     }
 }
 
@@ -816,9 +896,7 @@ function handleContextDelete() {
     
     const tasks = allTasks[selectedTaskDateKey];
     if (tasks) {
-        // 해당 날짜 방에서 선택한 n번째 일정을 1개만 딱 삭제!
         tasks.splice(selectedTaskIndex, 1);
-        
         syncToCloud();
         initAppRenders();
     }
