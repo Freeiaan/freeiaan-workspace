@@ -1090,6 +1090,10 @@ function handleContextAdd() {
             const lOverlay = document.getElementById('loadingOverlay');
             if (lOverlay) lOverlay.classList.add('hidden');
 
+            // 👉 여기가 핵심 범인! 찐 로딩창 이름은 'loadingShield' 였습니다!
+            const lShield = document.getElementById('loadingShield');
+            if (lShield) lShield.classList.add('hidden');
+
             const loginSc = document.getElementById('loginScreen');
             if (loginSc) loginSc.classList.remove('hidden');
             
