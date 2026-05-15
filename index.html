@@ -250,9 +250,13 @@
         <div id="recordDisplayGlobal" class="text-[10px] font-bold text-gray-500 flex gap-1.5"></div>
       </div>
 
-      <div class="flex w-full mb-5 gap-2 flex-shrink-0">
-          <button onclick="toggleDrawer()" class="flex-1 py-2.5 bg-[#e8f5e9] text-[#22741C] font-extrabold text-[11px] rounded-xl border-b-[3px] border-[#22741C] hover:bg-[#c8e6c9] shadow-sm transition active:scale-95">📋 내 보드</button>
-          <button onclick="openAnalytics()" class="flex-1 py-2.5 bg-[#fff3e0] text-[#ef6c00] font-extrabold text-[11px] rounded-xl border-b-[3px] border-[#ef6c00] hover:bg-[#ffe0b2] shadow-sm transition active:scale-95">📊 리포트</button>
+      <div class="flex w-full mb-5 gap-3 flex-shrink-0">
+          <button onclick="toggleDrawer()" class="flex-1 py-3 bg-gradient-to-br from-[#f4fbf6] to-[#e8f5e9] border border-[#cce8d6] rounded-2xl text-[#22741C] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(34,116,28,0.08)] hover:shadow-[0_6px_16px_rgba(34,116,28,0.12)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
+              <span class="text-sm">📋</span> 내 보드
+          </button>
+          <button onclick="openAnalytics()" class="flex-1 py-3 bg-gradient-to-br from-[#fffaf5] to-[#fff3e0] border border-[#ffe0b2] rounded-2xl text-[#ef6c00] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(239,108,0,0.06)] hover:shadow-[0_6px_16px_rgba(239,108,0,0.1)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
+              <span class="text-sm">📊</span> 리포트
+          </button>
       </div>
     
       <div id="timerClickArea" class="w-44 h-44 md:w-52 md:h-52 flex-shrink-0 bg-[#ede8e1] rounded-[2rem] p-3 md:p-4 shadow-lg relative flex justify-center items-center mb-5">
