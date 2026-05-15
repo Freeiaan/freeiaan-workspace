@@ -1082,15 +1082,27 @@ function handleContextAdd() {
 
         } else {
             currentUser = null;
-            $('loadingScreen').classList.add('hidden');
-            $('loginScreen').classList.remove('hidden');
-            $('mainApp').classList.add('hidden');
-            $('adminBtn').classList.add('hidden');
             
-            // 🔥 로그아웃 상태일 때 모바일 UI 하단으로 새어나오지 않게 꽁꽁 숨기기
-            const drawer = $('dashboardDrawer');
-            const habitSec = $('mobileHabitSection');
-            const tabBar = $('mobileTabBar');
+            // 🔥 어떤 로딩창이든 무조건 다 찾아내서 안전하게 숨겨버리기! (에러 완벽 차단)
+            const lScreen = document.getElementById('loadingScreen');
+            if (lScreen) lScreen.classList.add('hidden');
+            
+            const lOverlay = document.getElementById('loadingOverlay');
+            if (lOverlay) lOverlay.classList.add('hidden');
+
+            const loginSc = document.getElementById('loginScreen');
+            if (loginSc) loginSc.classList.remove('hidden');
+            
+            const mainAp = document.getElementById('mainApp');
+            if (mainAp) mainAp.classList.add('hidden');
+            
+            const adminB = document.getElementById('adminBtn');
+            if (adminB) adminB.classList.add('hidden');
+
+            // 🔥 로그아웃 상태일 때 모바일 UI 하단으로 새어나오지 않게 꽁꽁 숨기기 (기존 코드 보존!)
+            const drawer = document.getElementById('dashboardDrawer');
+            const habitSec = document.getElementById('mobileHabitSection');
+            const tabBar = document.getElementById('mobileTabBar');
             if (drawer) drawer.style.display = 'none';
             if (habitSec) habitSec.style.display = 'none';
             if (tabBar) tabBar.style.display = 'none';
