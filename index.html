@@ -1389,6 +1389,7 @@ function loadFromCloud() {
             initAppRenders();
         } else {
             syncToCloud();
+            initAppRenders(); // 🔥 신규 유저를 위해 빈 달력과 기본 화면을 쫙 그려주는 마법의 한 줄!
         }
         
         // 🌟 데이터 도착 완료! 철벽 가림막 스르륵 치우기
