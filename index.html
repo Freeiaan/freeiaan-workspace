@@ -228,10 +228,6 @@
               <h1 id="monthYear" class="text-base md:text-xl font-bold text-black"></h1>
               <button id="nextBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">▶</button>
     
-              <div class="hidden md:flex gap-2 ml-4">
-                  <button onclick="toggleDrawer()" class="text-[11px] font-bold bg-[#1b4332] text-white px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#22741C] transition">📋 내 보드 열기</button>
-                  <button onclick="openAnalytics()" class="text-[11px] font-bold bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50 transition">📊 성취 리포트</button>
-              </div>
           </div>
             <div class="flex gap-1.5 md:hidden">
                 <button onclick="openModal('createSingle', { dateKey: getDateKey(new Date()) })" class="px-2.5 py-1 bg-[#22741C] border border-[#22741C] rounded-[8px] text-[10px] font-extrabold text-white shadow-sm active:scale-95 transition-all">+ 추가</button>
@@ -451,6 +447,11 @@
       </header>
       <div class="flex-1 overflow-hidden flex p-4 md:p-8 gap-8">
          <div id="dpSectionTracker" class="w-full md:w-1/2 flex flex-col h-full relative flex-shrink-0">
+          <div class="flex w-full mb-3 gap-1">
+                      <button onclick="toggleDrawer()" class="flex-1 py-2 bg-[#e8f5e9] text-[#22741C] font-extrabold text-[11px] rounded-t-xl border-b-[3px] border-[#22741C] hover:bg-[#c8e6c9] transition">📋 내 보드</button>
+                      <button onclick="openAnalytics()" class="flex-1 py-2 bg-[#fff3e0] text-[#ef6c00] font-extrabold text-[11px] rounded-t-xl border-b-[3px] border-[#ef6c00] hover:bg-[#ffe0b2] transition">📊 성취 리포트</button>
+                  </div>
+           
             <div class="flex justify-between items-end mb-1">
               <div class="flex items-center gap-2">
                   <h3 class="font-bold text-sm text-gray-800 tracking-wide">TIME TRACKER</h3>
