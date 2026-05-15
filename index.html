@@ -1851,8 +1851,17 @@ function renderTimeGrid(dateKey) {
           };
           
           cell.onpointerup = () => { 
-              if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+              let isQuickTap = false;
+              
+              // 1. 0.6초가 되기 전에 손을 뗐다면 (타이머가 아직 살아있다면) -> 가벼운 '톡' 터치(클릭)로 인정!
+              if (pressTimer) { 
+                  clearTimeout(pressTimer); 
+                  pressTimer = null; 
+                  isQuickTap = true;
+              } 
+              
               if (isPainting) { 
+                  // [데스크탑 & 0.6초 꾹 누른 태블릿] 제자리 클릭/터치 처리
                   if (!dragHasMoved) { 
                       if (data[idx]) openTimeBlockModal(idx, dateKey); 
                       else applyBrushToCell(idx, cell); 
@@ -1861,6 +1870,15 @@ function renderTimeGrid(dateKey) {
                   // 🔥 색칠이 끝났으니 다시 스크롤 가능하게 잠금 해제!
                   document.body.style.touchAction = ''; 
                   setTimeout(() => { if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); }, 10);
+                  
+              } else if (isQuickTap) {
+                  // 🔥 [추가됨] 0.6초 미만으로 가볍게 '톡' 쳤을 때 즉시 반응하는 로직!
+                  if (data[idx]) {
+                      openTimeBlockModal(idx, dateKey); // 색칠된 칸이면 입력창(모달) 띄우기
+                  } else {
+                      applyBrushToCell(idx, cell); // 빈 칸이면 한 칸만 바로 색칠하기
+                      setTimeout(() => { if (currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); }, 10);
+                  }
               } 
           };
           
