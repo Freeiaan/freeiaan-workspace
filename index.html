@@ -2491,6 +2491,10 @@ function renderTimeGrid(dateKey) {
             const target = document.elementFromPoint(e.clientX, e.clientY);
             if (target && target.classList.contains('time-cell')) { 
                 const idx = parseInt(target.id.replace('time-cell-', '')); 
+                
+                // 🔥 [추가] 손가락이 위아래로 삐끗해도, 처음 누른 줄(가로)에서만 색칠되게 철벽 방어!
+                if (Math.floor(idx / 6) !== Math.floor(dragStartIdx / 6)) return;
+
                 if (!dragHasMoved && dragStartIdx !== idx) { 
                     applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
                     dragHasMoved = true; 
