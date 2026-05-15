@@ -440,9 +440,12 @@
       <div class="flex-1 overflow-hidden flex p-4 md:p-8 gap-8">
          <div id="dpSectionTracker" class="w-full md:w-1/2 flex flex-col h-full relative flex-shrink-0">
             <div class="flex justify-between items-end mb-1">
-                <h3 class="font-bold text-sm text-gray-800 tracking-wide">TIME TRACKER</h3>
-                <div id="modalRecordDisplay" class="text-[11px] font-bold text-[#22741C]"></div>
-            </div>
+              <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-sm text-gray-800 tracking-wide">TIME TRACKER</h3>
+                  <button onclick="clearGreyBlocks()" class="text-[10px] bg-red-50 text-red-500 border border-red-100 px-2 py-0.5 rounded-md font-bold hover:bg-red-100 transition shadow-sm active:scale-95">🧹 회색 블록 삭제</button>
+              </div>
+              <div id="modalRecordDisplay" class="text-[11px] font-bold text-[#22741C]"></div>
+          </div>
             <p class="text-[10px] text-gray-400 mb-3">(빈 칸을 드래그해 색칠하세요. <b>스크롤은 왼쪽 시간표 숫자를 밀어주세요!</b>)</p>
             <div class="flex text-[10px] text-gray-400 mb-1 pl-10 border-b border-[#e6e2d8] pb-1">
                <div class="flex-1 text-center font-semibold">10</div><div class="flex-1 text-center font-semibold">20</div><div class="flex-1 text-center font-semibold">30</div>
@@ -1950,6 +1953,31 @@ function renderTimeGrid(dateKey) {
         row.appendChild(cellContainer); 
         container.appendChild(row);
       }
+    }
+
+    // 🧹 회색 블록(기본 컬러)만 싹 골라 지우는 함수
+    function clearGreyBlocks() {
+        if (!currentPlannerDateKey) return;
+        if (!confirm("칠해진 '회색' 블록들을 모두 지우시겠습니까? \n(글자가 써진 블록도 회색이면 함께 삭제됩니다!)")) return;
+        
+        const data = dailyRecords[currentPlannerDateKey];
+        const greyColor = trackerColors[0].color; // 현재 설정된 첫 번째 기본 색상(회색)
+
+        let isDeleted = false;
+        for (let i = 0; i < 144; i++) {
+            // 해당 칸의 색상이 기본 회색과 같다면 삭제!
+            if (data.grid[i] === greyColor) {
+                data.grid[i] = null;
+                if (data.labels && data.labels[i]) delete data.labels[i];
+                isDeleted = true;
+            }
+        }
+
+        if (isDeleted) {
+            savePlannerData(); // 클라우드에 저장
+            renderTimeGrid(currentPlannerDateKey); // 화면 다시 그리기
+            renderTimerHistory(); // 하단 기록 목록도 갱신
+        }
     }
 
     function applyBrushToCell(idx, cellElement) {
