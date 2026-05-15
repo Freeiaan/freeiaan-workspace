@@ -1723,10 +1723,19 @@ function loadFromCloud() {
       if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
       $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden');
       if(window.innerWidth < 768 && window.switchDpTab) switchDpTab('tracker');
+      
+      // 🔥 [추가] 모달이 열리면 뒷배경 스크롤을 꽁꽁 얼려버립니다!
+      document.body.style.overflow = 'hidden';
     }
-    function closePlanner() { $('dailyPlannerModal').classList.add('hidden'); currentPlannerDateKey = null; }
+    
+    function closePlanner() { 
+      $('dailyPlannerModal').classList.add('hidden'); 
+      currentPlannerDateKey = null; 
+      
+      // 🔥 [추가] 모달이 닫히면 뒷배경 스크롤을 다시 부드럽게 풀어줍니다!
+      document.body.style.overflow = '';
+    }
     function savePlannerData() { if(currentPlannerDateKey) dailyRecords[currentPlannerDateKey].note = $('plannerNote').value; setLocal('ianDailyRecords', dailyRecords); }
-
     function renderPlannerTasks(dateKey) {
       const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = []; if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
       tasks.forEach((t, idx) => {
