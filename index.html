@@ -1667,7 +1667,9 @@ function loadFromCloud() {
         dailyRecords[todayKey].recorded[type] += pendingRecordSec; 
         const inputText = $('smartRecordInput').value.trim(); const inputColor = $('smartRecordColor').value; const taskIdx = $('smartRecordModal').dataset.taskIdx;
 
-        if (taskIdx !== '' && allTasks[todayKey][taskIdx]) allTasks[todayKey][taskIdx].isChecked = true;
+        // 🔥 이안님 요청: 타이머 기록 시 할 일 자동 체크(완료) 기능 제거! (이름과 색상만 복사해 옵니다)
+        // if (taskIdx !== '' && allTasks[todayKey][taskIdx]) allTasks[todayKey][taskIdx].isChecked = true;
+
         if ($('syncTrackerToggle').checked && inputText) {
             const now = new Date(); let currentHour = now.getHours(); if (currentHour < 5) currentHour += 24; const currentMin = now.getMinutes();
             let endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
