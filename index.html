@@ -1536,7 +1536,17 @@ function loadFromCloud() {
         if (isSelecting) {
             e.preventDefault(); 
             const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
-            if (hC) { const key = hC.getAttribute('data-date'); if (key !== selectEndKey) { selectEndKey = key; highlightSelection(selectStartKey, selectEndKey); } }
+            if (hC) { 
+                const key = hC.getAttribute('data-date'); 
+                if (key !== selectEndKey) { 
+                    selectEndKey = key; 
+                    highlightSelection(selectStartKey, selectEndKey); 
+                    
+                    // 🔥 [추가] 쭈욱 드래그를 시작하면 거슬리지 않게 팝업 메뉴를 숨깁니다!
+                    const quickMenu = document.getElementById('mobileQuickMenu');
+                    if (quickMenu) quickMenu.style.display = 'none';
+                } 
+            }
         }
     }, { passive: false });
 
@@ -2214,9 +2224,41 @@ function renderTimeGrid(dateKey) {
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
         cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         
+        // 🔥 태블릿(터치)도 꾹 누르면 메뉴가 뜨도록 업그레이드!
+        cell.onpointerdown = (e) => { 
+            if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.resize-handle') || e.target.closest('.date-trigger')) return;
+            
+            downTime = Date.now();
+            quickMenuTargetKey = key;
+            
+            // 화면이 좁거나(모바일) 터치/펜 입력인 경우(태블릿) -> '꾸욱 누르기' 모드!
+            if (window.innerWidth < 768 || e.pointerType === 'touch' || e.pointerType === 'pen') {
+                pressTimer = setTimeout(() => { 
+                    isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key);
+                    const menu = $('mobileQuickMenu');
+                    menu.style.display = 'flex';
+                    menu.style.left = `${Math.min(e.clientX, window.innerWidth - 160)}px`;
+                    menu.style.top = `${Math.min(e.clientY, window.innerHeight - 150)}px`;
+                    if(navigator.vibrate) navigator.vibrate(50); // 진동 피드백
+                }, 400); // 체감 속도를 위해 500ms -> 400ms로 살짝 줄임!
+            } else { 
+                // 데스크탑 마우스 클릭 시 바로 드래그 선택 시작
+                if (e.button === 0) { // 왼쪽 클릭일 때만
+                    isSelecting = true; selectStartKey = key; selectEndKey = key; highlightSelection(key, key); 
+                }
+            }
+        };
+        
+        cell.onpointermove = () => { clearTimeout(pressTimer); }; 
+        cell.onpointerup = () => { clearTimeout(pressTimer); };
+        cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
+        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
+        
+        // 🔥 터치 기기에서는 가볍게 톡! 치면 바로 일정 추가 창 열기
         cell.onclick = (e) => { 
-            if (window.innerWidth < 768 && !e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                if (Date.now() - downTime < 300) { 
+            if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
+                const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+                if ((window.innerWidth < 768 || isTouchDevice) && (Date.now() - downTime < 300)) { 
                     clearTimeout(pressTimer);
                     openModal('createSingle', { dateKey: key }); 
                 }
