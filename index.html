@@ -1842,6 +1842,10 @@ function renderTimeGrid(dateKey) {
           
           cell.onpointerenter = (e) => { 
               if(isPainting && e.pointerType === 'mouse') { 
+                  
+                  // 🔥 [추가] 같은 줄(가로)이 아니면 무조건 튕겨내기! (마우스 삐끗 방어)
+                  if (Math.floor(idx / 6) !== Math.floor(dragStartIdx / 6)) return;
+
                   if (!dragHasMoved) { 
                       applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
                       dragHasMoved = true; 
