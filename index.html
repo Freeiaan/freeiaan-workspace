@@ -569,35 +569,27 @@
   </div>
 
   <div id="eventModal" class="hidden fixed inset-0 z-[600] flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[400px] p-8 flex flex-col max-h-[90vh]">
-      <h3 class="text-lg font-black text-gray-800 mb-5">일정 설정</h3>
-      
-      <div class="flex flex-col gap-0 mb-6">
-          <input type="text" id="modalInput" class="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-t-2xl text-[14px] font-bold text-gray-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#22741C] transition-all" placeholder="일정 제목 (예: 회의 준비)">
-          <textarea id="modalDesc" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 border-t-0 rounded-b-2xl text-[13px] font-medium text-gray-600 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#22741C] transition-all resize-none h-20 custom-scrollbar" placeholder="세부 내용, 링크, 참고 사항 등을 적어주세요."></textarea>
-      </div>
-
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-[11px] font-black text-gray-400 uppercase tracking-widest">Category</span>
-        <div class="flex gap-1.5">
-          <button onclick="addNewCategory()" class="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1.5 rounded-lg font-bold hover:bg-gray-200 transition">+ 추가</button>
-          <button id="toggleEditBtn" onclick="toggleCategoryEdit()" class="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1.5 rounded-lg font-bold hover:bg-gray-200 transition">✏️ 변경</button>
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[440px] p-8">
+      <h3 class="text-lg font-bold mb-6">일정 설정</h3>
+      <input type="text" id="modalInput" class="w-full px-4 py-3 bg-gray-50 border rounded-2xl mb-6 text-[14px] font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#22741C]">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Category</span>
+        <div class="flex gap-2">
+          <button onclick="addNewCategory()" class="text-[11px] bg-gray-100 border px-3 py-1.5 rounded-lg font-bold hover:bg-gray-200 transition">카테고리 추가</button>
+          <button id="toggleEditBtn" onclick="toggleCategoryEdit()" class="text-[11px] bg-gray-100 border px-3 py-1.5 rounded-lg font-bold hover:bg-gray-200 transition">변경</button>
         </div>
       </div>
-      
-      <div id="categoryContainer" class="flex gap-3 overflow-x-auto custom-scrollbar mb-8 pb-3 pt-1 px-1 min-h-[80px]"></div>
-      
-      <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-auto">
-        <button id="modalDeleteBtn" class="text-red-500 font-extrabold text-sm hover:underline px-2 py-2">삭제</button>
-        <div class="flex gap-2">
-          <button onclick="closeModal()" class="text-gray-500 hover:bg-gray-100 rounded-xl font-extrabold text-sm px-5 py-3 transition-colors">취소</button>
-          <button id="modalSaveBtn" class="bg-[#22741C] text-white px-8 py-3 rounded-xl font-black text-sm shadow-md hover:bg-[#1b5e16] transition-all active:scale-95">저장 🚀</button>
+      <div id="categoryContainer" class="flex flex-wrap gap-x-2 gap-y-8 mb-10 pt-2 px-1 min-h-[90px]"></div>
+      <div class="flex justify-between items-center pt-2">
+        <button id="modalDeleteBtn" class="text-red-500 font-extrabold text-sm hover:underline">삭제</button>
+        <div class="flex gap-3">
+          <button onclick="closeModal()" class="text-gray-600 font-extrabold text-sm px-4 py-2">취소</button>
+          <button id="modalSaveBtn" class="bg-[#22741C] text-white px-10 py-3 rounded-2xl font-extrabold text-sm shadow-lg hover:bg-[#1b5e16]">저장</button>
         </div>
       </div>
     </div>
   </div>
 
-  
   <div id="smartRecordModal" class="hidden fixed inset-0 z-[4000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#faf8f5] w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
       <div class="flex justify-between items-center mb-6">
@@ -2133,11 +2125,7 @@ function renderTimeGrid(dateKey) {
       const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.draggable = true; div.className = "dashboard-item bg-white rounded-xl border border-gray-100 shadow-sm cursor-move flex-shrink-0 pr-3 py-2"; div.setAttribute('data-key', key); div.setAttribute('data-idx', idx);
       const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black'; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
       let dateBadge = ''; if (showDate) { const parts = key.split('-'); const dObj = new Date(parts[0], parts[1]-1, parts[2]); const mStr = String(dObj.getMonth()+1).padStart(2,'0'); const dStr = String(dObj.getDate()).padStart(2,'0'); const dayStr = ['일','월','화','수','목','금','토'][dObj.getDay()]; dateBadge = `<span class="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-2 flex-shrink-0">~${mStr}.${dStr} ${dayStr}</span>`; }
-      
-      // 🔥 [핵심] 메모가 1글자라도 있으면 📝 아이콘 띄우기!
-      const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
-
-      div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 md:w-[15px] md:h-[15px] rounded-md"><span class="cat-badge-bg text-[11px] md:text-[13px] font-bold md:font-medium ml-1.5" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] md:text-[13px] truncate font-medium md:font-medium ml-1.5 ${isCheckedClass}" style="color: ${colorStyle}">${t.text}${descIcon}</span></div>${dateBadge}`;
+      div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 md:w-[15px] md:h-[15px] rounded-md"><span class="cat-badge-bg text-[11px] md:text-[13px] font-bold md:font-medium ml-1.5" style="background-color: ${hexToRgba(cat.color, 0.15)}; color: ${colorStyle}">${cat.name}</span><div class="flex-1 flex items-center overflow-hidden h-full"><span class="text-[13px] md:text-[13px] truncate font-medium md:font-medium ml-1.5 ${isCheckedClass}" style="color: ${colorStyle}">${t.text}</span></div>${dateBadge}`;
       div.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('dash-key', key); e.dataTransfer.setData('dash-idx', idx); };
       div.querySelector('input').onclick = (e) => { e.stopPropagation(); allTasks[key][idx].isChecked = e.target.checked; saveAndRefresh(); }; 
       div.onclick = (e) => { if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) openModal('editSingle', { dateKey: key, index: idx, ...t }); }; return div;
@@ -2146,33 +2134,16 @@ function renderTimeGrid(dateKey) {
     function handleDashOver(e) { e.preventDefault(); }
     function handleDashDrop(e, type) { e.preventDefault(); const sK = e.dataTransfer.getData('dash-key'), sI = parseInt(e.dataTransfer.getData('dash-idx')); const target = e.target.closest('.dashboard-item'); if (target) { const dK = target.getAttribute('data-key'), dI = parseInt(target.getAttribute('data-idx')); if (sK === dK) { const temp = allTasks[sK].splice(sI, 1)[0]; allTasks[sK].splice(dI, 0, temp); saveAndRefresh(); } } }
 
-    // 🔥 카테고리 동그라미 다이어트 & 가로 스와이프 UI 반영
     function buildCategoryUI() {
       const container = $('categoryContainer'); if (!container) return; container.innerHTML = '';
       categories.forEach(cat => {
-        const item = document.createElement('div'); item.className = 'color-item flex flex-col items-center gap-1.5 w-[50px] relative group flex-shrink-0';
-        const circle = document.createElement('div'); circle.className = `color-circle ${selectedCategoryId === cat.id ? 'selected' : ''}`;
-        
-        // 동그라미 사이즈 줄이기!
-        circle.style.backgroundColor = cat.color;
-        circle.style.width = '32px'; 
-        circle.style.height = '32px';
-
+        const item = document.createElement('div'); item.className = 'color-item flex flex-col items-center gap-1 w-[60px] relative group';
+        const circle = document.createElement('div'); circle.className = `color-circle ${selectedCategoryId === cat.id ? 'selected' : ''}`; circle.style.backgroundColor = cat.color;
         const delBtn = document.createElement('div'); delBtn.className = 'delete-cat-btn'; delBtn.innerHTML = '×'; delBtn.style.display = isEditMode ? 'flex' : 'none';
         delBtn.onclick = (e) => { e.stopPropagation(); if (categories.length > 1) { categories = categories.filter(c => c.id !== cat.id); saveCategories(); buildCategoryUI(); } else { alert("최소 1개의 카테고리는 유지해야 합니다."); } };
         const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
         circle.onclick = () => { if (isEditMode) picker.click(); else { selectedCategoryId = cat.id; buildCategoryUI(); } };
-        
-        // 글씨 사이즈 줄이고 간격 바짝 붙이기!
-        const nameInput = document.createElement('input'); 
-        nameInput.className = 'category-name text-center border-none bg-transparent font-bold text-gray-700 outline-none w-full truncate'; 
-        nameInput.value = cat.name; nameInput.readOnly = !isEditMode; 
-        nameInput.style.fontSize = '10px';
-        nameInput.style.marginTop = '0px';
-        nameInput.style.padding = '0px';
-        if (isEditMode) nameInput.classList.add('border-b-2', 'border-black');
-
-        nameInput.onchange = (e) => { cat.name = e.target.value; saveCategories(); renderCalendar(); };
+        const nameInput = document.createElement('input'); nameInput.className = 'category-name'; nameInput.value = cat.name; nameInput.readOnly = !isEditMode; nameInput.onchange = (e) => { cat.name = e.target.value; saveCategories(); renderCalendar(); };
         circle.appendChild(picker); circle.appendChild(delBtn); item.appendChild(circle); item.appendChild(nameInput); container.appendChild(item);
       });
     }
@@ -2195,39 +2166,18 @@ function renderTimeGrid(dateKey) {
         renderCalendar(); 
         renderDashboard(); 
     }
-    // 🔥 [수정됨] 모달창 열 때 설명(Description) 필드도 싹 불러오기!
-    function openModal(mode, data) { 
-        currentMode = mode; editData = data; 
-        if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; 
-        if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; 
-        $('eventModal').classList.remove('hidden'); 
-        
-        $('modalInput').value = (data && data.text) ? data.text : ''; 
-        $('modalDesc').value = (data && data.description) ? data.description : ''; 
-        
-        buildCategoryUI(); 
-    }
-    
+    function openModal(mode, data) { currentMode = mode; editData = data; if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; $('eventModal').classList.remove('hidden'); $('modalInput').value = (data && data.text) ? data.text : ''; buildCategoryUI(); }
     function closeModal() { $('eventModal').classList.add('hidden'); }
-    function openDetailModal(key, date) { const m = $('mobileDetailModal'), l = $('detailList'); $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 일정`; l.innerHTML = ''; m.classList.remove('hidden'); (allTasks[key] || []).forEach((t, i) => { const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"; 
-    
-    // 🔥 메모 아이콘 표시
-    const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
-    
-    div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}${descIcon}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`; div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); }; div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } }; l.appendChild(div); }); $('detailAddBtn').onclick = () => { closeDetailModal(); openModal('createSingle', { dateKey: key }); }; }
+    function openDetailModal(key, date) { const m = $('mobileDetailModal'), l = $('detailList'); $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 일정`; l.innerHTML = ''; m.classList.remove('hidden'); (allTasks[key] || []).forEach((t, i) => { const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"; div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`; div.querySelector('input').onclick = () => { t.isChecked = !t.isChecked; saveAndRefresh(); openDetailModal(key, date); }; div.onclick = (e) => { if (e.target.tagName !== 'INPUT') { closeDetailModal(); openModal('editSingle', { dateKey: key, index: i, ...t }); } }; l.appendChild(div); }); $('detailAddBtn').onclick = () => { closeDetailModal(); openModal('createSingle', { dateKey: key }); }; }
     function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); }
 
-    // 🔥 [수정됨] 저장할 때 설명(Description) 필드도 같이 묶어서 저장하기!
     $('modalSaveBtn').onclick = () => {
       const txt = $('modalInput').value.trim() || '새 일정';
-      const desc = $('modalDesc').value.trim();
-      
-      if (currentMode === 'createSingle') { if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = []; allTasks[editData.dateKey].push({ text: txt, description: desc, categoryId: selectedCategoryId, isChecked: false }); } 
-      else if (currentMode === 'editSingle') { allTasks[editData.dateKey][editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked }; } 
-      else if (currentMode === 'createMulti') { multiTasks.push({ id: Date.now(), start: pendingStart, end: pendingEnd, text: txt, description: desc, categoryId: selectedCategoryId }); } 
-      else if (currentMode === 'editMulti') { const t = multiTasks.find(x => x.id === editData.id); t.text = txt; t.description = desc; t.categoryId = selectedCategoryId; } 
-      else if (currentMode === 'editInbox') { inboxTasks[editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked }; setLocal('ianInboxTasks', inboxTasks); renderInbox(); }
-      
+      if (currentMode === 'createSingle') { if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = []; allTasks[editData.dateKey].push({ text: txt, categoryId: selectedCategoryId, isChecked: false }); } 
+      else if (currentMode === 'editSingle') { allTasks[editData.dateKey][editData.index] = { text: txt, categoryId: selectedCategoryId, isChecked: editData.isChecked }; } 
+      else if (currentMode === 'createMulti') { multiTasks.push({ id: Date.now(), start: pendingStart, end: pendingEnd, text: txt, categoryId: selectedCategoryId }); } 
+      else if (currentMode === 'editMulti') { const t = multiTasks.find(x => x.id === editData.id); t.text = txt; t.categoryId = selectedCategoryId; } 
+      else if (currentMode === 'editInbox') { inboxTasks[editData.index] = { text: txt, categoryId: selectedCategoryId, isChecked: editData.isChecked }; setLocal('ianInboxTasks', inboxTasks); renderInbox(); }
       if (currentMode !== 'editInbox') saveAndRefresh(); closeModal(); if(currentPlannerDateKey) { activeBrushColor = null; renderPlannerTasks(currentPlannerDateKey); }
     };
 
@@ -2501,22 +2451,22 @@ function renderTimeGrid(dateKey) {
         
         const todoContainer = document.createElement('div'); todoContainer.className = "mt-1 flex flex-col gap-0.5 overflow-hidden todo-list-container flex-1 px-0.5 md:px-1";
         if (Array.isArray(allTasks[key])) {
-          if (Array.isArray(allTasks[key])) {
           allTasks[key].forEach((t, idx) => {
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
               const item = document.createElement('div'); item.draggable = true; 
               item.className = 'todo-item text-[10px] md:text-[11px] truncate px-0.5 md:px-1 rounded flex items-start md:items-center w-full gap-0 md:gap-1.5';
+              // 🟢 ID 대신 "어느 날짜의" "몇 번째" 일정인지 주소를 달아줍니다!
               item.setAttribute('data-datekey', key);
               item.setAttribute('data-index', idx);
               const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : '';
+              // 🔥 기존에는 글자색(colorStyle)으로 썼던 걸 배경색(bgColor)으로 변경합니다!
               const bgColor = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+              // 🔥 위에서 만든 색상 판독기를 돌려서 글자색(fontColor)을 알아냅니다!
               const fontColor = getContrastColor(cat.color);
               
-              // 🔥 [핵심] 달력 위 일정에도 📝 아이콘 띄우기!
-              const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[9px] opacity-70" title="메모 있음">📝</span>' : '';
-              
-              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1" style="background-color: ${bgColor}; color: ${fontColor};">${t.text}${descIcon}</span>`;
+              // span 태그에 background-color, color, 그리고 라벨처럼 예쁘게 보이도록 px-1.5, py-0.5, rounded-md 속성을 추가했어요.
+              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1" style="background-color: ${bgColor}; color: ${fontColor};">${t.text}</span>`;
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
               item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; 
