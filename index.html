@@ -3377,7 +3377,7 @@ function renderMemoFolders() {
         }
     }
 
-    // 💡 탭 드래그 앤 드롭 (위치 변경 및 날짜별 개별 저장)
+    // 💡 탭 드래그 앤 드롭 (위치 변경 및 날짜별 개별 저장) - 버그 완벽 수정본!
     let draggedTab = null;
     
     window.startTabDrag = function(e, tabName) {
@@ -3386,6 +3386,7 @@ function renderMemoFolders() {
     
     window.dropTab = function(e, targetTabName) {
         e.preventDefault();
+        // 잡고 있는 탭과 놓은 탭이 다를 때만 스왑(자리 교체) 작동!
         if (draggedTab && draggedTab !== targetTabName && currentPlannerDateKey) {
             const container = document.getElementById('dpSubTabsContainer');
             const memoTab = document.getElementById('tabWrapper-memo');
@@ -3393,15 +3394,21 @@ function renderMemoFolders() {
             
             if (!dailyRecords[currentPlannerDateKey]) dailyRecords[currentPlannerDateKey] = { grid: Array(144).fill(null), labels: {} };
             
-            if (targetTabName === 'memo') {
+            // 현재 화면에서 누가 1빠(왼쪽)에 있는지 배열 순서로 정확히 확인
+            const isMemoFirst = Array.from(container.children).indexOf(memoTab) < Array.from(container.children).indexOf(kptTab);
+            
+            if (isMemoFirst) {
+                // '오늘 기록(memo)'이 1빠였는데 스와이프 발생 -> KPT를 1빠로!
                 container.insertBefore(kptTab, memoTab);
                 dailyRecords[currentPlannerDateKey].tabOrder = 'kpt';
             } else {
+                // 'KPT'가 1빠였는데 스와이프 발생 -> 오늘 기록(memo)을 1빠로!
                 container.insertBefore(memoTab, kptTab);
                 dailyRecords[currentPlannerDateKey].tabOrder = 'memo';
             }
-            window.savePlannerData(); // 위치 바꾼 것도 클라우드에 영구 저장!
-            window.switchDpSubTab(draggedTab); // 위치 이동 후 해당 탭 열어주기
+            
+            window.savePlannerData(); // 바뀐 위치 저장
+            window.switchDpSubTab(draggedTab); // 끌어다 놓은 탭을 바로 열어주기
         }
         draggedTab = null;
     };
