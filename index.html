@@ -1809,10 +1809,16 @@ function loadFromCloud() {
     function openPlanner(dateKey, dateObj) {
       currentPlannerDateKey = dateKey; $('plannerTitle').textContent = `Day ${dateObj.getDate()}`; $('plannerSubtitle').textContent = `${dateObj.getFullYear()} . ${String(dateObj.getMonth() + 1).padStart(2, '0')} . ${String(dateObj.getDate()).padStart(2, '0')}`;
       if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
-      $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden');
+      $('plannerNote').value = dailyRecords[dateKey].note || ''; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden');
       if(window.innerWidth < 768 && window.switchDpTab) switchDpTab('tracker');
       
-      // 🔥 [추가] 모달이 열리면 뒷배경 스크롤을 꽁꽁 얼려버립니다!
+      // 💡 3단 KPT 전용창에 저장된 내용 쏙쏙 꽂아넣기!
+      const data = dailyRecords[dateKey] || {};
+      $('kptKeep').value = data.kptKeep || '';
+      $('kptProblem').value = data.kptProblem || '';
+      $('kptTry').value = data.kptTry || '';
+      
+      switchDpSubTab('memo');
       document.body.style.overflow = 'hidden';
     }
     
@@ -1823,7 +1829,6 @@ function loadFromCloud() {
       // 🔥 [추가] 모달이 닫히면 뒷배경 스크롤을 다시 부드럽게 풀어줍니다!
       document.body.style.overflow = '';
     }
-    function savePlannerData() { if(currentPlannerDateKey) dailyRecords[currentPlannerDateKey].note = $('plannerNote').value; setLocal('ianDailyRecords', dailyRecords); }
     function renderPlannerTasks(dateKey) {
       const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = []; if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
       tasks.forEach((t, idx) => {
@@ -3351,36 +3356,18 @@ function renderMemoFolders() {
 
     // 📂 데일리 플래너 내부 메모/KPT 서브 탭 전환
     window.switchDpSubTab = function(tab) {
-        const btnMemo = $('dpSubTabMemo');
-        const btnKPT = $('dpSubTabKPT');
-        const contMemo = $('dpSubContentMemo');
-        const contKPT = $('dpSubContentKPT');
-
+        const btnMemo = $('dpSubTabMemo'), btnKPT = $('dpSubTabKPT'), contMemo = $('dpSubContentMemo'), contKPT = $('dpSubContentKPT');
+        if (!btnMemo || !btnKPT) return;
         if (tab === 'memo') {
-            btnMemo.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]";
-            btnKPT.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
-            contMemo.classList.remove('hidden');
-            contKPT.classList.add('hidden');
+            btnMemo.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]"; btnKPT.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
+            contMemo.classList.remove('hidden'); contKPT.classList.add('hidden');
         } else {
-            btnKPT.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]";
-            btnMemo.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
-            contMemo.classList.add('hidden');
-            contKPT.classList.remove('hidden');
+            btnKPT.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]"; btnMemo.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
+            contMemo.classList.add('hidden'); contKPT.classList.remove('hidden');
         }
     }
     
-    // 🛠️ 기존 openPlanner 함수 확장수정: KPT 데이터 자동 로드 로직
-    const oldOpenPlanner = window.openPlanner;
-    window.openPlanner = function(dateKey, dateObj) {
-        if (typeof oldOpenPlanner === 'function') oldOpenPlanner(dateKey, dateObj);
-        const data = dailyRecords[dateKey] || {};
-        $('kptKeep').value = data.kptKeep || '';
-        $('kptProblem').value = data.kptProblem || '';
-        $('kptTry').value = data.kptTry || '';
-        switchDpSubTab('memo');
-    }
-    
-    // 🛠️ 기존 savePlannerData 함수 확장수정: KPT 데이터 자동 저장 로직
+    // 🛠️ 대시보드 저장 기능 (3단 슬롯 데이터 통합본)
     window.savePlannerData = function() {
         if (currentPlannerDateKey) {
             if(!dailyRecords[currentPlannerDateKey]) dailyRecords[currentPlannerDateKey] = { grid: Array(144).fill(null), labels: {} };
