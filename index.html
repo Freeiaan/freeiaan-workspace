@@ -585,7 +585,7 @@
         </div>
       </div>
       
-      <div id="categoryContainer" class="flex gap-3 overflow-x-auto custom-scrollbar mb-8 pb-3 pt-1 px-1 min-h-[80px]"></div>
+      <div id="categoryContainer" class="flex gap-2 overflow-x-auto no-scrollbar mb-6 pb-1 pt-1 px-1 min-h-[60px]"></div>
       
       <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-auto">
         <button id="modalDeleteBtn" class="text-red-500 font-extrabold text-sm hover:underline px-2 py-2">삭제</button>
@@ -2154,29 +2154,30 @@ function renderTimeGrid(dateKey) {
     function handleDashOver(e) { e.preventDefault(); }
     function handleDashDrop(e, type) { e.preventDefault(); const sK = e.dataTransfer.getData('dash-key'), sI = parseInt(e.dataTransfer.getData('dash-idx')); const target = e.target.closest('.dashboard-item'); if (target) { const dK = target.getAttribute('data-key'), dI = parseInt(target.getAttribute('data-idx')); if (sK === dK) { const temp = allTasks[sK].splice(sI, 1)[0]; allTasks[sK].splice(dI, 0, temp); saveAndRefresh(); } } }
 
-    // 🔥 카테고리 동그라미 다이어트 & 가로 스와이프 UI 반영
+    // 🔥 카테고리 동그라미 초밀착 다이어트 & 가로 스와이프 UI
     function buildCategoryUI() {
       const container = $('categoryContainer'); if (!container) return; container.innerHTML = '';
       categories.forEach(cat => {
-        const item = document.createElement('div'); item.className = 'color-item flex flex-col items-center gap-1.5 w-[50px] relative group flex-shrink-0';
+        // 전체 차지하는 너비도 50px -> 40px로 쫙 줄였습니다!
+        const item = document.createElement('div'); item.className = 'color-item flex flex-col items-center gap-1 w-[40px] relative group flex-shrink-0';
         const circle = document.createElement('div'); circle.className = `color-circle ${selectedCategoryId === cat.id ? 'selected' : ''}`;
         
-        // 동그라미 사이즈 줄이기!
+        // 동그라미 사이즈 32px -> 26px 로 더 귀엽고 슬림하게!
         circle.style.backgroundColor = cat.color;
-        circle.style.width = '32px'; 
-        circle.style.height = '32px';
+        circle.style.width = '26px'; 
+        circle.style.height = '26px';
 
         const delBtn = document.createElement('div'); delBtn.className = 'delete-cat-btn'; delBtn.innerHTML = '×'; delBtn.style.display = isEditMode ? 'flex' : 'none';
         delBtn.onclick = (e) => { e.stopPropagation(); if (categories.length > 1) { categories = categories.filter(c => c.id !== cat.id); saveCategories(); buildCategoryUI(); } else { alert("최소 1개의 카테고리는 유지해야 합니다."); } };
         const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
         circle.onclick = () => { if (isEditMode) picker.click(); else { selectedCategoryId = cat.id; buildCategoryUI(); } };
         
-        // 글씨 사이즈 줄이고 간격 바짝 붙이기!
+        // 글씨와 동그라미 사이 간격 밀착!
         const nameInput = document.createElement('input'); 
         nameInput.className = 'category-name text-center border-none bg-transparent font-bold text-gray-700 outline-none w-full truncate'; 
         nameInput.value = cat.name; nameInput.readOnly = !isEditMode; 
         nameInput.style.fontSize = '10px';
-        nameInput.style.marginTop = '0px';
+        nameInput.style.marginTop = '2px';
         nameInput.style.padding = '0px';
         if (isEditMode) nameInput.classList.add('border-b-2', 'border-black');
 
