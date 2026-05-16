@@ -1844,28 +1844,57 @@ function loadFromCloud() {
       document.body.style.overflow = '';
     }
     function savePlannerData() { if(currentPlannerDateKey) dailyRecords[currentPlannerDateKey].note = $('plannerNote').value; setLocal('ianDailyRecords', dailyRecords); }
-    function renderPlannerTasks(dateKey) {
-      const list = $('plannerTaskList'); list.innerHTML = ''; let tasks = []; if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; }
-      tasks.forEach((t, idx) => {
-        const cat = categories.find(c => c.id === t.categoryId) || categories[0];
-        const item = document.createElement('div'); item.className = 'flex items-center gap-3 py-1.5 px-2 rounded-xl cursor-pointer transition-all border-2 border-transparent hover:bg-white hover:shadow-sm brush-item';
-        const isDoneClass = t.isChecked ? 'line-through opacity-60' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
-        const circle = document.createElement('div'); circle.className = 'w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2'; circle.style.borderColor = colorStyle;
-        if (t.isChecked) { circle.style.backgroundColor = colorStyle; circle.innerHTML = `<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`; } else { circle.style.backgroundColor = 'white'; circle.innerHTML = ''; }
-        circle.onclick = (e) => { e.stopPropagation(); t.isChecked = !t.isChecked; saveAndRefresh(); if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey); };
-        
-        // 🔥 메모 아이콘 표시
-        const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
-
-        const textWrapper = document.createElement('div'); textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; textWrapper.title = "클릭하여 일정 수정";
-        const textSpan = document.createElement('span'); textSpan.className = `text-[14px] pt-px leading-none font-bold truncate block w-full ${isDoneClass} hover:underline`; 
-        textSpan.innerHTML = `${t.text}${descIcon}`; textSpan.style.color = colorStyle;
-        
-        textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); };
-        textWrapper.appendChild(textSpan); item.appendChild(circle); item.appendChild(textWrapper);
-        item.onclick = () => selectBrush(cat.color, item); list.appendChild(item);
-      });
-    }
+    function renderPlannerTasks(dateKey) { 
+            const list = $('plannerTaskList'); 
+            list.innerHTML = ''; 
+            let tasks = []; 
+            if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; } 
+            
+            tasks.forEach((t, idx) => { 
+                const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
+                const item = document.createElement('div'); 
+                
+                // 🔥 간격 다이어트: gap-3 -> gap-2.5, py-1.5 -> py-0.5 로 줄여서 행간을 쫙 밀착!
+                item.className = 'flex items-center gap-2.5 py-0.5 px-2 rounded-xl cursor-pointer transition-all border-2 border-transparent hover:bg-white hover:shadow-sm brush-item'; 
+                
+                const isDoneClass = t.isChecked ? 'line-through opacity-60' : ''; 
+                const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color; 
+                
+                // 🔥 체크박스 크기 다이어트: 12px 폰트에 맞게 w-3.5 h-3.5 로 미세 축소
+                const circle = document.createElement('div'); 
+                circle.className = 'w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2'; 
+                circle.style.borderColor = colorStyle; 
+                
+                if (t.isChecked) { 
+                    circle.style.backgroundColor = colorStyle; 
+                    circle.innerHTML = `<svg class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`; 
+                } else { 
+                    circle.style.backgroundColor = 'white'; 
+                    circle.innerHTML = ''; 
+                } 
+                
+                circle.onclick = (e) => { e.stopPropagation(); t.isChecked = !t.isChecked; saveAndRefresh(); if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey); }; 
+                
+                const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : ''; 
+                
+                const textWrapper = document.createElement('div'); 
+                textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; 
+                textWrapper.title = "클릭하여 일정 수정"; 
+                
+                const textSpan = document.createElement('span'); 
+                // 🔥 폰트 다이어트: text-[14px] -> text-[12px] 로 변경!
+                textSpan.className = `text-[12px] pt-px leading-tight font-bold truncate block w-full ${isDoneClass} hover:underline`;  
+                textSpan.innerHTML = `${t.text}${descIcon}`; 
+                textSpan.style.color = colorStyle; 
+                
+                textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); }; 
+                textWrapper.appendChild(textSpan); 
+                item.appendChild(circle); 
+                item.appendChild(textWrapper); 
+                item.onclick = () => selectBrush(cat.color, item); 
+                list.appendChild(item); 
+            }); 
+        }
     function selectBrush(color, element) {
       if (activeBrushColor === color) { activeBrushColor = null; element.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); element.classList.add('border-transparent'); return; }
       activeBrushColor = color; document.querySelectorAll('#plannerTaskList > div.brush-item').forEach(el => { el.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); el.classList.add('border-transparent'); }); element.classList.remove('border-transparent'); element.classList.add('bg-white', 'shadow-md', 'border-gray-200');
