@@ -3145,20 +3145,19 @@ function renderMemoFolders() {
             tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
             
-            // 🔄 원래 보던 주간 트래커와 일정 데이터를 완벽하게 리로드!
+            // 🔄 저장해둔 시간 데이터를 사용해 오리지널 트래커 렌더링 본체 강제 소환!
             if (window.lastWeeklyStart && window.lastWeeklyEnd) {
-                openWeeklyPlanner(window.lastWeeklyStart, window.lastWeeklyEnd);
+                renderOriginalWeeklyTracker(window.lastWeeklyStart, window.lastWeeklyEnd);
             }
         } else {
             tabKPT.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabTracker.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
             
-            // 📊 이안님이 픽하신 [옵션 1: 시원시원한 가로 매트릭스 뷰] 실행!
             renderWeeklyKPT('option1');
         }
     }
 
-    // 📊 주간 KPT 그리기 (이안님 PICK! 옵션 1 매트릭스 결정판)
+    // 📊 주간 KPT 그리기 (옵션 1 매트릭스 결정판)
     window.renderWeeklyKPT = function(viewMode) {
         const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         if (!container) return;
@@ -3168,7 +3167,6 @@ function renderMemoFolders() {
         kptWrapper.className = "p-4 md:p-8 w-full min-h-full bg-white flex flex-col gap-6 select-text";
         
         if(viewMode === 'option1') {
-            // 현재 열려있는 주간의 요일 날짜 숫자를 가져오기 위한 마법 코드
             let daysHtml = '';
             if (window.lastWeeklyStart) {
                 for(let i=0; i<7; i++) {
@@ -3190,15 +3188,12 @@ function renderMemoFolders() {
                         <div class="grid grid-cols-[100px_repeat(7,1fr)] border-b last:border-b-0 border-[#e6e2d8] min-h-[140px]">
                             <div class="flex items-center justify-center bg-[#fdfbf7] border-r border-[#e6e2d8] font-black text-[13px] ${type==='Keep'?'text-green-600':type==='Problem'?'text-orange-500':'text-blue-500'}">${type}</div>
                             ${Array(7).fill(0).map((_, i) => {
-                                // 요일별로 진짜 매칭되는 데일리 노트 데이터를 싹 긁어오는 구간!
                                 let cellContent = `<span class="text-gray-300 font-medium italic">텅 빈 기록... 🍃</span>`;
                                 if (window.lastWeeklyStart) {
                                     const targetD = new Date(window.lastWeeklyStart);
                                     targetD.setDate(window.lastWeeklyStart.getDate() + i);
                                     const targetKey = getDateKey(targetD);
                                     const rawNote = dailyRecords[targetKey]?.note || '';
-                                    
-                                    // 🔍 데일리 기록 정규식 분석기 (Keep:, Problem:, Try: 뒤에 적힌 글자만 추출)
                                     const regex = new RegExp(`${type}\\s*:\\s*([^\\n]+)`, 'i');
                                     const match = rawNote.match(regex);
                                     if (match && match[1].trim()) {
@@ -3216,13 +3211,126 @@ function renderMemoFolders() {
         container.appendChild(kptWrapper);
     }
 
-    // 🛠️ 기존 openWeeklyPlanner 보완: 현재 열린 주간의 시간 데이터를 전역에 박제하기
-    const originalOpenWeeklyPlanner = window.openWeeklyPlanner;
+    // 🛠️ [복구완료] 증발했던 원래 이안님의 오리지널 위클리 타임트래커 렌더링 코드 본체!
+    function renderOriginalWeeklyTracker(startDate, endDate) {
+        const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
+        if(!container) return;
+        container.innerHTML = `
+            <div class="w-full md:flex-1 h-[350px] md:h-auto md:min-h-0 flex-shrink-0 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
+                 <div class="flex items-center justify-between bg-[#f8fafc] px-3 py-3 border-b border-[#e6e2d8] gap-2 md:gap-4">
+                     <h3 class="font-bold text-[11px] md:text-[13px] text-gray-800 tracking-tight leading-[1.1] flex-shrink-0">WEEKLY<br class="md:hidden">TIME TRACKER</h3>
+                     <span class="text-[8px] md:text-[9px] text-gray-400 leading-tight break-keep">* 체크리스트 클릭 시 자동 동기화되며, 일간 트래커 데이터가 요일별로 요약 표시됩니다.</span>
+                 </div>
+                 <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
+                   <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
+                     <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border" style="height: 160px; background-color: #f8fafc;"></div>
+                     <div id="weeklyTimeLabels" class="relative flex flex-col w-full pb-4"></div>
+                   </div>
+                   <div id="weeklyGridContainer" class="flex flex-1 bg-white w-full"></div>
+                 </div>
+            </div>
+            <div class="w-full md:w-64 flex flex-col gap-4 flex-shrink-0">
+               <div class="h-60 bg-[#fffbeb] rounded-xl p-4 border border-orange-100 flex flex-col shadow-sm">
+                   <div class="flex justify-between items-center mb-2">
+                       <h4 class="text-xs font-bold text-orange-800 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-orange-400 rounded-sm"></span> 이번 주 메모</h4>
+                       <span class="text-[8px] text-orange-400 font-bold uppercase">개별저장됨</span>
+                   </div>
+                   <textarea id="weeklySpecificMemo" class="flex-1 w-full bg-transparent text-[12px] font-medium custom-scrollbar resize-none outline-none pr-1" placeholder="주간 목표를 적어보세요..."></textarea>
+               </div>
+               <div class="flex-1 bg-white rounded-xl p-4 border border-gray-200 flex flex-col shadow-sm min-h-[260px]">
+                   <div class="flex justify-between items-center mb-3">
+                       <h4 class="text-xs font-bold text-gray-800 flex items-center gap-1.5"><span class="w-1.5 h-4 bg-blue-400 rounded-sm"></span> 해빗 트래커</h4>
+                       <div class="flex gap-1.5">
+                           <button onclick="window.addHabit()" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold transition">+ 추가</button>
+                           <button id="habitEditBtn" onclick="toggleHabitEdit()" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold transition">- 삭제</button>
+                       </div>
+                   </div>
+                   <div class="flex text-[10px] font-bold text-gray-400 mb-2 border-b border-gray-100 pb-1">
+                       <div class="w-[45%] pl-1">Objective</div>
+                       <div class="w-[55%] flex justify-between px-1">
+                           <div class="w-4 text-center text-red-400">S</div><div class="w-4 text-center">M</div><div class="w-4 text-center">T</div><div class="w-4 text-center">W</div><div class="w-4 text-center">T</div><div class="w-4 text-center">F</div><div class="w-4 text-center text-blue-400">S</div>
+                       </div>
+                   </div>
+                   <div class="habit-list-container flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 flex-1 pb-2"></div>
+               </div>
+            </div>
+        `;
+        
+        // 데이터 채워넣는 오리지널 내부 시스템들 재가동!
+        const wMemoArea = $('weeklySpecificMemo'); if(wMemoArea) { wMemoArea.value = weeklyMemos[window.currentWeekKey] || ''; wMemoArea.oninput = (e) => { if(window.currentWeekKey) { weeklyMemos[window.currentWeekKey] = e.target.value; saveWeeklySpecifics(); } }; }
+        renderHabits(); const slotHeight = 20; const timeLabels = $('weeklyTimeLabels'); timeLabels.innerHTML = '';
+        for(let h = 5; h < 29; h++) { const div = document.createElement('div'); div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`; div.style.height = `${slotHeight}px`; div.textContent = `${h % 24}:00`; timeLabels.appendChild(div); }
+        const gridContainer = $('weeklyGridContainer'); gridContainer.innerHTML = ''; const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        for(let i=0; i<7; i++) {
+           const currentDay = new Date(startDate); currentDay.setDate(startDate.getDate() + i); const dateKey = getDateKey(currentDay);
+           const col = document.createElement('div'); col.className = 'flex-1 min-w-[100px] flex-shrink-0 border-r border-[#e6e2d8] last:border-r-0 flex flex-col relative w-full';
+           const isToday = getDateKey(new Date()) === dateKey; const isWeekend = (i === 0 || i === 6); 
+           const header = document.createElement('div'); const textColor = isToday ? 'text-white' : (isWeekend ? 'text-red-500' : 'text-gray-700');
+           header.className = `h-10 flex-shrink-0 border-b border-[#e6e2d8] flex flex-col items-center justify-center text-[11px] font-bold sticky top-0 z-20 box-border ${isToday ? 'bg-[#1b4332]' : 'bg-[#f8fafc]'} ${textColor}`;
+           const rec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 }; const totalSec = rec.stopwatch + rec.timer; let totalStr = '';
+           if (totalSec > 0) { const h = Math.floor(totalSec / 3600); const m = Math.floor((totalSec % 3600) / 60); totalStr = `<div class="${isToday ? 'text-green-200' : 'text-[#22741C]'} text-[9px] font-extrabold mt-0.5 tracking-tighter leading-none">${h}h ${m}m</div>`; }
+           header.innerHTML = `<span>${dayNames[i]} <span class="text-[9px] ${isToday ? 'opacity-90' : 'text-gray-400'}">${currentDay.getDate()}</span></span>${totalStr}`; col.appendChild(header);
+           const checklist = document.createElement('div'); checklist.className = 'h-[120px] flex-shrink-0 overflow-y-auto custom-scrollbar p-1.5 border-b border-[#e6e2d8] flex flex-col bg-[#faf8f5]';
+           if(Array.isArray(allTasks[dateKey]) && allTasks[dateKey].length > 0) {
+               allTasks[dateKey].forEach((t, tIdx) => {
+                   const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const isCheckedClass = t.isChecked ? 'line-through opacity-50' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+                   checklist.innerHTML += `<div class="flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full"><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer" onclick="toggleTaskFromWeekly('${dateKey}', ${tIdx}, event)"><span class="${isCheckedClass} break-words whitespace-normal flex-1" style="color: ${colorStyle}">${t.text}</span></div>`;
+               });
+           } else { checklist.innerHTML = `<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>`; }
+           col.appendChild(checklist);
+           const body = document.createElement('div'); body.className = 'w-full flex-shrink-0 box-border flex flex-col bg-white';
+           const gridData = dailyRecords[dateKey]?.grid || []; const labels = dailyRecords[dateKey]?.labels || {}; 
+           for(let h = 5; h < 29; h++) {
+               const row = document.createElement('div'); row.className = `flex w-full border-b border-[#e6e2d8] relative box-border`; row.style.height = `${slotHeight}px`; 
+               const bgContainer = document.createElement('div'); bgContainer.className = 'absolute inset-0 flex flex-row w-full h-full pointer-events-none z-0';
+               for(let m = 0; m < 6; m++) { const minBlock = document.createElement('div'); minBlock.className = 'flex-1 h-full box-border'; if (m < 5) minBlock.classList.add('border-r', 'border-dashed', 'border-[#e2e8f0]'); bgContainer.appendChild(minBlock); }
+               row.appendChild(bgContainer);
+               const cellContainer = document.createElement('div'); cellContainer.className = 'absolute inset-0 flex flex-row w-full h-full z-10 opacity-80';
+               let currentSegment = null; let segments = [];
+               for(let m = 0; m < 6; m++) {
+                   const idx = (h - 5) * 6 + m; const color = gridData ? gridData[idx] : null; const cell = document.createElement('div'); cell.className = 'flex-1 h-full box-border';
+                   if (color) {
+                       cell.style.backgroundColor = hexToRgba(color, 0.3);
+                       const hasLabel = labels && labels[idx];
+                       if (!currentSegment || currentSegment.color !== color || hasLabel) {
+                           if (currentSegment) segments.push(currentSegment);
+                           currentSegment = { start: m, end: m, color: color, idxs: [idx] };
+                       } else {
+                           currentSegment.end = m; currentSegment.idxs.push(idx);
+                       }
+                   } else {
+                       if (currentSegment) { segments.push(currentSegment); currentSegment = null; }
+                   }
+                   cellContainer.appendChild(cell);
+               }
+               if (currentSegment) segments.push(currentSegment); 
+               segments.forEach(seg => {
+                   let segText = ''; seg.idxs.forEach(i => { if(labels[i]) segText = labels[i].text; });
+                   if(segText) {
+                       const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-20 w-full';
+                       const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100; overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
+                       overlay.innerHTML = `<div class="absolute w-full h-[1.5px] z-0 opacity-70" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[8px] font-black z-0 px-0.5 opacity-70" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-white/90 px-1.5 py-[2px] rounded-[3px] shadow-sm text-[9px] font-extrabold text-black z-10 border-[1.5px] border-black max-w-[90%] truncate leading-none" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
+                       row.appendChild(overlay);
+                   }
+               });
+               row.appendChild(cellContainer); body.appendChild(row);
+           }
+           col.appendChild(body); gridContainer.appendChild(col);
+        }
+    }
+
+    // 🛠️ 오리지널 openWeeklyPlanner 입구 시스템 개조 완료!
     window.openWeeklyPlanner = function(startDate, endDate) {
         window.lastWeeklyStart = startDate;
         window.lastWeeklyEnd = endDate;
+        window.currentWeekKey = getDateKey(startDate); // 전역 주차 키 세팅 보존
         
-        // 탭 버튼 상태 초기화 (창을 새로 열 때 항상 첫 번째 탭이 활성화되도록 유도)
+        $('weeklySubtitle').textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')} - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')} - ${endDate.getDate().toString().padStart(2,'0')}`;
+        
+        // 모달창 오픈 트리거
+        $('weeklyPlannerModal').classList.remove('hidden');
+        
+        // 언제나 문을 열 때 기본값인 'Time Tracker' 탭으로 깔끔하게 세팅!
         const tabTracker = $('weekTabTracker');
         const tabKPT = $('weekTabKPT');
         if (tabTracker && tabKPT) {
@@ -3230,9 +3338,8 @@ function renderMemoFolders() {
             tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
         }
         
-        if (typeof originalOpenWeeklyPlanner === 'function') {
-            originalOpenWeeklyPlanner(startDate, endDate);
-        }
+        // 트래커 데이터 렌더링 함수 다이렉트 호출!
+        renderOriginalWeeklyTracker(startDate, endDate);
     }
 
   </script>
