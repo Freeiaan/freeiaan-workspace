@@ -485,11 +485,16 @@
                </div>
             </div>
             <div class="flex-1 flex flex-col min-h-0">
-                <div class="flex gap-4 border-b border-[#e6e2d8] mb-3 flex-shrink-0">
-                    <button id="dpSubTabMemo" onclick="switchDpSubTab('memo')" class="pb-2 text-[13px] font-black text-[#1b4332] border-b-2 border-[#1b4332] transition-all">일반 메모</button>
-                    <button id="dpSubTabKPT" onclick="switchDpSubTab('kpt')" class="pb-2 text-[13px] font-bold text-gray-400 hover:text-black transition-all">KPT 성찰 ✨</button>
+                <div id="dpSubTabsContainer" class="flex gap-4 border-b border-[#e6e2d8] mb-3 flex-shrink-0 w-full select-none">
+                    <div id="tabWrapper-memo" draggable="true" class="flex items-center gap-1.5 cursor-move" ondragstart="startTabDrag(event, 'memo')" ondragover="event.preventDefault()" ondrop="dropTab(event, 'memo')">
+                        <span class="text-gray-300 text-[11px] hover:text-gray-500 mb-2" title="드래그해서 순서 변경">≡</span>
+                        <button id="dpSubTabMemo" onclick="switchDpSubTab('memo')" class="pb-2 text-[13px] font-black text-[#1b4332] border-b-2 border-[#1b4332] transition-all whitespace-nowrap">오늘 기록</button>
+                    </div>
+                    <div id="tabWrapper-kpt" draggable="true" class="flex items-center gap-1.5 cursor-move" ondragstart="startTabDrag(event, 'kpt')" ondragover="event.preventDefault()" ondrop="dropTab(event, 'kpt')">
+                        <span class="text-gray-300 text-[11px] hover:text-gray-500 mb-2" title="드래그해서 순서 변경">≡</span>
+                        <button id="dpSubTabKPT" onclick="switchDpSubTab('kpt')" class="pb-2 text-[13px] font-bold text-gray-400 hover:text-black transition-all whitespace-nowrap">KPT 성찰 ✨</button>
+                    </div>
                 </div>
-
                 <div id="dpSubContentMemo" class="flex-1 flex flex-col">
                     <textarea id="plannerNote" oninput="savePlannerData()" class="flex-1 bg-transparent resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar" placeholder="자유롭게 기록해보세요..."></textarea>
                 </div>
@@ -3298,22 +3303,35 @@ function renderMemoFolders() {
         }
     };
 
-    // 안전한 Daily Planner 후킹
+    // 안전한 Daily Planner 후킹 (탭 순서 기억 능력 추가!)
     window._backupOpenPlanner = window._backupOpenPlanner || window.openPlanner;
     window.openPlanner = function(dateKey, dateObj) {
         if (typeof window._backupOpenPlanner === 'function') {
             window._backupOpenPlanner(dateKey, dateObj);
         }
         
-        // 💡 열 때마다 3단 슬롯 창에 기존 저장 데이터 뿌려주기
         const data = dailyRecords[dateKey] || {};
         if(document.getElementById('kptKeep')) document.getElementById('kptKeep').value = data.kptKeep || '';
         if(document.getElementById('kptProblem')) document.getElementById('kptProblem').value = data.kptProblem || '';
         if(document.getElementById('kptTry')) document.getElementById('kptTry').value = data.kptTry || '';
         
-        // 창 열 때 무조건 '일반 메모' 탭 띄우기
+        // 💡 저장된 탭 순서(tabOrder) 불러오기 및 재배치
+        const tabOrder = data.tabOrder || 'memo';
+        const container = document.getElementById('dpSubTabsContainer');
+        const memoTab = document.getElementById('tabWrapper-memo');
+        const kptTab = document.getElementById('tabWrapper-kpt');
+        
+        if (container && memoTab && kptTab) {
+            if (tabOrder === 'kpt') {
+                container.appendChild(memoTab); // kpt를 맨 앞에, memo를 그 뒤로!
+            } else {
+                container.appendChild(kptTab); // memo를 맨 앞에, kpt를 그 뒤로!
+            }
+        }
+        
+        // 저장된 순서에 맞춰 1번 탭을 알아서 활성화해서 띄워주기!
         if(typeof window.switchDpSubTab === 'function') {
-            window.switchDpSubTab('memo');
+            window.switchDpSubTab(tabOrder);
         }
     };
 
@@ -3358,6 +3376,35 @@ function renderMemoFolders() {
             icon.classList.replace('text-gray-700', 'text-gray-400');
         }
     }
+
+    // 💡 탭 드래그 앤 드롭 (위치 변경 및 날짜별 개별 저장)
+    let draggedTab = null;
+    
+    window.startTabDrag = function(e, tabName) {
+        draggedTab = tabName;
+    };
+    
+    window.dropTab = function(e, targetTabName) {
+        e.preventDefault();
+        if (draggedTab && draggedTab !== targetTabName && currentPlannerDateKey) {
+            const container = document.getElementById('dpSubTabsContainer');
+            const memoTab = document.getElementById('tabWrapper-memo');
+            const kptTab = document.getElementById('tabWrapper-kpt');
+            
+            if (!dailyRecords[currentPlannerDateKey]) dailyRecords[currentPlannerDateKey] = { grid: Array(144).fill(null), labels: {} };
+            
+            if (targetTabName === 'memo') {
+                container.insertBefore(kptTab, memoTab);
+                dailyRecords[currentPlannerDateKey].tabOrder = 'kpt';
+            } else {
+                container.insertBefore(memoTab, kptTab);
+                dailyRecords[currentPlannerDateKey].tabOrder = 'memo';
+            }
+            window.savePlannerData(); // 위치 바꾼 것도 클라우드에 영구 저장!
+            window.switchDpSubTab(draggedTab); // 위치 이동 후 해당 탭 열어주기
+        }
+        draggedTab = null;
+    };
 
   </script>
 </body>
