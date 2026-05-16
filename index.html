@@ -3131,22 +3131,15 @@ function renderMemoFolders() {
           .where('status', 'in', ['read', 'replied'])
           .onSnapshot(snapshot => {
               if (!snapshot.empty) {
-                  // 1. 유저가 마지막으로 쪽지함을 열어본 시간 가져오기 (본 적 없으면 0)
                   const lastChecked = parseInt(localStorage.getItem('ianLastCheckedInbox') || '0');
                   let hasNewReply = false;
-
                   snapshot.forEach(doc => {
                       const data = doc.data();
-                      // 2. 이안님이 답장(또는 확인)을 누른 시간 확인
                       const replyTime = data.repliedAt ? data.repliedAt.toMillis() : (data.readAt ? data.readAt.toMillis() : 0);
-                      
-                      // 3. 유저가 쪽지함을 본 시간보다 '더 최근에' 이안님이 답장을 했다면?
                       if (replyTime > lastChecked) {
                           hasNewReply = true;
                       }
                   });
-
-                  // 4. 진짜 새로 온 답장이 있을 때만 빨간 점 표시!
                   if (hasNewReply) {
                       $('feedbackNotification').classList.remove('hidden');
                   } else {
@@ -3178,7 +3171,7 @@ function renderMemoFolders() {
         }
     }
 
-    // 📊 주간 KPT 그리기 (옵션 1 매트릭스 결정판)
+    // 📊 주간 KPT 그리기 (이안님 PICK! 옵션 1 매트릭스 결정판)
     window.renderWeeklyKPT = function(viewMode) {
         const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         if (!container) return;
@@ -3215,25 +3208,24 @@ function renderMemoFolders() {
                                     targetD.setDate(window.lastWeeklyStart.getDate() + i);
                                     const targetKey = getDateKey(targetD);
                                     const data = dailyRecords[targetKey] || {};
-                                    
-                                    // 💡 이제 복잡한 분석 없이 저장된 데이터를 바로 꺼내옵니다!
-                                    const val = data['kpt' + type]; // kptKeep, kptProblem, kptTry 중 하나
+                                    const val = data['kpt' + type]; 
                                     if (val && val.trim()) {
-                                        cellContent = `<span class="text-gray-800 font-bold leading-relaxed">${val.trim()}</span>`;
+                                        cellContent = `<span class="text-gray-800 font-bold text-[12px] leading-relaxed">${val.trim()}</span>`;
                                     }
                                 }
                                 return `<div class="p-3 border-r last:border-r-0 border-[#e6e2d8] text-[12px] flex items-center justify-start overflow-y-auto custom-scrollbar whitespace-pre-wrap word-break break-all">${cellContent}</div>`;
                             }).join('')}
+                        </div>
                     `).join('')}
                 </div>
-                <p class="text-[11px] text-gray-400 font-bold pl-1">* 데일리 노션노트에 <b>Keep: 내용</b> / <b>Problem: 내용</b> / <b>Try: 내용</b> 형식으로 적어두면 요일별로 자동 배달됩니다! 🚚</p>
+                <p class="text-[11px] text-gray-400 font-bold pl-1">* 데일리 노션노트의 <b>KPT 성찰 탭</b>에 각 항목을 적어두면 여기에 자동으로 배달됩니다! 🚚</p>
             `;
         }
         container.appendChild(kptWrapper);
     }
 
-    // 🛠️ [복구완료] 증발했던 원래 이안님의 오리지널 위클리 타임트래커 렌더링 코드 본체!
-    function renderOriginalWeeklyTracker(startDate, endDate) {
+    // 📊 주간 타임 트래커 및 데이터 정밀 복구 함수 (누락되었던 본체 주머니 복구!)
+    window.renderOriginalWeeklyTracker = function(startDate, endDate) {
         const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         if(!container) return;
         container.innerHTML = `
@@ -3277,7 +3269,6 @@ function renderMemoFolders() {
             </div>
         `;
         
-        // 데이터 채워넣는 오리지널 내부 시스템들 재가동!
         const wMemoArea = $('weeklySpecificMemo'); if(wMemoArea) { wMemoArea.value = weeklyMemos[window.currentWeekKey] || ''; wMemoArea.oninput = (e) => { if(window.currentWeekKey) { weeklyMemos[window.currentWeekKey] = e.target.value; saveWeeklySpecifics(); } }; }
         renderHabits(); const slotHeight = 20; const timeLabels = $('weeklyTimeLabels'); timeLabels.innerHTML = '';
         for(let h = 5; h < 29; h++) { const div = document.createElement('div'); div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`; div.style.height = `${slotHeight}px`; div.textContent = `${h % 24}:00`; timeLabels.appendChild(div); }
@@ -3340,76 +3331,58 @@ function renderMemoFolders() {
         }
     }
 
-    // 🛠️ 오리지널 openWeeklyPlanner 입구 시스템 개조 완료!
+    // 🛠️ 오리지널 입구 시스템 개조 완료!
     window.openWeeklyPlanner = function(startDate, endDate) {
         window.lastWeeklyStart = startDate;
         window.lastWeeklyEnd = endDate;
-        window.currentWeekKey = getDateKey(startDate); // 전역 주차 키 세팅 보존
+        window.currentWeekKey = getDateKey(startDate); 
         
         $('weeklySubtitle').textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')} - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')} - ${endDate.getDate().toString().padStart(2,'0')}`;
-        
-        // 모달창 오픈 트리거
         $('weeklyPlannerModal').classList.remove('hidden');
         
-        // 언제나 문을 열 때 기본값인 'Time Tracker' 탭으로 깔끔하게 세팅!
         const tabTracker = $('weekTabTracker');
         const tabKPT = $('weekTabKPT');
         if (tabTracker && tabKPT) {
             tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
         }
-        
-        // 트래커 데이터 렌더링 함수 다이렉트 호출!
         renderOriginalWeeklyTracker(startDate, endDate);
     }
 
     // 📂 데일리 플래너 내부 메모/KPT 서브 탭 전환
-        window.switchDpSubTab = function(tab) {
-            const btnMemo = $('dpSubTabMemo');
-            const btnKPT = $('dpSubTabKPT');
-            const contMemo = $('dpSubContentMemo');
-            const contKPT = $('dpSubContentKPT');
-    
-            if (tab === 'memo') {
-                btnMemo.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]";
-                btnKPT.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
-                contMemo.classList.remove('hidden');
-                contKPT.classList.add('hidden');
-            } else {
-                btnKPT.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]";
-                btnMemo.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
-                contMemo.classList.add('hidden');
-                contKPT.classList.remove('hidden');
-            }
+    window.switchDpSubTab = function(tab) {
+        const btnMemo = $('dpSubTabMemo'), btnKPT = $('dpSubTabKPT'), contMemo = $('dpSubContentMemo'), contKPT = $('dpSubContentKPT');
+        if (tab === 'memo') {
+            btnMemo.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]"; btnKPT.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
+            contMemo.classList.remove('hidden'); contKPT.classList.add('hidden');
+        } else {
+            btnKPT.className = "pb-2 text-sm font-black text-[#1b4332] border-b-2 border-[#1b4332]"; btnMemo.className = "pb-2 text-sm font-bold text-gray-400 hover:text-black";
+            contMemo.classList.add('hidden'); contKPT.classList.remove('hidden');
         }
+    }
     
-        // 🛠️ 기존 openPlanner 함수 수정: KPT 데이터도 불러오기
-        const oldOpenPlanner = window.openPlanner;
-        window.openPlanner = function(dateKey, dateObj) {
-            if (typeof oldOpenPlanner === 'function') oldOpenPlanner(dateKey, dateObj);
-            
-            // KPT 데이터 불러오기
-            const data = dailyRecords[dateKey] || {};
-            $('kptKeep').value = data.kptKeep || '';
-            $('kptProblem').value = data.kptProblem || '';
-            $('kptTry').value = data.kptTry || '';
-            
-            // 창 열 때 무조건 '일반 메모' 탭이 먼저 보이게 초기화
-            switchDpSubTab('memo');
+    // 🛠️ 기존 openPlanner 함수 확장수정: KPT 데이터 자동 로드 로직
+    const oldOpenPlanner = window.openPlanner;
+    window.openPlanner = function(dateKey, dateObj) {
+        if (typeof oldOpenPlanner === 'function') oldOpenPlanner(dateKey, dateObj);
+        const data = dailyRecords[dateKey] || {};
+        $('kptKeep').value = data.kptKeep || '';
+        $('kptProblem').value = data.kptProblem || '';
+        $('kptTry').value = data.kptTry || '';
+        switchDpSubTab('memo');
+    }
+    
+    // 🛠️ 기존 savePlannerData 함수 확장수정: KPT 데이터 자동 저장 로직
+    window.savePlannerData = function() {
+        if (currentPlannerDateKey) {
+            if(!dailyRecords[currentPlannerDateKey]) dailyRecords[currentPlannerDateKey] = { grid: Array(144).fill(null), labels: {} };
+            dailyRecords[currentPlannerDateKey].note = $('plannerNote').value;
+            dailyRecords[currentPlannerDateKey].kptKeep = $('kptKeep').value;
+            dailyRecords[currentPlannerDateKey].kptProblem = $('kptProblem').value;
+            dailyRecords[currentPlannerDateKey].kptTry = $('kptTry').value;
+            setLocal('ianDailyRecords', dailyRecords);
         }
-    
-        // 🛠️ 기존 savePlannerData 함수 수정: KPT 데이터도 함께 저장
-        window.savePlannerData = function() {
-            if (currentPlannerDateKey) {
-                dailyRecords[currentPlannerDateKey].note = $('plannerNote').value;
-                dailyRecords[currentPlannerDateKey].kptKeep = $('kptKeep').value;
-                dailyRecords[currentPlannerDateKey].kptProblem = $('kptProblem').value;
-                dailyRecords[currentPlannerDateKey].kptTry = $('kptTry').value;
-                setLocal('ianDailyRecords', dailyRecords);
-            }
-        }
-    
-
+    }
   </script>
 </body>
 </html>
