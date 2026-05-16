@@ -3152,33 +3152,46 @@ function renderMemoFolders() {
         }
     }
 
-    // 📊 주간 KPT 그리기 (옵션 1: 매트릭스 뷰)
+    // 📊 주간 KPT 그리기 (옵션 2: 칸반 포스트잇 보드 뷰)
     window.renderWeeklyKPT = function(viewMode) {
         const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         container.innerHTML = ''; // 싹 비우기
         
-        // 여기에 주간 KPT 레이아웃 생성 로직이 들어갑니다.
         const kptWrapper = document.createElement('div');
-        kptWrapper.className = "p-4 md:p-8 w-full min-h-full bg-white flex flex-col gap-6";
+        kptWrapper.className = "p-4 md:p-6 w-full min-h-full bg-[#f8fafc] flex flex-col gap-4";
         
-        if(viewMode === 'option1') {
-            // [옵션 1] 매트릭스 뷰 로직
-            kptWrapper.innerHTML = `
-                <div class="flex flex-col border border-[#e6e2d8] rounded-2xl overflow-hidden shadow-sm">
-                    <div class="grid grid-cols-[100px_repeat(7,1fr)] bg-[#f8fafc] border-b border-[#e6e2d8] font-black text-[11px] text-center">
-                        <div class="py-3 border-r border-[#e6e2d8]">구분</div>
-                        <div class="py-3 border-r border-[#e6e2d8] text-red-500">SUN</div><div class="py-3 border-r border-[#e6e2d8]">MON</div><div class="py-3 border-r border-[#e6e2d8]">TUE</div>
-                        <div class="py-3 border-r border-[#e6e2d8]">WED</div><div class="py-3 border-r border-[#e6e2d8]">THU</div><div class="py-3 border-r border-[#e6e2d8]">FRI</div><div class="py-3 text-blue-500">SAT</div>
-                    </div>
-                    ${['Keep', 'Problem', 'Try'].map(type => `
-                        <div class="grid grid-cols-[100px_repeat(7,1fr)] border-b last:border-b-0 border-[#e6e2d8] min-h-[120px]">
-                            <div class="flex items-center justify-center bg-[#fdfbf7] border-r border-[#e6e2d8] font-black text-[13px] ${type==='Keep'?'text-green-600':type==='Problem'?'text-orange-500':'text-blue-500'}">${type}</div>
-                            ${Array(7).fill(0).map(() => `<div class="p-2 border-r last:border-r-0 border-[#e6e2d8] text-[11px] font-medium text-gray-600 leading-tight whitespace-pre-wrap">데일리 노트에 <br>${type}: ... <br>형식으로 적으면 <br>여기에 모여요!</div>`).join('')}
+        // 7개 요일 기둥을 칸반 스타일로 나란히 배치!
+        kptWrapper.innerHTML = `
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-7 gap-4 items-start w-full">
+                ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, i) => {
+                    const isWeekend = (i === 0 || i === 6);
+                    const textColor = isWeekend ? (i === 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-700';
+                    
+                    return `
+                        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm p-3 min-h-[300px] w-full">
+                            <div class="text-center font-black text-[12px] pb-2 border-b border-gray-100 ${textColor} mb-3">${day}</div>
+                            
+                            <div class="flex flex-col gap-2.5">
+                                <div class="bg-green-50 border border-green-200 rounded-xl p-2.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+                                    <span class="text-[9px] font-black bg-green-200 text-green-700 px-1.5 py-0.5 rounded-md mb-1.5 inline-block">Keep</span>
+                                    <p class="text-[11px] font-bold text-gray-700 leading-tight">엔화가방 3일 매출 1200만원 달성! 🚀</p>
+                                </div>
+                                
+                                <div class="bg-orange-50 border border-orange-200 rounded-xl p-2.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+                                    <span class="text-[9px] font-black bg-orange-200 text-orange-700 px-1.5 py-0.5 rounded-md mb-1.5 inline-block">Problem</span>
+                                    <p class="text-[11px] font-bold text-gray-700 leading-tight">2차 스위치백 가방 판매 부진 ㅠㅠ 명도가 안맞았나?</p>
+                                </div>
+                                
+                                <div class="bg-blue-50 border border-blue-200 rounded-xl p-2.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+                                    <span class="text-[9px] font-black bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded-md mb-1.5 inline-block">Try</span>
+                                    <p class="text-[11px] font-bold text-gray-700 leading-tight">3차 엔화지갑 직접 제작 기획 들어가기! 명도 조절 필수</p>
+                                </div>
+                            </div>
                         </div>
-                    `).join('')}
-                </div>
-            `;
-        }
+                    `;
+                }).join('')}
+            </div>
+        `;
         container.appendChild(kptWrapper);
     }
 
