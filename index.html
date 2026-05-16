@@ -3165,32 +3165,31 @@ function renderMemoFolders() {
           });
     }
 
-// 📂 위클리 플래너 내부 탭 전환 마스터 로직
+// ----------------------------------------------------
+    // 1. 위클리 플래너 탭 전환 및 KPT 렌더링
+    // ----------------------------------------------------
     window.switchWeekTab = function(tab) {
-        const tabTracker = $('weekTabTracker');
-        const tabKPT = $('weekTabKPT');
+        const tabTracker = document.getElementById('weekTabTracker');
+        const tabKPT = document.getElementById('weekTabKPT');
         if (!tabTracker || !tabKPT) return;
 
         if (tab === 'tracker') {
             tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
             
-            // 🔄 원래 보던 주간 트래커와 일정 데이터를 완벽하게 리로드!
-            if (window.lastWeeklyStart && window.lastWeeklyEnd) {
-                openWeeklyPlanner(window.lastWeeklyStart, window.lastWeeklyEnd);
+            // 기존 위클리 데이터 다시 불러오기
+            if (window.lastWeeklyStart && window.lastWeeklyEnd && typeof window._backupOpenWeeklyPlanner === 'function') {
+                window._backupOpenWeeklyPlanner(window.lastWeeklyStart, window.lastWeeklyEnd);
             }
         } else {
             tabKPT.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabTracker.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
-            
-            // 📊 이안님이 픽하신 [옵션 1: 시원시원한 가로 매트릭스 뷰] 실행!
-            renderWeeklyKPT('option1');
+            window.renderWeeklyKPT('option1');
         }
-    }
+    };
 
-    // 📊 주간 KPT 그리기 (이안님 PICK! 옵션 1 매트릭스 결정판)
     window.renderWeeklyKPT = function(viewMode) {
-        const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
+        const container = document.getElementById('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         if (!container) return;
         container.innerHTML = ''; 
         
@@ -3198,7 +3197,6 @@ function renderMemoFolders() {
         kptWrapper.className = "p-4 md:p-8 w-full min-h-full bg-white flex flex-col gap-6 select-text";
         
         if(viewMode === 'option1') {
-            // 현재 열려있는 주간의 요일 날짜 숫자를 가져오기 위한 마법 코드
             let daysHtml = '';
             if (window.lastWeeklyStart) {
                 for(let i=0; i<7; i++) {
@@ -3220,50 +3218,118 @@ function renderMemoFolders() {
                         <div class="grid grid-cols-[100px_repeat(7,1fr)] border-b last:border-b-0 border-[#e6e2d8] min-h-[140px]">
                             <div class="flex items-center justify-center bg-[#fdfbf7] border-r border-[#e6e2d8] font-black text-[13px] ${type==='Keep'?'text-green-600':type==='Problem'?'text-orange-500':'text-blue-500'}">${type}</div>
                             ${Array(7).fill(0).map((_, i) => {
-                                // 요일별로 진짜 매칭되는 데일리 노트 데이터를 싹 긁어오는 구간!
-                                let cellContent = `<span class="text-gray-300 font-medium italic">텅 빈 기록... 🍃</span>`;
+                                let cellContent = '<span class="text-gray-300 font-medium italic">텅 빈 기록... 🍃</span>';
                                 if (window.lastWeeklyStart) {
                                     const targetD = new Date(window.lastWeeklyStart);
                                     targetD.setDate(window.lastWeeklyStart.getDate() + i);
                                     const targetKey = getDateKey(targetD);
-                                    const rawNote = dailyRecords[targetKey]?.note || '';
-                                    
-                                    // 🔍 데일리 기록 정규식 분석기 (Keep:, Problem:, Try: 뒤에 적힌 글자만 추출)
-                                    const regex = new RegExp(`${type}\\s*:\\s*([^\\n]+)`, 'i');
-                                    const match = rawNote.match(regex);
-                                    if (match && match[1].trim()) {
-                                        cellContent = `<span class="text-gray-800 font-bold leading-relaxed">${match[1].trim()}</span>`;
+                                    const data = dailyRecords[targetKey] || {};
+                                    // 💡 데일리 3단 슬롯(kptKeep, kptProblem, kptTry)에서 데이터 다이렉트 호출!
+                                    const val = data['kpt' + type]; 
+                                    if (val && val.trim()) {
+                                        cellContent = '<span class="text-gray-800 font-bold text-[12px] leading-relaxed">' + val.trim() + '</span>';
                                     }
                                 }
-                                return `<div class="p-3 border-r last:border-r-0 border-[#e6e2d8] text-[12px] flex items-center justify-start overflow-y-auto custom-scrollbar whitespace-pre-wrap word-break break-all">${cellContent}</div>`;
+                                return '<div class="p-3 border-r last:border-r-0 border-[#e6e2d8] text-[12px] flex items-center justify-start overflow-y-auto custom-scrollbar whitespace-pre-wrap word-break break-all">' + cellContent + '</div>';
                             }).join('')}
                         </div>
                     `).join('')}
                 </div>
-                <p class="text-[11px] text-gray-400 font-bold pl-1">* 데일리 노션노트에 <b>Keep: 내용</b> / <b>Problem: 내용</b> / <b>Try: 내용</b> 형식으로 적어두면 요일별로 자동 배달됩니다! 🚚</p>
+                <p class="text-[11px] text-gray-400 font-bold pl-1">* 데일리 노션노트의 <b>KPT 성찰 탭</b>에 각 항목을 적어두면 여기에 자동으로 배달됩니다! 🚚</p>
             `;
         }
         container.appendChild(kptWrapper);
-    }
+    };
 
-    // 🛠️ 기존 openWeeklyPlanner 보완: 현재 열린 주간의 시간 데이터를 전역에 박제하기
-    const originalOpenWeeklyPlanner = window.openWeeklyPlanner;
+    // 안전한 Weekly Planner 후킹 (Syntax Error 방지)
+    window._backupOpenWeeklyPlanner = window._backupOpenWeeklyPlanner || window.openWeeklyPlanner;
     window.openWeeklyPlanner = function(startDate, endDate) {
         window.lastWeeklyStart = startDate;
         window.lastWeeklyEnd = endDate;
+        window.currentWeekKey = getDateKey(startDate); 
         
-        // 탭 버튼 상태 초기화 (창을 새로 열 때 항상 첫 번째 탭이 활성화되도록 유도)
-        const tabTracker = $('weekTabTracker');
-        const tabKPT = $('weekTabKPT');
+        const subtitle = document.getElementById('weeklySubtitle');
+        if(subtitle) subtitle.textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')} - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')} - ${endDate.getDate().toString().padStart(2,'0')}`;
+        
+        const modal = document.getElementById('weeklyPlannerModal');
+        if(modal) modal.classList.remove('hidden');
+        
+        // 창 열 때 항상 'Time Tracker' 탭으로 초기화
+        const tabTracker = document.getElementById('weekTabTracker');
+        const tabKPT = document.getElementById('weekTabKPT');
         if (tabTracker && tabKPT) {
             tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
         }
         
-        if (typeof originalOpenWeeklyPlanner === 'function') {
-            originalOpenWeeklyPlanner(startDate, endDate);
+        // 기존 렌더링 함수 실행
+        if (typeof window._backupOpenWeeklyPlanner === 'function') {
+            window._backupOpenWeeklyPlanner(startDate, endDate);
         }
-    }
+    };
+
+    // ----------------------------------------------------
+    // 2. 데일리 플래너 탭 전환 및 저장 연동
+    // ----------------------------------------------------
+    window.switchDpSubTab = function(tab) {
+        const btnMemo = document.getElementById('dpSubTabMemo');
+        const btnKPT = document.getElementById('dpSubTabKPT');
+        const contMemo = document.getElementById('dpSubContentMemo');
+        const contKPT = document.getElementById('dpSubContentKPT');
+        
+        if (!btnMemo || !btnKPT) return;
+        
+        if (tab === 'memo') {
+            btnMemo.className = "pb-2 text-[13px] font-black text-[#1b4332] border-b-2 border-[#1b4332] transition-all";
+            btnKPT.className = "pb-2 text-[13px] font-bold text-gray-400 hover:text-black transition-all";
+            contMemo.classList.remove('hidden');
+            contKPT.classList.add('hidden');
+        } else {
+            btnKPT.className = "pb-2 text-[13px] font-black text-[#1b4332] border-b-2 border-[#1b4332] transition-all";
+            btnMemo.className = "pb-2 text-[13px] font-bold text-gray-400 hover:text-black transition-all";
+            contMemo.classList.add('hidden');
+            contKPT.classList.remove('hidden');
+        }
+    };
+
+    // 안전한 Daily Planner 후킹
+    window._backupOpenPlanner = window._backupOpenPlanner || window.openPlanner;
+    window.openPlanner = function(dateKey, dateObj) {
+        if (typeof window._backupOpenPlanner === 'function') {
+            window._backupOpenPlanner(dateKey, dateObj);
+        }
+        
+        // 💡 열 때마다 3단 슬롯 창에 기존 저장 데이터 뿌려주기
+        const data = dailyRecords[dateKey] || {};
+        if(document.getElementById('kptKeep')) document.getElementById('kptKeep').value = data.kptKeep || '';
+        if(document.getElementById('kptProblem')) document.getElementById('kptProblem').value = data.kptProblem || '';
+        if(document.getElementById('kptTry')) document.getElementById('kptTry').value = data.kptTry || '';
+        
+        // 창 열 때 무조건 '일반 메모' 탭 띄우기
+        if(typeof window.switchDpSubTab === 'function') {
+            window.switchDpSubTab('memo');
+        }
+    };
+
+    // 💡 3단 KPT 데이터 연동 저장
+    window.savePlannerData = function() {
+        if (currentPlannerDateKey) {
+            if(!dailyRecords[currentPlannerDateKey]) {
+                dailyRecords[currentPlannerDateKey] = { grid: Array(144).fill(null), labels: {} };
+            }
+            const noteEl = document.getElementById('plannerNote');
+            const keepEl = document.getElementById('kptKeep');
+            const probEl = document.getElementById('kptProblem');
+            const tryEl = document.getElementById('kptTry');
+            
+            dailyRecords[currentPlannerDateKey].note = noteEl ? noteEl.value : '';
+            dailyRecords[currentPlannerDateKey].kptKeep = keepEl ? keepEl.value : '';
+            dailyRecords[currentPlannerDateKey].kptProblem = probEl ? probEl.value : '';
+            dailyRecords[currentPlannerDateKey].kptTry = tryEl ? tryEl.value : '';
+            
+            setLocal('ianDailyRecords', dailyRecords);
+        }
+    };
 
   </script>
 </body>
