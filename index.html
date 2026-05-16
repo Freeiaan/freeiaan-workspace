@@ -479,6 +479,15 @@
                    <span id="dailyTasksToggleIcon" class="text-[10px] font-bold text-gray-700 group-hover:text-black transition-colors px-2 py-0.5 bg-gray-200 rounded-md">▲ 접기</span>
                </div>
                
+               <div class="flex-shrink-0 flex flex-col mb-2 border-b border-[#e6e2d8] pb-3">
+               <button onclick="toggleDailyTasks()" class="w-full flex justify-between items-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm group">
+                   <div class="flex items-center gap-2">
+                       <span class="text-sm">☑️</span>
+                       <span id="dailyTasksTitleText" class="text-[13px] tracking-wide text-gray-800">오늘 할 일 (계산 중...)</span>
+                   </div>
+                   <span id="dailyTasksToggleIcon" class="text-[11px] font-black text-gray-400 group-hover:text-gray-700 transition-colors">▲ 접기</span>
+               </button>
+               
                <div id="dpTasksContainer" class="flex flex-col max-h-[200px] mt-3 transition-all">
                    <input type="text" id="plannerNewTaskInput" placeholder="+ 새로운 할 일 추가 (작성 후 Enter)" class="w-full text-[13px] font-bold px-3 py-2.5 rounded-xl border border-[#e6e2d8] bg-white/50 mb-2 flex-shrink-0">
                    <div id="plannerTaskList" class="flex flex-col gap-1 overflow-y-auto custom-scrollbar pr-2 pb-1"></div>
@@ -1846,56 +1855,51 @@ function loadFromCloud() {
     }
     function savePlannerData() { if(currentPlannerDateKey) dailyRecords[currentPlannerDateKey].note = $('plannerNote').value; setLocal('ianDailyRecords', dailyRecords); }
     function renderPlannerTasks(dateKey) { 
-            const list = $('plannerTaskList'); 
-            list.innerHTML = ''; 
-            let tasks = []; 
-            if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; } 
-            
-            tasks.forEach((t, idx) => { 
-                const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
-                const item = document.createElement('div'); 
-                
-                // 🔥 간격 다이어트: gap-3 -> gap-2.5, py-1.5 -> py-0.5 로 줄여서 행간을 쫙 밀착!
-                item.className = 'flex items-center gap-2.5 py-0.5 px-2 rounded-xl cursor-pointer transition-all border-2 border-transparent hover:bg-white hover:shadow-sm brush-item'; 
-                
-                const isDoneClass = t.isChecked ? 'line-through opacity-60' : ''; 
-                const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color; 
-                
-                // 🔥 체크박스 크기 다이어트: 12px 폰트에 맞게 w-3.5 h-3.5 로 미세 축소
-                const circle = document.createElement('div'); 
-                circle.className = 'w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2'; 
-                circle.style.borderColor = colorStyle; 
-                
-                if (t.isChecked) { 
-                    circle.style.backgroundColor = colorStyle; 
-                    circle.innerHTML = `<svg class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`; 
-                } else { 
-                    circle.style.backgroundColor = 'white'; 
-                    circle.innerHTML = ''; 
-                } 
-                
-                circle.onclick = (e) => { e.stopPropagation(); t.isChecked = !t.isChecked; saveAndRefresh(); if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey); }; 
-                
-                const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : ''; 
-                
-                const textWrapper = document.createElement('div'); 
-                textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; 
-                textWrapper.title = "클릭하여 일정 수정"; 
-                
-                const textSpan = document.createElement('span'); 
-                // 🔥 폰트 다이어트: text-[14px] -> text-[12px] 로 변경!
-                textSpan.className = `text-[12px] pt-px leading-tight font-bold truncate block w-full ${isDoneClass} hover:underline`;  
-                textSpan.innerHTML = `${t.text}${descIcon}`; 
-                textSpan.style.color = colorStyle; 
-                
-                textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); }; 
-                textWrapper.appendChild(textSpan); 
-                item.appendChild(circle); 
-                item.appendChild(textWrapper); 
-                item.onclick = () => selectBrush(cat.color, item); 
-                list.appendChild(item); 
-            }); 
+        const list = $('plannerTaskList'); 
+        list.innerHTML = ''; 
+        let tasks = []; 
+        if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; } 
+        
+        // 💡 [실시간 연동] 남은 할 일(체크 안 된 것) 개수를 세어서 아코디언 바 텍스트에 즉시 반영!
+        const remainingCount = tasks.filter(t => !t.isChecked).length;
+        const titleEl = document.getElementById('dailyTasksTitleText');
+        if (titleEl) {
+            titleEl.textContent = `오늘 할 일 (${remainingCount}개 남음)`;
         }
+        
+        tasks.forEach((t, idx) => { 
+            const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
+            const item = document.createElement('div'); 
+            item.className = 'flex items-center gap-2.5 py-0.5 px-2 rounded-xl cursor-pointer transition-all border-2 border-transparent hover:bg-white hover:shadow-sm brush-item'; 
+            const isDoneClass = t.isChecked ? 'line-through opacity-60' : ''; 
+            const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color; 
+            const circle = document.createElement('div'); 
+            circle.className = 'w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2'; 
+            circle.style.borderColor = colorStyle; 
+            if (t.isChecked) { 
+                circle.style.backgroundColor = colorStyle; 
+                circle.innerHTML = `<svg class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`; 
+            } else { 
+                circle.style.backgroundColor = 'white'; 
+                circle.innerHTML = ''; 
+            } 
+            circle.onclick = (e) => { e.stopPropagation(); t.isChecked = !t.isChecked; saveAndRefresh(); if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey); }; 
+            const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : ''; 
+            const textWrapper = document.createElement('div'); 
+            textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; 
+            textWrapper.title = "클릭하여 일정 수정"; 
+            const textSpan = document.createElement('span'); 
+            textSpan.className = `text-[12px] pt-px leading-tight font-bold truncate block w-full ${isDoneClass} hover:underline`;  
+            textSpan.innerHTML = `${t.text}${descIcon}`; 
+            textSpan.style.color = colorStyle; 
+            textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); }; 
+            textWrapper.appendChild(textSpan); 
+            item.appendChild(circle); 
+            item.appendChild(textWrapper); 
+            item.onclick = () => selectBrush(cat.color, item); 
+            list.appendChild(item); 
+        }); 
+    }
     function selectBrush(color, element) {
       if (activeBrushColor === color) { activeBrushColor = null; element.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); element.classList.add('border-transparent'); return; }
       activeBrushColor = color; document.querySelectorAll('#plannerTaskList > div.brush-item').forEach(el => { el.classList.remove('bg-white', 'shadow-md', 'border-gray-200'); el.classList.add('border-transparent'); }); element.classList.remove('border-transparent'); element.classList.add('bg-white', 'shadow-md', 'border-gray-200');
@@ -3586,7 +3590,7 @@ function renderMemoFolders() {
         }
     };
 
-    // 📂 데일리 플래너 TASKS 서랍 토글 기능 (열림/닫힘 상태 기억)
+    // 📂 데일리 플래너 TASKS 서랍 토글 기능 (아코디언 바 커스텀 버전)
     window.toggleDailyTasks = function() {
         const container = document.getElementById('dpTasksContainer');
         const icon = document.getElementById('dailyTasksToggleIcon');
@@ -3596,13 +3600,11 @@ function renderMemoFolders() {
             container.classList.remove('hidden');
             container.classList.add('flex');
             icon.textContent = '▲ 접기';
-            icon.className = "text-[10px] font-bold text-gray-700 group-hover:text-black transition-colors px-2 py-0.5 bg-gray-200 rounded-md";
             isOpen = true;
         } else {
             container.classList.add('hidden');
             container.classList.remove('flex');
             icon.textContent = '▼ 펼치기';
-            icon.className = "text-[10px] font-bold text-gray-500 group-hover:text-black transition-colors px-2 py-0.5 bg-gray-100 rounded-md";
             isOpen = false;
         }
         
@@ -3612,7 +3614,7 @@ function renderMemoFolders() {
             dailyRecords[currentPlannerDateKey].isTasksOpen = isOpen;
             setLocal('ianDailyRecords', dailyRecords);
         }
-    }
+    };
 
     // 💡 탭 드래그 앤 드롭 (위치 변경 및 날짜별 개별 저장) - 버그 완벽 수정본!
     let draggedTab = null;
