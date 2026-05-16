@@ -496,6 +496,12 @@
          </div>
          <button onclick="closeWeeklyPlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
+
+      <div class="flex gap-1 px-6 mt-4 flex-shrink-0">
+          <button id="weekTabTracker" onclick="switchWeekTab('tracker')" class="px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">Time Tracker</button>
+          <button id="weekTabKPT" onclick="switchWeekTab('kpt')" class="px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all">Weekly KPT</button>
+      </div>
+      
       <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-4 p-4 md:p-6 bg-[#faf8f5]">
          <div class="w-full md:flex-1 h-[350px] md:h-auto md:min-h-0 flex-shrink-0 border border-[#e6e2d8] rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
              <div class="flex items-center justify-between bg-[#f8fafc] px-3 py-3 border-b border-[#e6e2d8] gap-2 md:gap-4">
@@ -3128,6 +3134,57 @@ function renderMemoFolders() {
               }
           });
     }
+
+// 📂 위클리 탭 전환 함수
+    window.switchWeekTab = function(tab) {
+        const trackerArea = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto'); // 기존 트래커 영역
+        const tabTracker = $('weekTabTracker');
+        const tabKPT = $('weekTabKPT');
+
+        if (tab === 'tracker') {
+            tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative";
+            tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
+            renderWeeklyTrackerContent(); // 기존 트래커 그리기 (함수로 분리)
+        } else {
+            tabKPT.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative";
+            tabTracker.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
+            renderWeeklyKPT('option1'); // 🔥 일단 옵션 1(매트릭스)로 시작!
+        }
+    }
+
+    // 📊 주간 KPT 그리기 (옵션 1: 매트릭스 뷰)
+    window.renderWeeklyKPT = function(viewMode) {
+        const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
+        container.innerHTML = ''; // 싹 비우기
+        
+        // 여기에 주간 KPT 레이아웃 생성 로직이 들어갑니다.
+        const kptWrapper = document.createElement('div');
+        kptWrapper.className = "p-4 md:p-8 w-full min-h-full bg-white flex flex-col gap-6";
+        
+        if(viewMode === 'option1') {
+            // [옵션 1] 매트릭스 뷰 로직
+            kptWrapper.innerHTML = `
+                <div class="flex flex-col border border-[#e6e2d8] rounded-2xl overflow-hidden shadow-sm">
+                    <div class="grid grid-cols-[100px_repeat(7,1fr)] bg-[#f8fafc] border-b border-[#e6e2d8] font-black text-[11px] text-center">
+                        <div class="py-3 border-r border-[#e6e2d8]">구분</div>
+                        <div class="py-3 border-r border-[#e6e2d8] text-red-500">SUN</div><div class="py-3 border-r border-[#e6e2d8]">MON</div><div class="py-3 border-r border-[#e6e2d8]">TUE</div>
+                        <div class="py-3 border-r border-[#e6e2d8]">WED</div><div class="py-3 border-r border-[#e6e2d8]">THU</div><div class="py-3 border-r border-[#e6e2d8]">FRI</div><div class="py-3 text-blue-500">SAT</div>
+                    </div>
+                    ${['Keep', 'Problem', 'Try'].map(type => `
+                        <div class="grid grid-cols-[100px_repeat(7,1fr)] border-b last:border-b-0 border-[#e6e2d8] min-h-[120px]">
+                            <div class="flex items-center justify-center bg-[#fdfbf7] border-r border-[#e6e2d8] font-black text-[13px] ${type==='Keep'?'text-green-600':type==='Problem'?'text-orange-500':'text-blue-500'}">${type}</div>
+                            ${Array(7).fill(0).map(() => `<div class="p-2 border-r last:border-r-0 border-[#e6e2d8] text-[11px] font-medium text-gray-600 leading-tight whitespace-pre-wrap">데일리 노트에 <br>${type}: ... <br>형식으로 적으면 <br>여기에 모여요!</div>`).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        container.appendChild(kptWrapper);
+    }
+
+    // 기존의 openWeeklyPlanner 안의 내용을 함수로 따로 빼야 에러가 안 납니다!
+    // (기존 openWeeklyPlanner 함수는 유지하되, 내부 렌더링 로직만 switchWeekTab에서 쓸 수 있게 합니다)
+
     
   </script>
 </body>
