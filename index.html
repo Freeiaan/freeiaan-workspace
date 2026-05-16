@@ -3135,70 +3135,106 @@ function renderMemoFolders() {
           });
     }
 
-// 📂 위클리 탭 전환 함수
+// 📂 위클리 플래너 내부 탭 전환 마스터 로직
     window.switchWeekTab = function(tab) {
-        const trackerArea = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto'); // 기존 트래커 영역
         const tabTracker = $('weekTabTracker');
         const tabKPT = $('weekTabKPT');
+        if (!tabTracker || !tabKPT) return;
 
         if (tab === 'tracker') {
-            tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative";
+            tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
-            renderWeeklyTrackerContent(); // 기존 트래커 그리기 (함수로 분리)
+            
+            // 🔄 원래 보던 주간 트래커와 일정 데이터를 완벽하게 리로드!
+            if (window.lastWeeklyStart && window.lastWeeklyEnd) {
+                openWeeklyPlanner(window.lastWeeklyStart, window.lastWeeklyEnd);
+            }
         } else {
-            tabKPT.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative";
+            tabKPT.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
             tabTracker.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
-            renderWeeklyKPT('option1'); // 🔥 일단 옵션 1(매트릭스)로 시작!
+            
+            // 📊 이안님이 픽하신 [옵션 1: 시원시원한 가로 매트릭스 뷰] 실행!
+            renderWeeklyKPT('option1');
         }
     }
 
-    // 📊 주간 KPT 그리기 (옵션 2: 칸반 포스트잇 보드 뷰)
+    // 📊 주간 KPT 그리기 (이안님 PICK! 옵션 1 매트릭스 결정판)
     window.renderWeeklyKPT = function(viewMode) {
         const container = $('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
-        container.innerHTML = ''; // 싹 비우기
+        if (!container) return;
+        container.innerHTML = ''; 
         
         const kptWrapper = document.createElement('div');
-        kptWrapper.className = "p-4 md:p-6 w-full min-h-full bg-[#f8fafc] flex flex-col gap-4";
+        kptWrapper.className = "p-4 md:p-8 w-full min-h-full bg-white flex flex-col gap-6 select-text";
         
-        // 7개 요일 기둥을 칸반 스타일로 나란히 배치!
-        kptWrapper.innerHTML = `
-            <div class="flex-1 grid grid-cols-1 md:grid-cols-7 gap-4 items-start w-full">
-                ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, i) => {
-                    const isWeekend = (i === 0 || i === 6);
-                    const textColor = isWeekend ? (i === 0 ? 'text-red-500' : 'text-blue-500') : 'text-gray-700';
-                    
-                    return `
-                        <div class="flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm p-3 min-h-[300px] w-full">
-                            <div class="text-center font-black text-[12px] pb-2 border-b border-gray-100 ${textColor} mb-3">${day}</div>
-                            
-                            <div class="flex flex-col gap-2.5">
-                                <div class="bg-green-50 border border-green-200 rounded-xl p-2.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                                    <span class="text-[9px] font-black bg-green-200 text-green-700 px-1.5 py-0.5 rounded-md mb-1.5 inline-block">Keep</span>
-                                    <p class="text-[11px] font-bold text-gray-700 leading-tight">엔화가방 3일 매출 1200만원 달성! 🚀</p>
-                                </div>
-                                
-                                <div class="bg-orange-50 border border-orange-200 rounded-xl p-2.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                                    <span class="text-[9px] font-black bg-orange-200 text-orange-700 px-1.5 py-0.5 rounded-md mb-1.5 inline-block">Problem</span>
-                                    <p class="text-[11px] font-bold text-gray-700 leading-tight">2차 스위치백 가방 판매 부진 ㅠㅠ 명도가 안맞았나?</p>
-                                </div>
-                                
-                                <div class="bg-blue-50 border border-blue-200 rounded-xl p-2.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
-                                    <span class="text-[9px] font-black bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded-md mb-1.5 inline-block">Try</span>
-                                    <p class="text-[11px] font-bold text-gray-700 leading-tight">3차 엔화지갑 직접 제작 기획 들어가기! 명도 조절 필수</p>
-                                </div>
-                            </div>
+        if(viewMode === 'option1') {
+            // 현재 열려있는 주간의 요일 날짜 숫자를 가져오기 위한 마법 코드
+            let daysHtml = '';
+            if (window.lastWeeklyStart) {
+                for(let i=0; i<7; i++) {
+                    const d = new Date(window.lastWeeklyStart);
+                    d.setDate(window.lastWeeklyStart.getDate() + i);
+                    daysHtml += `<div class="py-3 border-r border-[#e6e2d8] last:border-r-0">${d.getDate()}</div>`;
+                }
+            } else {
+                daysHtml = `<div class="py-3 border-r border-[#e6e2d8]">일</div><div class="py-3 border-r border-[#e6e2d8]">월</div><div class="py-3 border-r border-[#e6e2d8]">화</div><div class="py-3 border-r border-[#e6e2d8]">수</div><div class="py-3 border-r border-[#e6e2d8]">목</div><div class="py-3 border-r border-[#e6e2d8]">금</div><div class="py-3">토</div>`;
+            }
+
+            kptWrapper.innerHTML = `
+                <div class="flex flex-col border border-[#e6e2d8] rounded-2xl overflow-hidden shadow-sm bg-white">
+                    <div class="grid grid-cols-[100px_repeat(7,1fr)] bg-[#f8fafc] border-b border-[#e6e2d8] font-black text-[11px] text-center text-gray-700">
+                        <div class="py-3 border-r border-[#e6e2d8]">구분</div>
+                        ${daysHtml}
+                    </div>
+                    ${['Keep', 'Problem', 'Try'].map(type => `
+                        <div class="grid grid-cols-[100px_repeat(7,1fr)] border-b last:border-b-0 border-[#e6e2d8] min-h-[140px]">
+                            <div class="flex items-center justify-center bg-[#fdfbf7] border-r border-[#e6e2d8] font-black text-[13px] ${type==='Keep'?'text-green-600':type==='Problem'?'text-orange-500':'text-blue-500'}">${type}</div>
+                            ${Array(7).fill(0).map((_, i) => {
+                                // 요일별로 진짜 매칭되는 데일리 노트 데이터를 싹 긁어오는 구간!
+                                let cellContent = `<span class="text-gray-300 font-medium italic">텅 빈 기록... 🍃</span>`;
+                                if (window.lastWeeklyStart) {
+                                    const targetD = new Date(window.lastWeeklyStart);
+                                    targetD.setDate(window.lastWeeklyStart.getDate() + i);
+                                    const targetKey = getDateKey(targetD);
+                                    const rawNote = dailyRecords[targetKey]?.note || '';
+                                    
+                                    // 🔍 데일리 기록 정규식 분석기 (Keep:, Problem:, Try: 뒤에 적힌 글자만 추출)
+                                    const regex = new RegExp(`${type}\\s*:\\s*([^\\n]+)`, 'i');
+                                    const match = rawNote.match(regex);
+                                    if (match && match[1].trim()) {
+                                        cellContent = `<span class="text-gray-800 font-bold leading-relaxed">${match[1].trim()}</span>`;
+                                    }
+                                }
+                                return `<div class="p-3 border-r last:border-r-0 border-[#e6e2d8] text-[12px] flex items-center justify-start overflow-y-auto custom-scrollbar whitespace-pre-wrap word-break break-all">${cellContent}</div>`;
+                            }).join('')}
                         </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
+                    `).join('')}
+                </div>
+                <p class="text-[11px] text-gray-400 font-bold pl-1">* 데일리 노션노트에 <b>Keep: 내용</b> / <b>Problem: 내용</b> / <b>Try: 내용</b> 형식으로 적어두면 요일별로 자동 배달됩니다! 🚚</p>
+            `;
+        }
         container.appendChild(kptWrapper);
     }
 
-    // 기존의 openWeeklyPlanner 안의 내용을 함수로 따로 빼야 에러가 안 납니다!
-    // (기존 openWeeklyPlanner 함수는 유지하되, 내부 렌더링 로직만 switchWeekTab에서 쓸 수 있게 합니다)
+    // 🛠️ 기존 openWeeklyPlanner 보완: 현재 열린 주간의 시간 데이터를 전역에 박제하기
+    const originalOpenWeeklyPlanner = window.openWeeklyPlanner;
+    window.openWeeklyPlanner = function(startDate, endDate) {
+        window.lastWeeklyStart = startDate;
+        window.lastWeeklyEnd = endDate;
+        
+        // 탭 버튼 상태 초기화 (창을 새로 열 때 항상 첫 번째 탭이 활성화되도록 유도)
+        const tabTracker = $('weekTabTracker');
+        const tabKPT = $('weekTabKPT');
+        if (tabTracker && tabKPT) {
+            tabTracker.className = "px-6 py-2 bg-white border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-black text-[#22741C] z-10 relative shadow-[0_-2px_10px_rgba(0,0,0,0.03)]";
+            tabKPT.className = "px-6 py-2 bg-[#f1f0ea] border border-[#e6e2d8] border-b-0 rounded-t-xl text-[12px] font-bold text-gray-400 hover:bg-white transition-all";
+        }
+        
+        if (typeof originalOpenWeeklyPlanner === 'function') {
+            originalOpenWeeklyPlanner(startDate, endDate);
+        }
+    }
 
-    
   </script>
 </body>
 </html>
