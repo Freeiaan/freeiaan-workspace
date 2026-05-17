@@ -590,23 +590,37 @@
     </div>
   </div>
 
-  <div id="timeBlockModal" class="hidden fixed inset-0 z-[500] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[320px] p-6">
-      <h3 class="text-lg font-bold mb-4">타임 블록 설정</h3>
-      <input type="text" id="tbLabelInput" placeholder="일정 내용을 입력하세요" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl mb-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#22741C]">
-      <div class="mb-5">
-         <div class="flex justify-between items-center mb-2">
-             <span class="text-xs font-bold text-gray-500">색상 변경</span>
-             <button id="tbEditColorBtn" onclick="toggleTbColorEdit()" class="text-[10px] bg-gray-100 border px-3 py-1 rounded-lg text-gray-600 font-bold hover:bg-gray-200 transition">수정</button>
-         </div>
-         <div id="tbColorContainer" class="flex gap-2 flex-wrap items-center min-h-[30px]"></div>
+  <div id="timeBlockModal" class="hidden fixed inset-0 z-[5000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#faf8f5] w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-black text-gray-800">타임 블록 설정 🎨</h2>
+        <button onclick="$('timeBlockModal').classList.add('hidden')" class="text-3xl text-gray-400 hover:text-black">&times;</button>
       </div>
-      <div class="flex justify-between items-center pt-2">
-         <button id="tbDeleteBtn" class="text-red-500 font-extrabold text-xs hover:underline">삭제</button>
-         <div class="flex gap-2">
-            <button onclick="$('timeBlockModal').classList.add('hidden')" class="text-gray-600 font-extrabold text-xs px-3 py-2">취소</button>
-            <button id="tbSaveBtn" class="bg-[#22741C] text-white px-5 py-2 rounded-xl font-extrabold text-xs shadow-md hover:bg-[#1b5e16]">저장</button>
-         </div>
+
+      <div class="mb-6">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">오늘 할 일에서 가져오기</h3>
+        <div id="tbTodayTasks" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">자주 하는 일 (카테고리)</h3>
+        <div id="tbCategories" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="mb-8">
+        <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">직접 입력</h3>
+        <div class="flex gap-2">
+          <input type="text" id="tbLabelInput" class="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#22741C]" placeholder="어떤 일을 하셨나요?">
+          <input type="color" id="tbColorInput" class="w-12 h-12 rounded-xl cursor-pointer border-0 bg-transparent p-0">
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center pt-4 border-t border-gray-200 mt-2">
+        <button id="tbDeleteBtn" class="text-red-500 font-extrabold text-sm hover:underline px-2 py-2">삭제 🗑️</button>
+        <div class="flex gap-2">
+          <button onclick="$('timeBlockModal').classList.add('hidden')" class="text-gray-500 hover:bg-gray-100 rounded-xl font-extrabold text-sm px-5 py-3 transition-colors">취소</button>
+          <button id="tbSaveBtn" class="bg-[#22741C] hover:bg-[#1b5e16] text-white font-black px-8 py-3 rounded-xl shadow-lg transition-all active:scale-95 text-sm">저장하기 🚀</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2121,66 +2135,106 @@ function renderTimeGrid(dateKey) {
       savePlannerData();
     }
 
+    // 💡 수동 타임 블록 설정 창 열기 (스마트 연동 버전)
     function openTimeBlockModal(idx, dateKey) {
-        tbCurrentIdx = idx; currentPlannerDateKey = dateKey; const data = dailyRecords[dateKey]; const blockColor = data.grid[idx];
+        tbCurrentIdx = idx; currentPlannerDateKey = dateKey; 
+        const data = dailyRecords[dateKey]; 
+        const blockColor = data.grid[idx];
         let startIdx = idx;
+        
         if (blockColor) {
-            // 🔥 [수정됨] 색이 같더라도, 다른 라벨이 적혀있는 곳을 만나면 거기서 후진을 멈춤!
             while (startIdx > 0 && data.grid[startIdx - 1] === blockColor && !(data.labels && data.labels[startIdx])) {
                 startIdx--;
             }
         }
-        if (!data.labels) data.labels = {}; $('tbLabelInput').value = data.labels[startIdx] ? data.labels[startIdx].text : '';
-        const colorContainer = $('tbColorContainer'); colorContainer.dataset.selectedColor = blockColor || trackerColors[0].color;
-        isTbColorEditMode = false; $('tbEditColorBtn').textContent = '수정'; renderTbColors(); $('timeBlockModal').classList.remove('hidden');
+        
+        // 1. 오늘 할 일 버튼 렌더링
+        const todayContainer = $('tbTodayTasks'); 
+        todayContainer.innerHTML = '';
+        if (allTasks[dateKey] && allTasks[dateKey].length > 0) {
+            const uncompleted = allTasks[dateKey].filter(t => !t.isChecked);
+            if(uncompleted.length === 0) { 
+                todayContainer.innerHTML = '<span class="text-xs text-gray-400 font-medium">남은 일정이 없습니다.</span>'; 
+            } else {
+                uncompleted.forEach((t) => {
+                    const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
+                    const btn = document.createElement('button');
+                    btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border hover:opacity-80 transition-all';
+                    btn.style.backgroundColor = hexToRgba(cat.color, 0.1); 
+                    btn.style.color = cat.color; 
+                    btn.style.borderColor = cat.color; 
+                    btn.textContent = t.text;
+                    btn.onclick = function() { selectTbRecord(t.text, cat.color, this); }; 
+                    todayContainer.appendChild(btn);
+                });
+            }
+        } else { 
+            todayContainer.innerHTML = '<span class="text-xs text-gray-400 font-medium">오늘 등록된 일정이 없습니다.</span>'; 
+        }
+
+        // 2. 카테고리 버튼 렌더링
+        const catContainer = $('tbCategories'); 
+        catContainer.innerHTML = '';
+        categories.forEach(cat => {
+            const btn = document.createElement('button'); 
+            btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white hover:bg-gray-50 transition-all';
+            btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${cat.color}"></span>${cat.name}`;
+            btn.onclick = function() { selectTbRecord(cat.name + ' 작업', cat.color, this); }; 
+            catContainer.appendChild(btn);
+        });
+
+        // 3. 기존 글자와 색상 불러오기
+        $('tbLabelInput').value = (data.labels && data.labels[startIdx]) ? data.labels[startIdx].text : '';
+        $('tbColorInput').value = blockColor || (categories.length > 0 ? categories[0].color : '#000000');
+        
+        $('timeBlockModal').classList.remove('hidden');
     }
 
+    // 💡 버튼 클릭 시 입력창에 글씨와 색상 자동 채우기!
+    function selectTbRecord(text, color, clickedBtn) {
+        $('tbLabelInput').value = text;
+        $('tbColorInput').value = color;
+        
+        // 시각적 피드백: 선택한 버튼만 진하게, 나머지는 투명하게!
+        document.querySelectorAll('#tbTodayTasks button, #tbCategories button').forEach(b => {
+            b.style.opacity = '0.3';
+            b.style.borderWidth = '1px';
+        });
+        clickedBtn.style.opacity = '1';
+        clickedBtn.style.borderWidth = '2px';
+    }
+
+    // 💡 저장 버튼 누를 때
     $('tbSaveBtn').onclick = () => {
-        const newText = $('tbLabelInput').value.trim(); const newColor = $('tbColorContainer').dataset.selectedColor; const data = dailyRecords[currentPlannerDateKey];
-        const oldColor = data.grid[tbCurrentIdx]; let start = tbCurrentIdx, end = tbCurrentIdx;
+        const newText = $('tbLabelInput').value.trim(); 
+        const newColor = $('tbColorInput').value; 
+        const data = dailyRecords[currentPlannerDateKey];
+        const oldColor = data.grid[tbCurrentIdx]; 
+        let start = tbCurrentIdx, end = tbCurrentIdx;
+        
         if (oldColor) {
-            // 🔥 [수정됨] 저장할 때도 텍스트가 있는 경계선을 넘지 않도록 제한!
             while (start > 0 && data.grid[start - 1] === oldColor && !(data.labels && data.labels[start])) { start--; }
             while (end < 143 && data.grid[end + 1] === oldColor && !(data.labels && data.labels[end + 1])) { end++; }
         }
         for(let i = start; i <= end; i++) { data.grid[i] = newColor; if(data.labels) delete data.labels[i]; }
         if (newText) { if (!data.labels) data.labels = {}; data.labels[start] = { text: newText, color: newColor }; }
-        savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); 
+        
+        savePlannerData(); 
+        $('timeBlockModal').classList.add('hidden'); 
+        renderTimeGrid(currentPlannerDateKey); 
+        renderTimerHistory(); 
     };
 
+    // 💡 삭제 버튼 누를 때
     $('tbDeleteBtn').onclick = () => {
         const data = dailyRecords[currentPlannerDateKey]; const oldColor = data.grid[tbCurrentIdx]; let start = tbCurrentIdx, end = tbCurrentIdx;
         if (oldColor) {
-            // 🔥 [수정됨] 삭제할 때도 남의 텍스트가 있는 블록은 건드리지 않고 삭제!
             while (start > 0 && data.grid[start - 1] === oldColor && !(data.labels && data.labels[start])) { start--; }
             while (end < 143 && data.grid[end + 1] === oldColor && !(data.labels && data.labels[end + 1])) { end++; }
         }
         for(let i = start; i <= end; i++) { data.grid[i] = null; if (data.labels && data.labels[i]) delete data.labels[i]; }
         savePlannerData(); $('timeBlockModal').classList.add('hidden'); renderTimeGrid(currentPlannerDateKey); renderTimerHistory(); 
     };
-
-    function toggleTbColorEdit() { isTbColorEditMode = !isTbColorEditMode; $('tbEditColorBtn').textContent = isTbColorEditMode ? '완료' : '수정'; renderTbColors(); }
-    function renderTbColors() {
-        const colorContainer = $('tbColorContainer'); const blockColor = colorContainer.dataset.selectedColor; colorContainer.innerHTML = '';
-        trackerColors.forEach(tc => {
-            const cWrapper = document.createElement('div'); cWrapper.className = 'relative flex-shrink-0';
-            const c = document.createElement('div'); c.className = `w-6 h-6 rounded-full cursor-pointer border-2 transition-all ${blockColor === tc.color && !isTbColorEditMode ? 'border-black shadow-md' : 'border-transparent'}`; c.style.backgroundColor = tc.color;
-            if (isTbColorEditMode) {
-                const delBtn = document.createElement('div'); delBtn.className = 'absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold cursor-pointer z-50 shadow-sm'; delBtn.innerHTML = '×';
-                delBtn.onclick = (e) => { e.stopPropagation(); if (trackerColors.length > 1) { trackerColors = trackerColors.filter(x => x.id !== tc.id); saveTrackerColors(); if (colorContainer.dataset.selectedColor === tc.color) colorContainer.dataset.selectedColor = trackerColors[0].color; renderTbColors(); } else { alert("최소 1개의 컬러는 유지해야 합니다."); } };
-                cWrapper.appendChild(delBtn);
-                const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.value = tc.color;
-                picker.onchange = (e) => { const oldColor = tc.color; const newColor = e.target.value; tc.color = newColor; if (colorContainer.dataset.selectedColor === oldColor) colorContainer.dataset.selectedColor = newColor; for (let dKey in dailyRecords) { const grid = dailyRecords[dKey].grid; for(let i=0; i<grid.length; i++) { if (grid[i] === oldColor) grid[i] = newColor; } if (dailyRecords[dKey].labels) { for (let key in dailyRecords[dKey].labels) { if (dailyRecords[dKey].labels[key].color === oldColor) dailyRecords[dKey].labels[key].color = newColor; } } } savePlannerData(); saveTrackerColors(); if(currentPlannerDateKey) renderTimeGrid(currentPlannerDateKey); renderTbColors(); };
-                cWrapper.appendChild(picker); c.onclick = () => picker.click();
-            } else { c.onclick = () => { colorContainer.dataset.selectedColor = tc.color; renderTbColors(); }; }
-            cWrapper.appendChild(c); colorContainer.appendChild(cWrapper);
-        });
-        if (isTbColorEditMode) {
-            const addBtn = document.createElement('div'); addBtn.className = 'w-6 h-6 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-100 text-gray-500 text-sm font-bold flex-shrink-0'; addBtn.innerHTML = '+';
-            addBtn.onclick = () => { trackerColors.push({ id: 'tc' + Date.now(), color: '#94a3b8' }); saveTrackerColors(); renderTbColors(); }; colorContainer.appendChild(addBtn);
-        }
-    }
-    function saveTrackerColors() { setLocal('ianTrackerColors', trackerColors); }
 
     window.switchDpTab = function(tab) {
         const secT = $('dpSectionTracker'), secN = $('dpSectionNotes');
