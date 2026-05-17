@@ -3286,7 +3286,7 @@ function renderMemoFolders() {
         });
     }
 
-    // 🔴 실시간 답장 알림 체크 (똑똑한 알림 버전!)
+   // 🔴 실시간 답장 알림 체크 (똑똑한 알림 버전!)
     function checkNewReplies() {
         if (!currentUser) return;
         db.collection('feedbacks')
@@ -3309,11 +3309,14 @@ function renderMemoFolders() {
                       }
                   });
 
-                  // 4. 진짜 새로 온 답장이 있을 때만 빨간 점 표시!
+                  // 4. 진짜 새로 온 답장이 있을 때 바깥과 안쪽 빨간 점을 동시에 켭니다!
+                  const innerDot = document.getElementById('innerNotification');
                   if (hasNewReply) {
                       $('feedbackNotification').classList.remove('hidden');
+                      if(innerDot) innerDot.classList.remove('hidden'); // ✨ 안쪽 점도 켜기!
                   } else {
                       $('feedbackNotification').classList.add('hidden');
+                      if(innerDot) innerDot.classList.add('hidden'); // ✨ 안쪽 점도 끄기!
                   }
               }
           });
