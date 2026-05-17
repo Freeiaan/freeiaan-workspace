@@ -211,8 +211,8 @@
         <div class="flex gap-2">
             <button onclick="window.location.reload()" class="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-blue-100 transition flex items-center gap-1">🔄 새로고침</button>
             
-            <button onclick="openLedger()" class="text-[10px] font-bold bg-[#facc15] text-black border border-[#facc15] px-3 py-1.5 rounded-lg shadow-sm hover:bg-yellow-500 transition flex items-center gap-1">💰 가계부</button>
-            <button onclick="exportData()" class="text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 수동 백업</button>
+            <button onclick="openLedger()" class="hidden text-[10px] font-bold bg-[#facc15] text-black border border-[#facc15] px-3 py-1.5 rounded-lg shadow-sm hover:bg-yellow-500 transition flex items-center gap-1">💰 가계부</button>
+            <button onclick="exportData()" class="hidden text-[10px] font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-gray-600 hover:bg-gray-50">📤 수동 백업</button>
         </div>
       </div> <!-- 🔥 드디어 박스가 정상적으로 닫혔습니다! -->
       
@@ -822,15 +822,56 @@
       </div>
   </div>
 
-  <!-- 💬 피드백 (미니 쪽지함) 플로팅 버튼 -->
-  <button onclick="openFeedbackModal()" class="fixed bottom-6 right-6 z-[6000] bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 hover:scale-110 transition-all duration-300">
-      <span class="text-2xl">💬</span>
-      <!-- 🔴 나중에 3탄에서 쓰일 '답장 알림' 빨간 점 (일단 숨겨둠!) -->
-      <span id="feedbackNotification" class="hidden absolute top-0 right-0 flex h-4 w-4">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
-      </span>
+  <button onclick="openSettingsModal()" class="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-12 h-12 md:w-14 md:h-14 bg-[#22741C] text-white rounded-full shadow-xl flex items-center justify-center hover:bg-[#1b5e16] hover:scale-105 transition-all z-[100]">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
   </button>
+
+  <div id="settingsModal" class="hidden fixed inset-0 z-[5000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-[#faf8f5] w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl border border-[#e6e2d8]">
+          <div class="flex items-center justify-between mb-6">
+              <h2 class="text-xl font-black text-gray-800 flex items-center gap-2">설정 ⚙️</h2>
+              <button onclick="closeSettingsModal()" class="text-3xl text-gray-400 hover:text-black transition-colors">&times;</button>
+          </div>
+
+          <div class="flex flex-col gap-3">
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center hover:border-[#22741C] transition-colors group cursor-pointer" onclick="closeSettingsModal(); openFeedbackModal();">
+                  <div>
+                      <h3 class="text-[13px] font-black text-gray-800 group-hover:text-[#22741C] transition-colors">이안에게 메시지 보내기 💬</h3>
+                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">건의사항 및 피드백 남기기</p>
+                  </div>
+                  <span class="text-gray-300 group-hover:text-[#22741C] text-lg font-bold">〉</span>
+              </div>
+
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
+                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">데이터 관리 (보안)</h3>
+                  <div class="flex gap-2">
+                      <button onclick="exportData()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-xl text-[11px] font-black transition-all">수동 백업 💾</button>
+                      <button onclick="closeSettingsModal(); window.openRestoreModal();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">데이터 복원 📥</button>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div id="restoreModal" class="hidden fixed inset-0 z-[6000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#faf8f5] w-full max-w-md rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2">데이터 복원 📥</h2>
+        <button onclick="closeRestoreModal()" class="text-3xl text-gray-400 hover:text-black transition-colors">&times;</button>
+      </div>
+      <p class="text-[12px] text-gray-500 font-bold mb-6">기존에 복사해두신 백업 코드를 아래에 붙여넣어 주세요.<br><span class="text-red-500">* 주의: 복원 시 현재 화면의 데이터는 덮어씌워집니다!</span></p>
+
+      <textarea id="restoreInput" class="w-full h-32 bg-white border border-gray-200 rounded-xl p-4 text-[11px] font-mono text-gray-600 outline-none focus:border-[#22741C] focus:ring-1 focus:ring-[#22741C] custom-scrollbar resize-none mb-6" placeholder='{"ianDailyRecords": {...}, "ianAllTasks": {...}} 등과 같은 긴 텍스트 코드를 이곳에 Ctrl+V 해주세요.'></textarea>
+
+      <div class="flex justify-end gap-2">
+        <button onclick="closeRestoreModal()" class="text-gray-500 hover:bg-gray-100 rounded-xl font-extrabold text-sm px-5 py-3 transition-colors">취소</button>
+        <button onclick="executeRestore()" class="bg-[#22741C] hover:bg-[#1b5e16] text-white font-black px-6 py-3 rounded-xl shadow-lg transition-all active:scale-95 text-sm">복원 실행하기 🚀</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 💌 피드백 모달 (경고문 유지 + 쪽지함 통합 버전) -->
   <div id="feedbackModal" class="hidden fixed inset-0 z-[7000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -3848,6 +3889,41 @@ function renderMemoFolders() {
             window.switchDpSubTab(draggedTab); // 끌어다 놓은 탭을 바로 열어주기
         }
         draggedTab = null;
+    };
+
+    // 💡 설정 모달창 열고 닫기
+    window.openSettingsModal = function() { document.getElementById('settingsModal').classList.remove('hidden'); };
+    window.closeSettingsModal = function() { document.getElementById('settingsModal').classList.add('hidden'); };
+
+    // 💡 복원 모달창 열고 닫기
+    window.openRestoreModal = function() { document.getElementById('restoreModal').classList.remove('hidden'); };
+    window.closeRestoreModal = function() { 
+        document.getElementById('restoreModal').classList.add('hidden'); 
+        document.getElementById('restoreInput').value = ''; 
+    };
+
+    // 💡 복원 실행 함수 (백업 코드 해독 & 주입)
+    window.executeRestore = function() {
+        const backupData = document.getElementById('restoreInput').value.trim();
+        
+        if (!backupData) {
+            alert("백업 코드를 먼저 붙여넣어 주세요!");
+            return;
+        }
+
+        if (confirm("정말 복원하시겠습니까? 현재 입력된 데이터는 사라지고 백업 데이터로 덮어씌워집니다.")) {
+            try {
+                const parsedData = JSON.parse(backupData);
+                for (let key in parsedData) {
+                    localStorage.setItem(key, JSON.stringify(parsedData[key]));
+                }
+                alert("🎉 데이터 복원이 완벽하게 끝났습니다! 화면을 새로고침합니다.");
+                location.reload(); 
+            } catch (e) {
+                alert("⚠️ 유효하지 않은 백업 코드입니다. 복사한 코드가 중간에 잘리지 않았는지 다시 확인해 주세요!");
+                console.error(e);
+            }
+        }
     };
 
   </script>
