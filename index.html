@@ -844,12 +844,19 @@
           <div class="flex flex-col gap-3">
               <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center hover:border-[#22741C] transition-colors group cursor-pointer" onclick="closeSettingsModal(); openFeedbackModal();">
                   <div>
-                      <h3 class="text-[13px] font-black text-gray-800 group-hover:text-[#22741C] transition-colors">이안에게 메시지 보내기 💬</h3>
-                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">건의사항 및 피드백 남기기</p>
+                      <h3 class="text-[13px] font-black text-gray-800 group-hover:text-[#22741C] transition-colors flex items-center gap-2">
+                          이안의 우체통 📮
+                          <span id="innerNotification" class="hidden flex h-2.5 w-2.5">
+                              <span class="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-red-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span>
+                          </span>
+                      </h3>
+                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">건의사항 남기기 및 이안의 답장 확인</p>
                   </div>
                   <span class="text-gray-300 group-hover:text-[#22741C] text-lg font-bold">〉</span>
               </div>
 
+            
               <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
                   <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">데이터 관리 (보안)</h3>
                   <div class="flex gap-2">
@@ -3018,6 +3025,12 @@ function renderMemoFolders() {
         
         $('feedbackContent').value = ''; // 창 열 때마다 내용 깔끔하게 비우기
         $('feedbackModal').classList.remove('hidden');
+
+        // 🔴 우체통을 열면 겉(톱니바퀴)과 속(우체통)의 빨간 점을 모두 끕니다!
+        const outerDot = document.getElementById('feedbackNotification');
+        const innerDot = document.getElementById('innerNotification');
+        if (outerDot) outerDot.classList.add('hidden');
+        if (innerDot) innerDot.classList.add('hidden');
     }
 
     // ❌ 피드백 모달 닫기
