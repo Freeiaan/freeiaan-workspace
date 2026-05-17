@@ -3290,37 +3290,50 @@ function renderMemoFolders() {
         }
     };
 
-    // 💡 [신규] 반갈죽 스플릿 뷰 & 돋보기 엔진 (아이디어 1+3 퓨전)
+    // 💡 [신규] 6:4 스플릿 뷰 & 미니 리더기 탑재 버전!
     window.renderWeeklyDiary = function() {
         const container = document.getElementById('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         if (!container) return;
         container.innerHTML = ''; 
 
-        // 1. 레이아웃 뼈대: 왼쪽(피드 50%) + 오른쪽(인사이트 50%)
+        // 1. 레이아웃 뼈대: 왼쪽(60%) + 오른쪽(40%) / 왼쪽은 리스트뷰와 상세뷰를 번갈아 띄울 수 있게 구조화!
         container.innerHTML = `
             <div class="flex flex-col md:flex-row h-full w-full gap-4 md:gap-6 p-4 md:p-6 bg-white min-h-[500px]">
-                <div class="w-full md:w-1/2 flex flex-col h-full border border-[#e6e2d8] rounded-2xl bg-[#faf8f5] shadow-sm overflow-hidden min-h-[300px]">
-                    <div class="p-3 md:p-4 border-b border-[#e6e2d8] bg-white flex-shrink-0">
-                        <div class="flex items-center bg-gray-100 rounded-xl px-3 py-2 border border-transparent focus-within:border-[#22741C] focus-within:bg-white transition-all">
-                            <span class="text-gray-400 text-sm mr-2">🔍</span>
-                            <input type="text" id="diarySearchInput" placeholder="단어를 검색하면 과거의 모든 메모를 찾아와요!" class="bg-transparent border-none outline-none text-[12px] font-bold text-gray-800 w-full placeholder-gray-400">
+                <div class="w-full md:w-[60%] flex flex-col h-full border border-[#e6e2d8] rounded-2xl bg-[#faf8f5] shadow-sm overflow-hidden min-h-[300px] relative">
+                    
+                    <div id="diaryListView" class="flex flex-col h-full w-full absolute inset-0 bg-[#faf8f5] z-10">
+                        <div class="p-3 md:p-4 border-b border-[#e6e2d8] bg-white flex-shrink-0">
+                            <div class="flex items-center bg-gray-100 rounded-xl px-3 py-2 border border-transparent focus-within:border-[#22741C] focus-within:bg-white transition-all">
+                                <span class="text-gray-400 text-sm mr-2">🔍</span>
+                                <input type="text" id="diarySearchInput" placeholder="단어를 검색하면 과거의 모든 메모를 찾아와요!" class="bg-transparent border-none outline-none text-[12px] font-bold text-gray-800 w-full placeholder-gray-400">
+                            </div>
                         </div>
+                        <div id="diaryFeedList" class="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 flex flex-col gap-3">
+                            </div>
                     </div>
-                    <div id="diaryFeedList" class="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 flex flex-col gap-3">
+
+                    <div id="diaryDetailView" class="hidden flex flex-col h-full w-full absolute inset-0 bg-white z-20 shadow-[-5px_0_15px_rgba(0,0,0,0.05)]">
+                        <div class="p-3 md:p-4 border-b border-[#e6e2d8] bg-[#fdfbf7] flex justify-between items-center flex-shrink-0">
+                            <button id="diaryBackBtn" class="text-[12px] font-black text-gray-500 hover:text-black transition-colors flex items-center gap-1.5"><span class="text-lg leading-none mb-0.5">←</span> 뒤로가기</button>
+                            <span id="diaryDetailDate" class="text-[11px] font-black text-white bg-[#22741C] px-2.5 py-1 rounded-md tracking-wider"></span>
                         </div>
+                        <div id="diaryDetailContent" class="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6 text-[13px] font-medium text-gray-800 leading-relaxed whitespace-pre-wrap word-break break-all">
+                            </div>
+                    </div>
+
                 </div>
 
-                <div class="w-full md:w-1/2 flex flex-col h-full border border-blue-100 rounded-2xl bg-[#f4f9ff] shadow-sm overflow-hidden min-h-[300px]">
+                <div class="w-full md:w-[40%] flex flex-col h-full border border-blue-100 rounded-2xl bg-[#f4f9ff] shadow-sm overflow-hidden min-h-[300px]">
                     <div class="p-3 md:p-4 border-b border-blue-200 bg-white flex justify-between items-center flex-shrink-0">
-                        <h3 class="font-black text-[12px] text-blue-700 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-blue-500 rounded-sm"></span> 주간 인사이트 & 다음 주 목표</h3>
+                        <h3 class="font-black text-[12px] text-blue-700 flex items-center gap-1.5"><span class="w-1.5 h-3 bg-blue-500 rounded-sm"></span> 주간 인사이트 & 목표</h3>
                         <span class="text-[9px] bg-blue-100 text-blue-500 px-2 py-0.5 rounded font-black">자동저장됨</span>
                     </div>
-                    <textarea id="weeklyInsightMemo" class="flex-1 w-full bg-transparent resize-none outline-none custom-scrollbar p-4 md:p-5 text-[13px] font-bold leading-relaxed text-gray-800 placeholder-blue-300" placeholder="왼쪽의 기록들을 쭉 읽어보고, 이번 주의 반성이나 다음 주 핵심 목표를 시원하게 적어보세요! ✍️"></textarea>
+                    <textarea id="weeklyInsightMemo" class="flex-1 w-full bg-transparent resize-none outline-none custom-scrollbar p-4 md:p-5 text-[13px] font-bold leading-relaxed text-gray-800 placeholder-blue-300" placeholder="왼쪽의 기록들을 쭉 읽어보고, 이번 주의 반성이나 다음 주 핵심 목표를 적어보세요! ✍️"></textarea>
                 </div>
             </div>
         `;
 
-        // 2. 오른쪽 인사이트 메모장 저장 로직 (기존 weeklyMemos 공간에 '_insight' 이름표를 붙여서 안전하게 기생 저장!)
+        // 2. 오른쪽 인사이트 메모장 저장 로직
         const insightArea = document.getElementById('weeklyInsightMemo');
         if (insightArea) {
             const insightKey = window.currentWeekKey + '_insight';
@@ -3331,7 +3344,24 @@ function renderMemoFolders() {
             };
         }
 
-        // 3. 왼쪽 돋보기 검색 & 피드 렌더링 엔진
+        // 3. 뷰 전환 컨트롤러 (뒤로가기 버튼)
+        document.getElementById('diaryBackBtn').onclick = () => {
+            document.getElementById('diaryDetailView').classList.add('hidden');
+            document.getElementById('diaryListView').classList.remove('hidden');
+        };
+
+        // 4. 전역 함수로 상세 뷰 여는 기능 열어두기
+        window.openDiaryDetail = function(dateStr, fullText, contextHtml) {
+            document.getElementById('diaryDetailDate').textContent = dateStr;
+            document.getElementById('diaryDetailContent').innerHTML = `
+                ${contextHtml ? `<div class="mb-4 pb-4 border-b border-gray-100 bg-[#fdfbf7] p-3 rounded-xl">${contextHtml}</div>` : ''}
+                ${fullText}
+            `;
+            document.getElementById('diaryListView').classList.add('hidden');
+            document.getElementById('diaryDetailView').classList.remove('hidden');
+        };
+
+        // 5. 왼쪽 돋보기 검색 & 피드 렌더링 엔진 (3줄 요약)
         const feedList = document.getElementById('diaryFeedList');
         const searchInput = document.getElementById('diarySearchInput');
 
@@ -3340,7 +3370,7 @@ function renderMemoFolders() {
             let results = [];
 
             if (searchTerm.trim() === '') {
-                // 검색어가 없으면: '이번 주(월~일)'의 메모만 순서대로 보여주기
+                // 이번 주 월~일요일
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(window.lastWeeklyStart);
                     d.setDate(window.lastWeeklyStart.getDate() + i);
@@ -3351,7 +3381,7 @@ function renderMemoFolders() {
                     }
                 }
             } else {
-                // 검색어가 있으면: '과거에 썼던 모든 메모'를 탈탈 털어서 검색!
+                // 전체 검색
                 const term = searchTerm.toLowerCase();
                 for (const key in dailyRecords) {
                     const note = dailyRecords[key].note;
@@ -3361,7 +3391,6 @@ function renderMemoFolders() {
                         results.push({ date: d, key: key, text: note });
                     }
                 }
-                // 검색 결과는 최신 날짜가 맨 위로 오게 정렬
                 results.sort((a, b) => b.date - a.date);
             }
 
@@ -3374,14 +3403,14 @@ function renderMemoFolders() {
             results.forEach(res => {
                 const dateStr = `${res.date.getMonth() + 1}/${res.date.getDate()} (${dayNames[res.date.getDay()]})`;
                 
-                // 검색한 단어 노란색 형광펜 칠하기
                 let displayText = res.text;
+                let rawText = res.text; // 원본 데이터 보존
                 if (searchTerm) {
                     const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                     displayText = displayText.replace(regex, '<span class="bg-yellow-300 text-black px-0.5 rounded font-black">$1</span>');
                 }
 
-                // 🔥 아이디어 2번 적용: 메모 위에 그날 '완료한 주요 할 일' 훈장 달아주기 (맥락 부여)
+                // 할 일 뱃지 
                 let contextHtml = '';
                 if (allTasks[res.key]) {
                     const doneTasks = allTasks[res.key].filter(t => t.isChecked);
@@ -3393,29 +3422,31 @@ function renderMemoFolders() {
                 }
 
                 const card = document.createElement('div');
-                card.className = 'bg-white p-4 rounded-xl shadow-sm border border-[#e6e2d8] flex flex-col hover:border-[#22741C] transition-colors';
+                card.className = 'bg-white p-4 rounded-xl shadow-sm border border-[#e6e2d8] flex flex-col hover:border-[#22741C] hover:shadow-md cursor-pointer transition-all group';
+                // 🔥 카드 클릭 시 마법의 미니 리더기가 뜹니다!
+                card.onclick = () => window.openDiaryDetail(dateStr, displayText, contextHtml);
+
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-black text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">${dateStr}</span>
+                        <span class="text-[10px] font-black text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md group-hover:bg-[#e4f8c4] group-hover:text-[#1b4332] transition-colors">${dateStr}</span>
+                        <span class="text-[9px] text-gray-300 font-bold group-hover:text-[#22741C] transition-colors">자세히 보기 ></span>
                     </div>
-                    <div class="text-[12px] font-medium text-gray-800 leading-relaxed whitespace-pre-wrap word-break break-all">${displayText}</div>
+                    <div class="text-[12px] font-medium text-gray-800 leading-relaxed whitespace-pre-wrap word-break break-all line-clamp-3">${displayText}</div>
                     ${contextHtml}
                 `;
                 feedList.appendChild(card);
             });
         };
 
-        // 처음 탭을 열었을 때 바로 실행!
         renderFeed();
 
-        // 검색창에 글자를 칠 때마다 실시간으로 찾아주기
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 renderFeed(e.target.value);
             });
         }
     };
-
+    
     window.renderWeeklyKPT = function(viewMode) {
         const container = document.getElementById('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         if (!container) return;
