@@ -3290,13 +3290,13 @@ function renderMemoFolders() {
         }
     };
 
-    // 💡 [신규] 6:4 스플릿 뷰 & 미니 리더기 탑재 버전!
+    // 💡 [신규] 6:4 스플릿 뷰 & 미니 리더기 (여백 버그 수정 + 닫기 버튼 우측 배치!)
     window.renderWeeklyDiary = function() {
         const container = document.getElementById('weeklyPlannerModal').querySelector('.flex-1.overflow-y-auto');
         if (!container) return;
         container.innerHTML = ''; 
 
-        // 1. 레이아웃 뼈대: 왼쪽(60%) + 오른쪽(40%) / 왼쪽은 리스트뷰와 상세뷰를 번갈아 띄울 수 있게 구조화!
+        // 1. 레이아웃 뼈대: 왼쪽(60%) + 오른쪽(40%)
         container.innerHTML = `
             <div class="flex flex-col md:flex-row h-full w-full gap-4 md:gap-6 p-4 md:p-6 bg-white min-h-[500px]">
                 <div class="w-full md:w-[60%] flex flex-col h-full border border-[#e6e2d8] rounded-2xl bg-[#faf8f5] shadow-sm overflow-hidden min-h-[300px] relative">
@@ -3314,11 +3314,11 @@ function renderMemoFolders() {
 
                     <div id="diaryDetailView" class="hidden flex flex-col h-full w-full absolute inset-0 bg-white z-20 shadow-[-5px_0_15px_rgba(0,0,0,0.05)]">
                         <div class="p-3 md:p-4 border-b border-[#e6e2d8] bg-[#fdfbf7] flex justify-between items-center flex-shrink-0">
-                            <button id="diaryBackBtn" class="text-[12px] font-black text-gray-500 hover:text-black transition-colors flex items-center gap-1.5"><span class="text-lg leading-none mb-0.5">←</span> 뒤로가기</button>
                             <span id="diaryDetailDate" class="text-[11px] font-black text-white bg-[#22741C] px-2.5 py-1 rounded-md tracking-wider"></span>
+                            <button id="diaryBackBtn" class="text-[12px] font-black text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1.5">닫기 ✕</button>
                         </div>
-                        <div id="diaryDetailContent" class="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6 text-[13px] font-medium text-gray-800 leading-relaxed whitespace-pre-wrap word-break break-all">
-                            </div>
+                        <div id="diaryDetailContent" class="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 text-[13px] font-medium text-gray-800 leading-relaxed whitespace-pre-wrap word-break break-all">
+                        </div>
                     </div>
 
                 </div>
@@ -3333,7 +3333,7 @@ function renderMemoFolders() {
             </div>
         `;
 
-        // 2. 오른쪽 인사이트 메모장 저장 로직
+        // 2. 오른쪽 인사이트 저장 로직
         const insightArea = document.getElementById('weeklyInsightMemo');
         if (insightArea) {
             const insightKey = window.currentWeekKey + '_insight';
@@ -3344,24 +3344,24 @@ function renderMemoFolders() {
             };
         }
 
-        // 3. 뷰 전환 컨트롤러 (뒤로가기 버튼)
+        // 3. 뷰 전환 컨트롤러 (닫기 버튼)
         document.getElementById('diaryBackBtn').onclick = () => {
             document.getElementById('diaryDetailView').classList.add('hidden');
             document.getElementById('diaryListView').classList.remove('hidden');
         };
 
-        // 4. 전역 함수로 상세 뷰 여는 기능 열어두기
+        // 4. 상세 뷰 열기
         window.openDiaryDetail = function(dateStr, fullText, contextHtml) {
             document.getElementById('diaryDetailDate').textContent = dateStr;
-            document.getElementById('diaryDetailContent').innerHTML = `
-                ${contextHtml ? `<div class="mb-4 pb-4 border-b border-gray-100 bg-[#fdfbf7] p-3 rounded-xl">${contextHtml}</div>` : ''}
-                ${fullText}
-            `;
+            // ✨ 여백 버그 해결의 핵심! 
+            // 컴퓨터가 코드의 줄바꿈을 공백으로 착각하지 않게 한 줄로 바짝 붙였습니다!
+            document.getElementById('diaryDetailContent').innerHTML = (contextHtml ? `<div class="mb-4 pb-4 border-b border-gray-100 bg-[#fdfbf7] p-3 rounded-xl">${contextHtml}</div>` : '') + fullText;
+            
             document.getElementById('diaryListView').classList.add('hidden');
             document.getElementById('diaryDetailView').classList.remove('hidden');
         };
 
-        // 5. 왼쪽 돋보기 검색 & 피드 렌더링 엔진 (3줄 요약)
+        // 5. 왼쪽 돋보기 검색 & 피드 렌더링 엔진
         const feedList = document.getElementById('diaryFeedList');
         const searchInput = document.getElementById('diarySearchInput');
 
@@ -3370,7 +3370,6 @@ function renderMemoFolders() {
             let results = [];
 
             if (searchTerm.trim() === '') {
-                // 이번 주 월~일요일
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(window.lastWeeklyStart);
                     d.setDate(window.lastWeeklyStart.getDate() + i);
@@ -3381,7 +3380,6 @@ function renderMemoFolders() {
                     }
                 }
             } else {
-                // 전체 검색
                 const term = searchTerm.toLowerCase();
                 for (const key in dailyRecords) {
                     const note = dailyRecords[key].note;
@@ -3404,13 +3402,11 @@ function renderMemoFolders() {
                 const dateStr = `${res.date.getMonth() + 1}/${res.date.getDate()} (${dayNames[res.date.getDay()]})`;
                 
                 let displayText = res.text;
-                let rawText = res.text; // 원본 데이터 보존
                 if (searchTerm) {
                     const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                     displayText = displayText.replace(regex, '<span class="bg-yellow-300 text-black px-0.5 rounded font-black">$1</span>');
                 }
 
-                // 할 일 뱃지 
                 let contextHtml = '';
                 if (allTasks[res.key]) {
                     const doneTasks = allTasks[res.key].filter(t => t.isChecked);
@@ -3423,7 +3419,6 @@ function renderMemoFolders() {
 
                 const card = document.createElement('div');
                 card.className = 'bg-white p-4 rounded-xl shadow-sm border border-[#e6e2d8] flex flex-col hover:border-[#22741C] hover:shadow-md cursor-pointer transition-all group';
-                // 🔥 카드 클릭 시 마법의 미니 리더기가 뜹니다!
                 card.onclick = () => window.openDiaryDetail(dateStr, displayText, contextHtml);
 
                 card.innerHTML = `
