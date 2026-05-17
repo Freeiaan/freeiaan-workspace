@@ -2482,7 +2482,8 @@ function renderTimeGrid(dateKey) {
       $('weeklyPlannerModal').classList.remove('hidden');
     }
 
-    function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); isHabitEditMode = false; const btn = $('habitEditBtn'); if(btn) btn.textContent = '- 삭제'; }
+    function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); isHabitEditMode = false; const btn = $('habitEditBtn'); if(btn) btn.textContent = '- 삭제'; 
+                                  document.body.style.overflow = '';}
     window.toggleHabitEdit = function() { isHabitEditMode = !isHabitEditMode; const desktopBtn = $('habitEditBtn'); if(desktopBtn) desktopBtn.textContent = isHabitEditMode ? '완료' : '- 삭제'; const mobileBtn = $('mobileHabitEditBtn'); if(mobileBtn) mobileBtn.textContent = isHabitEditMode ? '완료' : '- 삭제'; renderHabits(); };
     window.deleteHabit = function(index) { if(weeklyHabits[window.currentWeekKey]) { weeklyHabits[window.currentWeekKey].splice(index, 1); saveWeeklySpecifics(); renderHabits(); } };
     
@@ -3665,6 +3666,7 @@ function renderMemoFolders() {
         if (typeof window.switchWeekTab === 'function') {
             window.switchWeekTab('tracker');
         }
+        document.body.style.overflow = 'hidden';
     };
 
     // ----------------------------------------------------
