@@ -399,13 +399,20 @@
            <div><h2 class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Achievement Report</h2></div>
            <button onclick="closeAnalytics()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
          </div>
-         <div class="flex flex-col gap-3">
-             <div class="flex items-center gap-3">
-                 <button onclick="changeAnalyticsMonth(-1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">◀</button>
-                 <span id="analyticsMonthLabel" class="text-sm font-extrabold text-gray-800 tracking-wide"></span>
-                 <button onclick="changeAnalyticsMonth(1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">▶</button>
+         <div class="flex flex-col md:flex-row gap-6 items-center w-full">
+             <div class="w-full md:w-[220px] flex-shrink-0 flex flex-col gap-3">
+                 <div class="flex items-center justify-between px-2">
+                     <button onclick="changeAnalyticsMonth(-1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">◀</button>
+                     <span id="analyticsMonthLabel" class="text-sm font-extrabold text-gray-800 tracking-wide"></span>
+                     <button onclick="changeAnalyticsMonth(1)" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold hover:bg-gray-200 transition">▶</button>
+                 </div>
+                 <div id="miniCalendarContainer" class="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm">
+                     </div>
              </div>
-             <div id="analyticsTabs" class="flex gap-2 overflow-x-auto custom-scrollbar pb-2"></div>
+             
+             <div class="flex-1 w-full mt-2 md:mt-0">
+                 <div id="analyticsTabs" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 w-full"></div>
+             </div>
          </div>
       </header>
       <div class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 flex flex-col gap-10 bg-gray-50/30">
@@ -1670,7 +1677,7 @@ function loadFromCloud() {
         return weeks;
     }
 
-    // 📊 성취 리포트 탭 렌더링 (이안님 스케치 반영: 바둑판 카드형 Grid 배열!)
+    // 📊 성취 리포트 탭 렌더링 (이안님 스케치 반영: 바둑판 카드형 Grid 배열 + 미니 달력!)
     function renderAnalyticsTabs() {
         const year = analyticsDate.getFullYear(); 
         const month = analyticsDate.getMonth(); 
@@ -1678,31 +1685,26 @@ function loadFromCloud() {
         const weeks = getMonthWeeks(year, month); 
         const tabsContainer = $('analyticsTabs'); 
         
-        // 🔥 기존 가로 스크롤(flex)을 버리고, 모바일 2칸/PC 3칸 바둑판(grid)으로 변경!
-        tabsContainer.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 w-full mt-3 mb-2';
+        // 🔥 우측 주차별 바둑판 렌더링
+        tabsContainer.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 w-full';
         tabsContainer.innerHTML = '';
         
-        // [월간 전체 요약] 버튼
         const btnAll = document.createElement('button'); 
         const isAllSelected = analyticsMode === 'month';
-        btnAll.className = `p-3 rounded-xl text-[13px] font-black transition-all border flex items-center justify-center ${isAllSelected ? 'bg-[#1b4332] text-white border-[#1b4332] shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`; 
+        btnAll.className = `p-3 rounded-xl text-[12px] font-black transition-all border flex items-center justify-center ${isAllSelected ? 'bg-[#1b4332] text-white border-[#1b4332] shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`; 
         btnAll.textContent = `${month + 1}월 전체 요약`; 
         btnAll.onclick = () => { analyticsMode = 'month'; renderAnalyticsTabs(); renderAnalyticsContent(weeks); }; 
         tabsContainer.appendChild(btnAll);
         
-        // [각 주차별] 버튼 (이안님 스케치처럼 2줄로 쪼개기!)
         weeks.forEach(w => {
             const btn = document.createElement('button'); 
             const isSelected = (analyticsMode === 'week' && analyticsSelectedWeekKey === w.key);
             
-            // 선택된 버튼은 연한 초록색 배경에 찐초록 테두리로 강조!
             btn.className = `p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${isSelected ? 'bg-[#e4f8c4] text-[#1b4332] border-[#22741C] shadow-sm scale-[1.02]' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`;
             
-            // 텍스트를 "N주차"와 "날짜"로 분리
             const weekNumText = w.weekNum + '주차';
-            const dateRangeText = w.label.split(' ')[1]; // "04.26~05.02" 부분만 쏙 빼오기
+            const dateRangeText = w.label.split(' ')[1]; 
 
-            // 스케치하신 느낌 그대로 2줄 렌더링
             btn.innerHTML = `
                 <span class="text-[13px] font-black ${isSelected ? 'text-[#1b4332]' : 'text-gray-700'}">${weekNumText}</span>
                 <span class="text-[10px] font-bold opacity-80">${dateRangeText}</span>
@@ -1714,6 +1716,58 @@ function loadFromCloud() {
         
         if (analyticsMode === 'month') { renderAnalyticsContent(weeks); } 
         else { const selWeek = weeks.find(w => w.key === analyticsSelectedWeekKey) || weeks[0]; if(selWeek) renderAnalyticsContent(weeks, selWeek); }
+
+        // 🔥 좌측 미니 달력 렌더링 호출
+        renderMiniCalendar(year, month, weeks);
+    }
+
+    // 🗓️ 좌측 미니 달력 그리기 함수 (선택된 주차에 형광펜 칠하기!)
+    function renderMiniCalendar(year, month, weeks) {
+        const container = $('miniCalendarContainer');
+        if(!container) return;
+        
+        const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+        let html = '<div class="grid grid-cols-7 gap-1 text-center mb-1.5">';
+        dayNames.forEach((d, idx) => {
+            const color = (idx === 0 || idx === 6) ? 'text-red-400' : 'text-gray-400';
+            html += `<div class="text-[9px] font-black ${color}">${d}</div>`;
+        });
+        html += '</div><div class="grid grid-cols-7 gap-y-1 gap-x-1 text-center">';
+        
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        for(let i=0; i<firstDay; i++) { html += `<div></div>`; }
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        let selStart = 0, selEnd = 0;
+        if(analyticsMode === 'week' && analyticsSelectedWeekKey) {
+            const selW = weeks.find(w => w.key === analyticsSelectedWeekKey);
+            if(selW) { selStart = selW.start.getTime(); selEnd = selW.end.getTime(); }
+        }
+
+        for(let i=1; i<=daysInMonth; i++) {
+            const curD = new Date(year, month, i);
+            const isToday = curD.getTime() === today.getTime();
+            const inSelectedWeek = analyticsMode === 'week' && curD.getTime() >= selStart && curD.getTime() <= selEnd;
+            
+            let classes = "text-[10px] font-bold w-5 h-5 mx-auto flex items-center justify-center rounded-full transition-all ";
+            
+            if (isToday) {
+                classes += "bg-[#22741C] text-white shadow-md ";
+            } else if (inSelectedWeek) {
+                classes += "bg-[#e4f8c4] text-[#1b4332] font-black "; // 선택된 주차 형광펜 효과
+            } else {
+                classes += "text-gray-600 ";
+            }
+
+            html += `<div class="flex items-center justify-center"><div class="${classes}">${i}</div></div>`;
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
     }
 
     function renderAnalyticsContent(allWeeks, selectedWeek = null) {
