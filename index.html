@@ -2145,18 +2145,31 @@ function renderTimeGrid(dateKey) {
             // 3. 텍스트는 오직 '전체 블록의 정중앙'이 속한 줄에만 그립니다.
             if (midIdx >= rowStartIdx && midIdx <= rowEndIdx) {
                 const midInRow = midIdx % 6;
-                // 칸의 중앙에 정확히 위치하도록 절대 위치로 계산
-                const leftPercent = (midInRow / 6) * 100 + (100 / 12);
+                let alignStyle = '';
                 
+                // 💡 스마트 눈치게임 정렬! (블록 위치에 따라 좌/우/중앙 닻 내리기)
+                if (midInRow >= 4) { // 오른쪽 끝 영역 (40~60분)
+                    // 오른쪽 벽에 꼬리를 고정 (오른쪽으로 튀어나가서 가로 스크롤 생기는 것 완벽 방지!)
+                    alignStyle = `right: ${100 - endPos}%; transform: none;`;
+                } else if (midInRow <= 1) { // 왼쪽 끝 영역 (0~20분)
+                    // 왼쪽 벽에 꼬리를 고정 (왼쪽으로 잘리는 것 방지)
+                    alignStyle = `left: ${startPos}%; transform: none;`;
+                } else { // 정중앙 영역 (20~40분)
+                    // 기존처럼 블록 가운데에 예쁘게 둥둥 띄우기
+                    const leftPercent = (midInRow / 6) * 100 + (100 / 12);
+                    alignStyle = `left: ${leftPercent}%; transform: translateX(-50%);`;
+                }
+
                 innerHTML += `
                     <div class="absolute bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" 
-                         style="color: ${seg.color}; border-color: ${seg.color}; left: ${leftPercent}%; transform: translateX(-50%);">
+                         style="color: ${seg.color}; border-color: ${seg.color}; ${alignStyle}">
                         ${segText}
                     </div>`;
             }
 
             overlay.innerHTML = innerHTML;
             cellContainer.appendChild(overlay);
+        });
         });
         row.appendChild(cellContainer); 
         container.appendChild(row);
