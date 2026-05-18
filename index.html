@@ -251,7 +251,7 @@
       </div>
 
       <div class="flex w-full mb-5 gap-3 flex-shrink-0">
-          <button onclick="toggleDrawer()" class="flex-1 py-3 bg-gradient-to-br from-[#f4fbf6] to-[#e8f5e9] border border-[#cce8d6] rounded-2xl text-[#22741C] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(34,116,28,0.08)] hover:shadow-[0_6px_16px_rgba(34,116,28,0.12)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
+          <button onclick="toggleDrawer()" ontouchend="event.preventDefault(); toggleDrawer();" class="flex-1 py-3 bg-gradient-to-br from-[#f4fbf6] to-[#e8f5e9] border border-[#cce8d6] rounded-2xl text-[#22741C] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(34,116,28,0.08)] hover:shadow-[0_6px_16px_rgba(34,116,28,0.12)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
               <span class="text-sm">📋</span> 내 보드
           </button>
           <button onclick="openAnalytics()" class="flex-1 py-3 bg-gradient-to-br from-[#fffaf5] to-[#fff3e0] border border-[#ffe0b2] rounded-2xl text-[#ef6c00] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(239,108,0,0.06)] hover:shadow-[0_6px_16px_rgba(239,108,0,0.1)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
@@ -2575,6 +2575,17 @@ function renderTimeGrid(dateKey) {
     function handleQuickRange() { isSelecting = true; selectStartKey = quickMenuTargetKey; selectEndKey = quickMenuTargetKey; highlightSelection(quickMenuTargetKey, quickMenuTargetKey); closeQuickMenu(); }
     function closeQuickMenu() { $('mobileQuickMenu').style.display = 'none'; }
 
+    // 🔥 퀵메뉴(꾸욱 메뉴) 바깥 바탕을 터치하면 자동으로 창 닫기!
+    window.addEventListener('pointerdown', (e) => {
+        const quickMenu = document.getElementById('mobileQuickMenu');
+        if (quickMenu && quickMenu.style.display === 'flex') {
+            // 터치한 곳이 퀵메뉴 내부가 아니라면 닫아버리기!
+            if (!quickMenu.contains(e.target)) {
+                quickMenu.style.display = 'none';
+            }
+        }
+    });
+
 function renderCalendar() {
       const calendar = $('calendar'); if (!calendar) return; calendar.innerHTML = '';
       const year = displayDate.getFullYear(), month = displayDate.getMonth(); $('monthYear').textContent = `${year}년 ${month + 1}월`;
@@ -2661,11 +2672,11 @@ function renderCalendar() {
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
         cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         
-        // 🔥 터치 기기에서는 가볍게 톡! 치면 바로 일정 추가 창 열기
+        // 🔥 태블릿(터치 기기)에서는 가볍게 톡! 쳐서 일정 추가되는 기능 끄기
         cell.onclick = (e) => { 
             if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-                if ((window.innerWidth < 768 || isTouchDevice) && (Date.now() - downTime < 300)) { 
+                // 오직 모바일(화면 가로 768px 미만)에서만 톡! 터치를 허용합니다.
+                if (window.innerWidth < 768 && (Date.now() - downTime < 300)) { 
                     clearTimeout(pressTimer);
                     openModal('createSingle', { dateKey: key }); 
                 }
