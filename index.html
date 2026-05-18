@@ -3958,6 +3958,14 @@ function renderMemoFolders() {
         }
     };
 
+    // 🔥 iOS/태블릿 PWA에서 일정 드래그 중 화면 뚝뚝 끊기는 현상 완벽 방어!
+    document.addEventListener('touchmove', (e) => {
+        // 일정을 드래그 선택 중(isSelecting)이거나, 시간 색칠 중일 때
+        if (isSelecting || isPainting || isResizing || isDT) {
+            e.preventDefault(); // 사파리의 지멋대로 스크롤 기능을 완전히 얼려버립니다!
+        }
+    }, { passive: false });
+
   </script>
 </body>
 </html>
