@@ -1656,9 +1656,20 @@ function loadFromCloud() {
         }
         
         $('analyticsModal').classList.remove('hidden'); 
+        
+        // 🔥 [추가] 리포트 창 열 때 뒷배경 스크롤 꽁꽁 얼리기! (PC/태블릿 완벽 고정)
+        document.body.style.overflow = 'hidden';
+        
         renderAnalyticsTabs(); 
     }
-    function closeAnalytics() { $('analyticsModal').classList.add('hidden'); }
+
+    // ❌ 성취 리포트 닫기
+    function closeAnalytics() { 
+        $('analyticsModal').classList.add('hidden'); 
+        
+        // 🔥 [추가] 리포트 창 닫을 때 얼려둔 뒷배경 스크롤 다시 풀어주기!
+        document.body.style.overflow = '';
+    }
     function openLedger() { 
         $('ledgerModal').classList.remove('hidden'); 
     }
