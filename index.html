@@ -1668,7 +1668,7 @@ function loadFromCloud() {
         document.body.style.overflow = ''; // 뒷배경 스크롤 해제
     }
 
-    // 💰 가계부 열기
+    // 💰 가계부 열기 (안전하게 살려뒀습니다!)
     function openLedger() { 
         $('ledgerModal').classList.remove('hidden'); 
     }
@@ -1730,7 +1730,7 @@ function loadFromCloud() {
         if(isAllSelected && analyticsMainTab === 'focus') allColorClass = 'bg-[#1b4332] text-white border-[#1b4332] shadow-md';
         if(isAllSelected && analyticsMainTab === 'habit') allColorClass = 'bg-blue-600 text-white border-blue-600 shadow-md';
 
-        btnAll.className = `px-4 py-2 flex-shrink-0 rounded-xl text-[12px] font-black transition-all border ${allColorClass}`;
+        btnAll.className = `px-3.5 py-2 flex-shrink-0 rounded-xl text-[12px] font-black transition-all border ${allColorClass}`;
         btnAll.textContent = `${month + 1}월 전체 요약`; 
         btnAll.onclick = () => { analyticsMode = 'month'; renderAnalyticsTabs(); renderAnalyticsContent(weeks); }; 
         weekNav.appendChild(btnAll);
@@ -1743,9 +1743,8 @@ function loadFromCloud() {
             if(isSelected && analyticsMainTab === 'focus') weekColorClass = 'bg-[#22741C] text-white border-[#22741C] shadow-sm';
             if(isSelected && analyticsMainTab === 'habit') weekColorClass = 'bg-blue-500 text-white border-blue-500 shadow-sm';
 
-            btn.className = `px-4 py-2 flex-shrink-0 rounded-xl text-[12px] font-black transition-all border flex items-center justify-center ${weekColorClass}`;
-            // 💡 [수정] 이안님 요청: 날짜 안 나오게 오직 "N주차" 텍스트만 깔끔하게 주입!
-            btn.textContent = w.weekNum + '주차';
+            btn.className = `px-3.5 py-2 flex-shrink-0 rounded-xl text-[12px] font-bold transition-all border flex items-center gap-1 ${weekColorClass}`;
+            btn.innerHTML = `${w.weekNum}주차 <span class="text-[10px] opacity-70 font-normal ml-0.5">${w.label.split(' ')[1]}</span>`;
             
             btn.onclick = () => { analyticsMode = 'week'; analyticsSelectedWeekKey = w.key; renderAnalyticsTabs(); renderAnalyticsContent(weeks, w); }; 
             weekNav.appendChild(btn);
@@ -1759,24 +1758,24 @@ function loadFromCloud() {
         renderMiniCalendar(year, month, weeks);
     }
 
-    // 🎨 콘텐츠 렌더링 (이안님의 완벽 격리 요청 반영!)
+    // 🎨 콘텐츠 렌더링 (메인 탭 선택에 따라 화면 숨기기/보이기 마법!)
     function renderAnalyticsContent(allWeeks, selectedWeek = null) {
         const focusChart = $('focusChart'); const habitGrid = $('habitStatsGrid'); 
         focusChart.innerHTML = ''; habitGrid.innerHTML = '';
         
-        // 💡 [완벽 격리] 부모 요소를 타고 올라가 진짜 section 구조를 제어합니다!
-        const focusSection = focusChart?.closest('section');
-        const habitSection = habitGrid?.closest('section');
+        // 🔥 1. 카테고리 탭 선택에 따라 화면 끄고 켜기
+        const sections = document.querySelectorAll('#analyticsModal section');
         const cheerBox = document.querySelector('#analyticsModal .bg-\\[\\#e4f8c4\\]'); 
-        
-        if (analyticsMainTab === 'focus') {
-            if(focusSection) focusSection.style.display = 'block';
-            if(habitSection) habitSection.style.display = 'none';
-            if(cheerBox) cheerBox.style.display = 'none'; // 집중시간 탭에선 응원 상자 완전히 끄기
-        } else {
-            if(focusSection) focusSection.style.display = 'none';
-            if(habitSection) habitSection.style.display = 'block';
-            if(cheerBox) cheerBox.style.display = 'flex';  // 해빗 탭에선 응원 상자 켜기
+        if(sections.length >= 2) {
+            if (analyticsMainTab === 'focus') {
+                sections[0].style.display = 'block';
+                sections[1].style.display = 'none';
+                if(cheerBox) cheerBox.style.display = 'none'; // 집중시간일땐 하단 응원메시지 숨김
+            } else {
+                sections[0].style.display = 'none';
+                sections[1].style.display = 'block';
+                if(cheerBox) cheerBox.style.display = 'flex'; // 해빗일땐 켬
+            }
         }
 
         // 데이터 계산 및 그리기 (기존 로직 유지)
