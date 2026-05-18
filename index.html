@@ -1630,7 +1630,27 @@ function loadFromCloud() {
             icon.style.transform = 'rotate(180deg)'; // 화살표 뒤집기!
         }
     }
-    function openAnalytics() { analyticsDate = new Date(); analyticsMode = 'month'; $('analyticsModal').classList.remove('hidden'); renderAnalyticsTabs(); }
+    // 📊 성취 리포트 열기 (오늘이 포함된 주차를 자동으로 찾아줍니다!)
+    function openAnalytics() { 
+        analyticsDate = new Date(); 
+        const year = analyticsDate.getFullYear();
+        const month = analyticsDate.getMonth();
+        const weeks = getMonthWeeks(year, month);
+        const todayTime = analyticsDate.getTime();
+        
+        // 오늘 날짜가 속한 주차 찾기
+        const currentWeek = weeks.find(w => todayTime >= w.start.getTime() && todayTime <= w.end.getTime());
+        
+        if (currentWeek) {
+            analyticsMode = 'week';
+            analyticsSelectedWeekKey = currentWeek.key;
+        } else {
+            analyticsMode = 'month'; // 혹시 못 찾으면 전체 보기로!
+        }
+        
+        $('analyticsModal').classList.remove('hidden'); 
+        renderAnalyticsTabs(); 
+    }
     function closeAnalytics() { $('analyticsModal').classList.add('hidden'); }
     function openLedger() { 
         $('ledgerModal').classList.remove('hidden'); 
@@ -1650,16 +1670,50 @@ function loadFromCloud() {
         return weeks;
     }
 
+    // 📊 성취 리포트 탭 렌더링 (이안님 스케치 반영: 바둑판 카드형 Grid 배열!)
     function renderAnalyticsTabs() {
-        const year = analyticsDate.getFullYear(); const month = analyticsDate.getMonth(); $('analyticsMonthLabel').textContent = `${year}년 ${month + 1}월`;
-        const weeks = getMonthWeeks(year, month); const tabsContainer = $('analyticsTabs'); tabsContainer.innerHTML = '';
-        const btnAll = document.createElement('button'); btnAll.className = `px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-colors border ${analyticsMode === 'month' ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`; btnAll.textContent = `${month + 1}월 전체`; btnAll.onclick = () => { analyticsMode = 'month'; renderAnalyticsTabs(); renderAnalyticsContent(weeks); }; tabsContainer.appendChild(btnAll);
+        const year = analyticsDate.getFullYear(); 
+        const month = analyticsDate.getMonth(); 
+        $('analyticsMonthLabel').textContent = `${year}년 ${month + 1}월`;
+        const weeks = getMonthWeeks(year, month); 
+        const tabsContainer = $('analyticsTabs'); 
+        
+        // 🔥 기존 가로 스크롤(flex)을 버리고, 모바일 2칸/PC 3칸 바둑판(grid)으로 변경!
+        tabsContainer.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 w-full mt-3 mb-2';
+        tabsContainer.innerHTML = '';
+        
+        // [월간 전체 요약] 버튼
+        const btnAll = document.createElement('button'); 
+        const isAllSelected = analyticsMode === 'month';
+        btnAll.className = `p-3 rounded-xl text-[13px] font-black transition-all border flex items-center justify-center ${isAllSelected ? 'bg-[#1b4332] text-white border-[#1b4332] shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`; 
+        btnAll.textContent = `${month + 1}월 전체 요약`; 
+        btnAll.onclick = () => { analyticsMode = 'month'; renderAnalyticsTabs(); renderAnalyticsContent(weeks); }; 
+        tabsContainer.appendChild(btnAll);
+        
+        // [각 주차별] 버튼 (이안님 스케치처럼 2줄로 쪼개기!)
         weeks.forEach(w => {
-            const btn = document.createElement('button'); const isSelected = (analyticsMode === 'week' && analyticsSelectedWeekKey === w.key);
-            btn.className = `px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-colors border ${isSelected ? 'bg-[#1b4332] text-white border-[#1b4332]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
-            btn.textContent = w.label; btn.onclick = () => { analyticsMode = 'week'; analyticsSelectedWeekKey = w.key; renderAnalyticsTabs(); renderAnalyticsContent(weeks, w); }; tabsContainer.appendChild(btn);
+            const btn = document.createElement('button'); 
+            const isSelected = (analyticsMode === 'week' && analyticsSelectedWeekKey === w.key);
+            
+            // 선택된 버튼은 연한 초록색 배경에 찐초록 테두리로 강조!
+            btn.className = `p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${isSelected ? 'bg-[#e4f8c4] text-[#1b4332] border-[#22741C] shadow-sm scale-[1.02]' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`;
+            
+            // 텍스트를 "N주차"와 "날짜"로 분리
+            const weekNumText = w.weekNum + '주차';
+            const dateRangeText = w.label.split(' ')[1]; // "04.26~05.02" 부분만 쏙 빼오기
+
+            // 스케치하신 느낌 그대로 2줄 렌더링
+            btn.innerHTML = `
+                <span class="text-[13px] font-black ${isSelected ? 'text-[#1b4332]' : 'text-gray-700'}">${weekNumText}</span>
+                <span class="text-[10px] font-bold opacity-80">${dateRangeText}</span>
+            `;
+            
+            btn.onclick = () => { analyticsMode = 'week'; analyticsSelectedWeekKey = w.key; renderAnalyticsTabs(); renderAnalyticsContent(weeks, w); }; 
+            tabsContainer.appendChild(btn);
         });
-        if (analyticsMode === 'month') { renderAnalyticsContent(weeks); } else { const selWeek = weeks.find(w => w.key === analyticsSelectedWeekKey) || weeks[0]; if(selWeek) renderAnalyticsContent(weeks, selWeek); }
+        
+        if (analyticsMode === 'month') { renderAnalyticsContent(weeks); } 
+        else { const selWeek = weeks.find(w => w.key === analyticsSelectedWeekKey) || weeks[0]; if(selWeek) renderAnalyticsContent(weeks, selWeek); }
     }
 
     function renderAnalyticsContent(allWeeks, selectedWeek = null) {
