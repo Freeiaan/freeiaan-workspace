@@ -2349,17 +2349,18 @@ function renderTimeGrid(dateKey) {
                 const midInRow = midIdx % 6;
                 let alignStyle = '';
                 
-                // 💡 스마트 눈치게임 정렬! (블록 위치에 따라 좌/우/중앙 닻 내리기)
-                if (midInRow >= 4) { // 오른쪽 끝 영역 (40~60분)
-                    // 오른쪽 벽에 꼬리를 고정하되, 오른쪽 화살표(▶)가 숨쉴 공간 12px 띄워주기!
-                    alignStyle = `right: ${100 - endPos}%; transform: translateX(-12px);`;
-                } else if (midInRow <= 1) { // 왼쪽 끝 영역 (0~20분)
-                    // 왼쪽 벽에 고정하되, 왼쪽 화살표(◀)가 숨쉴 공간 12px 띄워주기!
-                    alignStyle = `left: ${startPos}%; transform: translateX(12px);`;
-                } else { // 정중앙 영역 (20~40분)
-                    // 기존처럼 블록 가운데에 예쁘게 둥둥 띄우기
-                    const leftPercent = (midInRow / 6) * 100 + (100 / 12);
-                    alignStyle = `left: ${leftPercent}%; transform: translateX(-50%);`;
+                // 💡 진짜 스마트 눈치게임 정렬! (블록 위치 + '글자 수'까지 파악해서 닻 내리기)
+                const midPercent = (startPos + endPos) / 2;
+                let alignStyle = `left: ${midPercent}%; transform: translateX(-50%);`; // 기본은 무조건 예쁘게 정중앙!
+
+                // 텍스트가 길어서(5글자 이상) 화면 밖으로 나갈 위험이 있을 때만 눈치게임 발동!
+                // ("독서", "공부" 같은 짧은 단어는 무조건 중앙에 둡니다 ㅎㅎ)
+                if (segText.length >= 5) {
+                    if (midPercent >= 70) { // 오른쪽으로 치우친 긴 글자
+                        alignStyle = `right: ${100 - endPos}%; transform: translateX(-12px);`;
+                    } else if (midPercent <= 30) { // 왼쪽으로 치우친 긴 글자
+                        alignStyle = `left: ${startPos}%; transform: translateX(12px);`;
+                    }
                 }
 
                 innerHTML += `
