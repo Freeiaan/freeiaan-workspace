@@ -1952,43 +1952,28 @@ function loadFromCloud() {
             e.preventDefault();
             const target = document.elementFromPoint(e.clientX, e.clientY);
             const cell = target?.closest('.time-cell');
-            
             if (cell) {
                 const newIdx = parseInt(cell.id.replace('time-cell-', ''));
                 const data = dailyRecords[resizeTrackerData.dateKey];
                 const color = resizeTrackerData.color;
                 
-                // 1. 기존 블록 삭제 + 기존 글자 기억하기
+                // 기존 데이터 초기화 로직은 그대로 두되, 여기선 새로고침하지 마세요!
                 let oldLabelText = "일정"; 
-                for (let i = 0; i < 144; i++) {
-                    if (data.grid[i] === color) data.grid[i] = null;
-                }
+                for (let i = 0; i < 144; i++) { if (data.grid[i] === color) data.grid[i] = null; }
                 if (data.labels) {
                     for (let idx in data.labels) {
-                        if (data.labels[idx].color === color) {
-                            oldLabelText = data.labels[idx].text; 
-                            delete data.labels[idx];
-                        }
+                        if (data.labels[idx].color === color) { oldLabelText = data.labels[idx].text; delete data.labels[idx]; }
                     }
                 }
-        
-                // 2. 새로운 범위 계산 및 적용
-                let newStart = resizeTrackerData.start;
-                let newEnd = resizeTrackerData.end;
-        
-                if (resizeTrackerData.edge === 'start') newStart = newIdx; 
-                else newEnd = newIdx;
-        
+                let newStart = resizeTrackerData.start, newEnd = resizeTrackerData.end;
+                if (resizeTrackerData.edge === 'start') newStart = newIdx; else newEnd = newIdx;
                 if (newStart > newEnd) { let temp = newStart; newStart = newEnd; newEnd = temp; }
-        
                 for (let i = newStart; i <= newEnd; i++) data.grid[i] = color;
                 if (!data.labels) data.labels = {};
                 data.labels[newStart] = { text: oldLabelText, color: color }; 
-        
-                renderTimeGrid(resizeTrackerData.dateKey);
+                renderTimeGrid(resizeTrackerDateKey);
             }
         } 
-        // [수정된 부분: 드래그 중에는 새로고침 없이 데이터만 업데이트]
         else if (isResizing && resizeData) {
             e.preventDefault();
             const target = document.elementFromPoint(e.clientX, e.clientY);
@@ -1997,12 +1982,9 @@ function loadFromCloud() {
                 const newDate = cell.getAttribute('data-date');
                 const task = multiTasks.find(t => t.id === resizeData.id);
                 if (task && newDate) {
-                    // 데이터만 바꿉니다. (새로고침은 절대 금지!)
-                    if (resizeData.edge === 'start') {
-                        if (task.start !== newDate) task.start = newDate;
-                    } else {
-                        if (task.end !== newDate) task.end = newDate;
-                    }
+                    // 🔥 데이터만 바꿉니다. 새로고침(saveAndRefresh) 절대 금지!
+                    if (resizeData.edge === 'start') task.start = newDate;
+                    else task.end = newDate;
                 }
             }
         }
