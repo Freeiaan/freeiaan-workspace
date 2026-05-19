@@ -1601,6 +1601,7 @@ function loadFromCloud() {
     let currentWeekKey = null, currentExtMemoIndex = null, currentPlannerDateKey = null, isHabitEditMode = false;
     let selectedFilters = new Set(['all']), displayDate = new Date();
     let isEditMode = false, isResizing = false, resizeData = null;
+    let resizeTrackerData = null;
     let draggedTaskInfo = null, isSelecting = false, selectStartKey = null, selectEndKey = null;
     let pendingStart = null, pendingEnd = null, selectedCategoryId = 'cat1';
     let currentMode = '', editData = null;
@@ -1931,11 +1932,53 @@ function loadFromCloud() {
             }
         }
 
-        if (isResizing && resizeData) { 
-            e.preventDefault(); 
-            const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell'); 
-            if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); if (t) { if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } 
+        // [3단계: 드래그할 때 실시간 늘리기]
+if (isResizing && resizeTrackerData) { 
+    e.preventDefault();
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = target?.closest('.time-cell');
+    
+    if (cell) {
+        const newIdx = parseInt(cell.id.replace('time-cell-', ''));
+        const data = dailyRecords[resizeTrackerData.dateKey];
+        const color = resizeTrackerData.color;
+        
+        // 1. 기존의 색칠된 영역을 깨끗이 지웁니다.
+        for (let i = 0; i < 144; i++) {
+            if (data.grid[i] === color) data.grid[i] = null;
         }
+        // 라벨도 같이 지워줍니다.
+        if (data.labels) {
+            for (let idx in data.labels) {
+                if (data.labels[idx].color === color) delete data.labels[idx];
+            }
+        }
+
+        // 2. 드래그 방향에 따라 새로운 범위(newStart, newEnd)를 계산합니다.
+        let newStart = resizeTrackerData.start;
+        let newEnd = resizeTrackerData.end;
+
+        if (resizeTrackerData.edge === 'start') {
+            newStart = newIdx; // 시작점을 마우스 위치로 변경
+        } else {
+            newEnd = newIdx;   // 끝점을 마우스 위치로 변경
+        }
+
+        // 3. 시작점이 끝점보다 커지면 순서를 뒤집어 방어합니다.
+        if (newStart > newEnd) { let temp = newStart; newStart = newEnd; newEnd = temp; }
+
+        // 4. 새로운 범위에 색칠 및 라벨 복구
+        for (let i = newStart; i <= newEnd; i++) {
+            data.grid[i] = color;
+        }
+        // 라벨을 새로운 시작점(newStart)에 복구 (기본 텍스트는 "일정")
+        if (!data.labels) data.labels = {};
+        data.labels[newStart] = { text: "일정", color: color }; 
+
+        // 화면을 즉시 렌더링해서 부드럽게 보이게 합니다.
+        renderTimeGrid(resizeTrackerData.dateKey);
+    }
+}
         if (isSelecting) {
             e.preventDefault(); 
             const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
@@ -1970,7 +2013,13 @@ function loadFromCloud() {
             if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } 
             document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); 
         } 
-        if (isResizing) { isResizing = false; resizeData = null; saveAndRefresh(); } 
+        if (isResizing) {
+    isResizing = false;
+    resizeTrackerData = null; // 드래그 완료 후 바구니 비우기
+    resizeData = null;        // 기존 멀티태스크용 데이터도 안전하게 초기화
+    savePlannerData();        // 최종 저장!
+    renderTimeGrid(currentPlannerDateKey); // 화면을 최종 상태로 깔끔하게 다시 그리기
+}
     });
 
     window.startResize = function(e, id, edge) { e.preventDefault(); e.stopPropagation(); isResizing = true; resizeData = { id: id, edge: edge }; };
@@ -2621,6 +2670,24 @@ function renderTimeGrid(dateKey) {
         renderCalendar(); 
         renderDashboard(); 
     }
+
+      window.startTrackerResize = function(e, edge, start, end, color, dateKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // 드래그 시작 시점의 정보를 전역 변수에 저장합니다.
+          resizeTrackerData = {
+              edge: edge, // 'start' 혹은 'end'
+              start: start,
+              end: end,
+              color: color,
+              dateKey: dateKey
+          };
+          
+          // 드래그 중임을 알리는 상태
+          isResizing = true; 
+      };
+    
     // 🔥 [수정됨] 모달창 열 때 세부 내용(Description) 필드도 함께 불러오기
     function openModal(mode, data) { 
         currentMode = mode; editData = data; 
@@ -3064,63 +3131,6 @@ function renderCalendar() {
         const lastTab = localStorage.getItem('ianLastTab') || 'home';
         switchMobileTab(lastTab);
     }
-
-    // 🔥 전역 pointermove 수정완료: 터치 드래그 정확히 인식
-    window.addEventListener('pointermove', (e) => { 
-        if (isDT) { e.preventDefault(); let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
-        
-        if (isPainting && e.pointerType !== 'mouse') {
-            e.preventDefault(); 
-            const target = document.elementFromPoint(e.clientX, e.clientY);
-            if (target && target.classList.contains('time-cell')) { 
-                const idx = parseInt(target.id.replace('time-cell-', '')); 
-                
-                // 🔥 [추가] 손가락이 위아래로 삐끗해도, 처음 누른 줄(가로)에서만 색칠되게 철벽 방어!
-                if (Math.floor(idx / 6) !== Math.floor(dragStartIdx / 6)) return;
-
-                if (!dragHasMoved && dragStartIdx !== idx) { 
-                    applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
-                    dragHasMoved = true; 
-                } 
-                if (dragHasMoved) applyBrushToCell(idx, target); 
-            }
-        }
-
-        if (isResizing && resizeData) { 
-            e.preventDefault(); 
-            const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell'); 
-            if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); if (t) { if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } 
-        }
-        if (isSelecting) {
-            e.preventDefault(); 
-            const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
-            if (hC) { const key = hC.getAttribute('data-date'); if (key !== selectEndKey) { selectEndKey = key; highlightSelection(selectStartKey, selectEndKey); } }
-        }
-    }, { passive: false });
-
-    // 🔥 전역 pointerup 수정완료: 마우스 드래그 끝날 때 화면 정상 렌더링
-window.addEventListener('pointerup', () => { 
-    
-    // 👉 어떤 상황에서든 화면에서 손을 떼면 스크롤 잠금 무조건 해제! (새로 추가된 줄)
-    document.body.style.touchAction = ''; 
-    
-    if (isPainting) {
-            isPainting = false; 
-            setTimeout(() => {
-                if (currentPlannerDateKey) { 
-                    renderTimeGrid(currentPlannerDateKey); 
-                    if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); 
-                } 
-            }, 10);
-        } 
-        if (isDT) { isDT = false; } 
-        if (isSelecting) { 
-            isSelecting = false; 
-            if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } 
-            document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); 
-        } 
-        if (isResizing) { isResizing = false; resizeData = null; saveAndRefresh(); } 
-    });
 
     let pStartY = 0;
     let pIsPulling = false;
