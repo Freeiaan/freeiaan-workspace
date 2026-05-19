@@ -1910,7 +1910,7 @@ function loadFromCloud() {
     
     tDial.onpointerdown = (e) => { if (isR) return; e.preventDefault(); isDT = true; tLaps = Math.floor(timeLeft / 3600); lastA = getAngle(e); timerMode = 'idle'; };
     
-    // 🔥 전역 pointermove 수정완료: 터치 드래그 정확히 인식
+// 🔥 [최종 통합] 모든 드래그 및 리사이징 동작을 처리하는 통합 엔진
     window.addEventListener('pointermove', (e) => { 
         if (isDT) { e.preventDefault(); let a = getAngle(e); if (lastA > 270 && a < 90) tLaps++; else if (lastA < 90 && a > 270) tLaps = Math.max(0, tLaps - 1); lastA = a; const totalSec = (tLaps * 3600) + Math.round((a / 360) * 3600); timeLeft = Math.min(360000, Math.round(totalSec / 300) * 300); updateTUI(); }
         
@@ -1919,14 +1919,8 @@ function loadFromCloud() {
             const target = document.elementFromPoint(e.clientX, e.clientY);
             if (target && target.classList.contains('time-cell')) { 
                 const idx = parseInt(target.id.replace('time-cell-', '')); 
-                
-                // 🔥 [추가] 손가락이 위아래로 삐끗해도, 처음 누른 줄(가로)에서만 색칠되게 철벽 방어!
                 if (Math.floor(idx / 6) !== Math.floor(dragStartIdx / 6)) return;
-
-                if (!dragHasMoved && dragStartIdx !== idx) { 
-                    applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
-                    dragHasMoved = true; 
-                } 
+                if (!dragHasMoved && dragStartIdx !== idx) { applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); dragHasMoved = true; } 
                 if (dragHasMoved) applyBrushToCell(idx, target); 
             }
         }
@@ -1936,42 +1930,65 @@ function loadFromCloud() {
             const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell'); 
             if (hC) { const hD = hC.getAttribute('data-date'); const t = multiTasks.find(x => String(x.id) === String(resizeData.id)); if (t) { if (resizeData.edge === 'start' && new Date(hD) <= new Date(t.end)) t.start = hD; else if (resizeData.edge === 'end' && new Date(hD) >= new Date(t.start)) t.end = hD; renderCalendar(); } } 
         }
+
+        // 타임 트래커 리사이징 로직
+        if (window.isTrackerResizing && window.trResizeData) {
+            e.preventDefault();
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            if (target && target.classList.contains('time-cell')) {
+                const hoveredIdx = parseInt(target.id.replace('time-cell-', ''));
+                const data = dailyRecords[window.trResizeData.dateKey];
+                let newStart = window.trResizeData.startIdx, newEnd = window.trResizeData.endIdx;
+
+                if (window.trResizeData.edge === 'start') {
+                    newStart = Math.min(hoveredIdx, window.trResizeData.endIdx);
+                    if (newStart < window.trResizeData.startIdx) { for(let i = newStart; i < window.trResizeData.startIdx; i++) data.grid[i] = window.trResizeData.color; } 
+                    else if (newStart > window.trResizeData.startIdx) { for(let i = window.trResizeData.startIdx; i < newStart; i++) { if(data.grid[i] === window.trResizeData.color) data.grid[i] = null; } }
+                    if (window.trResizeData.labelText) {
+                        if (!data.labels) data.labels = {};
+                        data.labels[newStart] = { text: window.trResizeData.labelText, color: window.trResizeData.color };
+                        if (newStart !== window.trResizeData.originalStart) delete data.labels[window.trResizeData.originalStart];
+                        window.trResizeData.originalStart = newStart; 
+                    }
+                    window.trResizeData.startIdx = newStart;
+                } else {
+                    newEnd = Math.max(hoveredIdx, window.trResizeData.startIdx);
+                    if (newEnd > window.trResizeData.endIdx) { for(let i = window.trResizeData.endIdx + 1; i <= newEnd; i++) data.grid[i] = window.trResizeData.color; } 
+                    else if (newEnd < window.trResizeData.endIdx) { for(let i = newEnd + 1; i <= window.trResizeData.endIdx; i++) { if(data.grid[i] === window.trResizeData.color) data.grid[i] = null; } }
+                    window.trResizeData.endIdx = newEnd;
+                }
+                renderTimeGrid(window.trResizeData.dateKey);
+            }
+        }
+
         if (isSelecting) {
             e.preventDefault(); 
             const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
-            if (hC) { 
-                const key = hC.getAttribute('data-date'); 
-                if (key !== selectEndKey) { 
-                    selectEndKey = key; 
-                    highlightSelection(selectStartKey, selectEndKey); 
-                    
-                    // 🔥 [추가] 쭈욱 드래그를 시작하면 거슬리지 않게 팝업 메뉴를 숨깁니다!
-                    const quickMenu = document.getElementById('mobileQuickMenu');
-                    if (quickMenu) quickMenu.style.display = 'none';
-                } 
-            }
+            if (hC) { const key = hC.getAttribute('data-date'); if (key !== selectEndKey) { selectEndKey = key; highlightSelection(selectStartKey, selectEndKey); } }
         }
     }, { passive: false });
 
-    // 🔥 전역 pointerup 수정완료: 마우스 드래그 끝날 때 화면 정상 렌더링
+    // 🔥 [최종 통합] 모든 동작을 마무리하는 통합 엔진
     window.addEventListener('pointerup', () => { 
-        if (isPainting) { 
-            isPainting = false; 
-            setTimeout(() => {
-                if (currentPlannerDateKey) { 
-                    renderTimeGrid(currentPlannerDateKey); 
-                    if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); 
-                } 
-            }, 10);
-        } 
+        document.body.style.touchAction = ''; 
+        if (isPainting) { isPainting = false; setTimeout(() => { if (currentPlannerDateKey) { renderTimeGrid(currentPlannerDateKey); if (currentPlannerDateKey === getDateKey(new Date())) renderTimerHistory(); } }, 10); } 
         if (isDT) { isDT = false; } 
-        if (isSelecting) { 
-            isSelecting = false; 
-            if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } 
-            document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); 
-        } 
+        if (isSelecting) { isSelecting = false; if (selectStartKey !== selectEndKey) { let [s, e] = [new Date(selectStartKey), new Date(selectEndKey)]; if (s > e) [s, e] = [e, s]; pendingStart = getDateKey(s); pendingEnd = getDateKey(e); openModal('createMulti', { start: pendingStart, end: pendingEnd }); } document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); } 
         if (isResizing) { isResizing = false; resizeData = null; saveAndRefresh(); } 
+        
+        // 리사이징 종료 처리
+        if (window.isTrackerResizing) {
+            window.isTrackerResizing = false;
+            savePlannerData(); 
+            if (window.trResizeData) {
+                renderTimeGrid(window.trResizeData.dateKey);
+                if (window.trResizeData.dateKey === getDateKey(new Date())) renderTimerHistory();
+                window.trResizeData = null;
+            }
+        }
     });
+
+    // 💡 아래의 나머지는 건드리지 마세요! (이후 코드들 생략)
 
     window.startResize = function(e, id, edge) { e.preventDefault(); e.stopPropagation(); isResizing = true; resizeData = { id: id, edge: edge }; };
     
