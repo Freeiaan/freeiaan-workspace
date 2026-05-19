@@ -2344,13 +2344,14 @@ function renderTimeGrid(dateKey) {
                 </div>
             `;
 
-            // 3. 텍스트는 오직 '전체 블록의 정중앙'이 속한 줄에만 그립니다.
+           // 3. 텍스트는 오직 '전체 블록의 정중앙'이 속한 줄에만 그립니다.
             if (midIdx >= rowStartIdx && midIdx <= rowEndIdx) {
-                const midInRow = midIdx % 6;
-                let alignStyle = '';
                 
-                // 💡 스마트 눈치게임 정렬! (블록 위치에 따라 좌/우/중앙 닻 내리기)
-                // ... (중략) ...
+                // 💡 진짜 스마트 눈치게임 정렬! (블록 위치 + '글자 수'까지 파악해서 닻 내리기)
+                const midPercent = (startPos + endPos) / 2;
+                let alignStyle = `left: ${midPercent}%; transform: translateX(-50%);`; // 기본은 무조건 예쁘게 정중앙!
+
+                // 텍스트가 길어서(5글자 이상) 화면 밖으로 나갈 위험이 있을 때만 눈치게임 발동!
                 if (segText.length >= 5) {
                     if (midPercent >= 70) { // 오른쪽으로 치우친 긴 글자
                         alignStyle = `right: ${100 - endPos}%; transform: translateX(-12px);`;
