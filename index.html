@@ -1933,52 +1933,57 @@ function loadFromCloud() {
         }
 
         // [3단계: 드래그할 때 실시간 늘리기]
-if (isResizing && resizeTrackerData) { 
-    e.preventDefault();
-    const target = document.elementFromPoint(e.clientX, e.clientY);
-    const cell = target?.closest('.time-cell');
-    
-    if (cell) {
-        const newIdx = parseInt(cell.id.replace('time-cell-', ''));
-        const data = dailyRecords[resizeTrackerData.dateKey];
-        const color = resizeTrackerData.color;
+        if (isResizing && resizeTrackerData) { 
+            e.preventDefault();
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const cell = target?.closest('.time-cell');
+            
+            if (cell) {
+                const newIdx = parseInt(cell.id.replace('time-cell-', ''));
+                const data = dailyRecords[resizeTrackerData.dateKey];
+                const color = resizeTrackerData.color;
+                
+                // 1. 기존 블록 삭제 + 기존 글자 기억하기
+                let oldLabelText = "일정"; // 제목이 없으면 기본값
+                for (let i = 0; i < 144; i++) {
+                    if (data.grid[i] === color) data.grid[i] = null;
+                }
+                // 라벨도 같이 지우면서, 글자를 상자에 담아둡니다.
+                if (data.labels) {
+                    for (let idx in data.labels) {
+                        if (data.labels[idx].color === color) {
+                            oldLabelText = data.labels[idx].text; // ⭐️ 제목을 여기에 기억해!
+                            delete data.labels[idx];
+                        }
+                    }
+                }
         
-        // 1. 기존의 색칠된 영역을 깨끗이 지웁니다.
-        for (let i = 0; i < 144; i++) {
-            if (data.grid[i] === color) data.grid[i] = null;
-        }
-        // 라벨도 같이 지워줍니다.
-        if (data.labels) {
-            for (let idx in data.labels) {
-                if (data.labels[idx].color === color) delete data.labels[idx];
+                // 2. 드래그 방향에 따라 새로운 범위(newStart, newEnd)를 계산합니다.
+                let newStart = resizeTrackerData.start;
+                let newEnd = resizeTrackerData.end;
+        
+                if (resizeTrackerData.edge === 'start') {
+                    newStart = newIdx; 
+                } else {
+                    newEnd = newIdx;
+                }
+        
+                // 3. 시작점이 끝점보다 커지면 순서를 뒤집어 방어합니다.
+                if (newStart > newEnd) { let temp = newStart; newStart = newEnd; newEnd = temp; }
+        
+                // 4. 새로운 범위에 색칠
+                for (let i = newStart; i <= newEnd; i++) {
+                    data.grid[i] = color;
+                }
+                
+                // 5. 기억했던 제목을 다시 복구! (⭐️ "일정" 대신 oldLabelText 사용)
+                if (!data.labels) data.labels = {};
+                data.labels[newStart] = { text: oldLabelText, color: color }; 
+        
+                // 화면을 즉시 렌더링해서 부드럽게 보이게 합니다.
+                renderTimeGrid(resizeTrackerData.dateKey);
             }
         }
-
-        // 2. 드래그 방향에 따라 새로운 범위(newStart, newEnd)를 계산합니다.
-        let newStart = resizeTrackerData.start;
-        let newEnd = resizeTrackerData.end;
-
-        if (resizeTrackerData.edge === 'start') {
-            newStart = newIdx; // 시작점을 마우스 위치로 변경
-        } else {
-            newEnd = newIdx;   // 끝점을 마우스 위치로 변경
-        }
-
-        // 3. 시작점이 끝점보다 커지면 순서를 뒤집어 방어합니다.
-        if (newStart > newEnd) { let temp = newStart; newStart = newEnd; newEnd = temp; }
-
-        // 4. 새로운 범위에 색칠 및 라벨 복구
-        for (let i = newStart; i <= newEnd; i++) {
-            data.grid[i] = color;
-        }
-        // 라벨을 새로운 시작점(newStart)에 복구 (기본 텍스트는 "일정")
-        if (!data.labels) data.labels = {};
-        data.labels[newStart] = { text: "일정", color: color }; 
-
-        // 화면을 즉시 렌더링해서 부드럽게 보이게 합니다.
-        renderTimeGrid(resizeTrackerData.dateKey);
-    }
-}
         if (isSelecting) {
             e.preventDefault(); 
             const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
