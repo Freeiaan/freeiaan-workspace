@@ -1974,20 +1974,33 @@ function loadFromCloud() {
                 renderTimeGrid(resizeTrackerDateKey);
             }
         } 
-        else if (isResizing && resizeData) {
-            e.preventDefault();
-            const target = document.elementFromPoint(e.clientX, e.clientY);
-            const cell = target?.closest('.group-cell');
-            if (cell) {
-                const newDate = cell.getAttribute('data-date');
-                const task = multiTasks.find(t => t.id === resizeData.id);
-                if (task && newDate) {
-                    // 🔥 데이터만 바꿉니다. 새로고침(saveAndRefresh) 절대 금지!
-                    if (resizeData.edge === 'start') task.start = newDate;
-                    else task.end = newDate;
-                }
-            }
-        }
+              else if (isResizing && resizeData) {
+          e.preventDefault();
+          // elementFromPoint가 multi-task 바 위에서 group-cell을 못 찾는 문제 해결
+          // 포인터 위치에서 가장 가까운 group-cell을 직접 찾기
+          let cell = null;
+          const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+          for (const el of elementsAtPoint) {
+              if (el.classList.contains('group-cell')) { cell = el; break; }
+              const parent = el.closest('.group-cell');
+              if (parent) { cell = parent; break; }
+          }
+          if (cell) {
+              const newDate = cell.getAttribute('data-date');
+              const task = multiTasks.find(t => String(t.id) === String(resizeData.id));
+              if (task && newDate) {
+                  const changed = (resizeData.edge === 'start') 
+                      ? task.start !== newDate 
+                      : task.end !== newDate;
+                  if (changed) {
+                      if (resizeData.edge === 'start') task.start = newDate;
+                      else task.end = newDate;
+                      // 드래그 중 실시간으로 캘린더 다시 그리기
+                      renderCalendar();
+                  }
+              }
+          }
+      }
       
         if (isSelecting) {
             e.preventDefault(); 
@@ -2043,7 +2056,6 @@ function loadFromCloud() {
     });
 
     window.startResize = function(e, id, edge) { 
-    console.log("화살표 클릭됨! ID:", id, "Edge:", edge); // 💡 이 줄 추가
     e.preventDefault(); 
     e.stopPropagation(); 
     isResizing = true; 
