@@ -2351,11 +2351,11 @@ function renderTimeGrid(dateKey) {
                 
                 // 💡 스마트 눈치게임 정렬! (블록 위치에 따라 좌/우/중앙 닻 내리기)
                 if (midInRow >= 4) { // 오른쪽 끝 영역 (40~60분)
-                    // 오른쪽 벽에 꼬리를 고정 (오른쪽으로 튀어나가서 가로 스크롤 생기는 것 완벽 방지!)
-                    alignStyle = `right: ${100 - endPos}%; transform: none;`;
+                    // 오른쪽 벽에 꼬리를 고정하되, 오른쪽 화살표(▶)가 숨쉴 공간 12px 띄워주기!
+                    alignStyle = `right: ${100 - endPos}%; transform: translateX(-12px);`;
                 } else if (midInRow <= 1) { // 왼쪽 끝 영역 (0~20분)
-                    // 왼쪽 벽에 꼬리를 고정 (왼쪽으로 잘리는 것 방지)
-                    alignStyle = `left: ${startPos}%; transform: none;`;
+                    // 왼쪽 벽에 고정하되, 왼쪽 화살표(◀)가 숨쉴 공간 12px 띄워주기!
+                    alignStyle = `left: ${startPos}%; transform: translateX(12px);`;
                 } else { // 정중앙 영역 (20~40분)
                     // 기존처럼 블록 가운데에 예쁘게 둥둥 띄우기
                     const leftPercent = (midInRow / 6) * 100 + (100 / 12);
