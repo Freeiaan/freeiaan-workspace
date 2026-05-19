@@ -694,11 +694,6 @@
       </div>
 
       <div class="mb-6">
-          <h3 class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">기록 날짜 선택</h3>
-          <input type="date" id="smartRecordDateInput" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#22741C]">
-      </div>
-
-      <div class="mb-6">
         <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">오늘 할 일에서 가져오기</h3>
         <div id="smartRecordTodayTasks" class="flex flex-wrap gap-2"></div>
       </div>
@@ -2136,9 +2131,7 @@ function loadFromCloud() {
     }
 
     function submitSmartRecord() {
-        // 사용자가 선택한 날짜가 있으면 그 날짜를, 없으면 오늘 날짜를 씁니다.
-        let todayKey = $('smartRecordDateInput').value; 
-        if (!todayKey) todayKey = getDateKey(new Date());
+        const todayKey = getDateKey(new Date()); // 무조건 오늘 날짜로 저장!
         if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
         if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; 
         let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; 
