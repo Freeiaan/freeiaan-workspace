@@ -1988,7 +1988,7 @@ function loadFromCloud() {
                 renderTimeGrid(resizeTrackerData.dateKey);
             }
         } 
-        // 캘린더 일정 화살표를 위한 로직 수정
+        // [수정된 부분: 드래그 중에는 새로고침 없이 데이터만 업데이트]
         else if (isResizing && resizeData) {
             e.preventDefault();
             const target = document.elementFromPoint(e.clientX, e.clientY);
@@ -1997,15 +1997,12 @@ function loadFromCloud() {
                 const newDate = cell.getAttribute('data-date');
                 const task = multiTasks.find(t => t.id === resizeData.id);
                 if (task && newDate) {
-                    // 🔥 새로고침(saveAndRefresh)을 빼고, 값만 먼저 변경합니다.
+                    // 데이터만 바꿉니다. (새로고침은 절대 금지!)
                     if (resizeData.edge === 'start') {
                         if (task.start !== newDate) task.start = newDate;
                     } else {
                         if (task.end !== newDate) task.end = newDate;
                     }
-                    
-                    // 💡 드래그 중에는 새로고침 없이, 시각적인 위치만 살짝 바꿔주거나
-                    // 아니면 그냥 놔둡니다. 렌더링은 손을 뗄 때(pointerup) 한 번만!
                 }
             }
         }
