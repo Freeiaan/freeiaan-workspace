@@ -2063,40 +2063,63 @@ function loadFromCloud() {
     function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); saveTimerState(); }
     
     let pendingRecordSec = 0;
-              // 1. 모든 일정 가져오기 (필터링 없이!)
-          const tasks = allTasks[todayKey] || [];
-          
-          // 2. 일정이 아예 없을 때
-          if (tasks.length === 0) {
-              todayContainer.innerHTML = '<span class="text-xs text-gray-400">등록된 일정이 없습니다.</span>';
-          } 
-          // 3. 일정이 있을 때 (완료된 것까지 전부!)
-          else {
-              tasks.forEach((t, idx) => {
-                  const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
-                  const btn = document.createElement('button');
-                  
-                  btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border hover:opacity-80 transition-all';
-                  btn.style.backgroundColor = hexToRgba(cat.color, 0.1); 
-                  btn.style.color = cat.color; 
-                  btn.style.borderColor = cat.color; 
-                  btn.textContent = t.text;
-                  
-                  // 클릭하면 선택되게 하기
-                  btn.onclick = function() { selectSmartRecord(t.text, cat.color, idx, this); }; 
-                  todayContainer.appendChild(btn);
-              });
-          }
-        } else { todayContainer.innerHTML = '<span class="text-xs text-gray-400">오늘 등록된 일정이 없습니다.</span>'; }
 
-        const catContainer = $('smartRecordCategories'); catContainer.innerHTML = '';
-        categories.forEach(cat => {
-            const btn = document.createElement('button'); btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white hover:bg-gray-50 transition-all';
-            btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${cat.color}"></span>${cat.name}`;
-            btn.onclick = function() { selectSmartRecord(cat.name + ' 작업', cat.color, null, this); }; catContainer.appendChild(btn);
-        });
-
-        $('smartRecordInput').value = ''; $('smartRecordColor').value = categories.length > 0 ? categories[0].color : '#000000'; $('smartRecordModal').dataset.taskIdx = ''; $('smartRecordModal').classList.remove('hidden');
+    function recordTimer() { 
+        if (sessionElapsed <= 0) { alert("기록할 시간이 없습니다!"); return; }
+        
+        pendingRecordSec = sessionElapsed; 
+        const h = Math.floor(pendingRecordSec / 3600); 
+        const m = Math.floor((pendingRecordSec % 3600) / 60);
+        
+        $('smartRecordTimeText').textContent = `총 집중 시간 : ${h > 0 ? h + '시간 ' : ''}${m}분`;
+        
+        // 1. 날짜 선택기에서 가져오거나 오늘 날짜 사용
+        let todayKey = $('smartRecordDateInput') ? $('smartRecordDateInput').value : ''; 
+        if (!todayKey) todayKey = getDateKey(new Date()); 
+        
+        const todayContainer = $('smartRecordTodayTasks'); 
+        if (!todayContainer) return;
+        todayContainer.innerHTML = '';
+        
+        // 2. 모든 일정(완료 포함) 가져오기
+        const tasks = allTasks[todayKey] || []; 
+        
+        if (tasks.length === 0) {
+            todayContainer.innerHTML = '<span class="text-xs text-gray-400">등록된 일정이 없습니다.</span>';
+        } else {
+            tasks.forEach((t, idx) => {
+                const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
+                const btn = document.createElement('button');
+                
+                btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border hover:opacity-80 transition-all';
+                btn.style.backgroundColor = hexToRgba(cat.color, 0.1); 
+                btn.style.color = cat.color; 
+                btn.style.borderColor = cat.color; 
+                btn.textContent = t.text;
+                
+                btn.onclick = function() { selectSmartRecord(t.text, cat.color, idx, this); }; 
+                todayContainer.appendChild(btn);
+            });
+        }
+    
+        // 3. 카테고리 버튼 생성
+        const catContainer = $('smartRecordCategories'); 
+        if (catContainer) {
+            catContainer.innerHTML = '';
+            categories.forEach(cat => {
+                const btn = document.createElement('button'); 
+                btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 bg-white hover:bg-gray-50 transition-all';
+                btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${cat.color}"></span>${cat.name}`;
+                btn.onclick = function() { selectSmartRecord(cat.name + ' 작업', cat.color, null, this); }; 
+                catContainer.appendChild(btn);
+            });
+        }
+        
+        // 4. 모달창 띄우기
+        $('smartRecordInput').value = ''; 
+        $('smartRecordColor').value = categories.length > 0 ? categories[0].color : '#000000'; 
+        $('smartRecordModal').dataset.taskIdx = ''; 
+        $('smartRecordModal').classList.remove('hidden');
     }
 
     function selectSmartRecord(text, color, taskIdx, clickedBtn) {
