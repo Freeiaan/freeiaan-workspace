@@ -2042,7 +2042,13 @@ function loadFromCloud() {
             }
     });
 
-    window.startResize = function(e, id, edge) { e.preventDefault(); e.stopPropagation(); isResizing = true; resizeData = { id: id, edge: edge }; };
+    window.startResize = function(e, id, edge) { 
+    console.log("화살표 클릭됨! ID:", id, "Edge:", edge); // 💡 이 줄 추가
+    e.preventDefault(); 
+    e.stopPropagation(); 
+    isResizing = true; 
+    resizeData = { id: id, edge: edge }; 
+};
     
     function saveTimerState() { localStorage.setItem('ianTimerState', JSON.stringify({ isR, timerMode, timerLastTick, timeLeft, sessionElapsed })); }
     function loadTimerState() {
