@@ -694,6 +694,11 @@
       </div>
 
       <div class="mb-6">
+          <h3 class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">기록 날짜 선택</h3>
+          <input type="date" id="smartRecordDateInput" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#22741C]">
+      </div>
+
+      <div class="mb-6">
         <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">오늘 할 일에서 가져오기</h3>
         <div id="smartRecordTodayTasks" class="flex flex-wrap gap-2"></div>
       </div>
@@ -2058,22 +2063,30 @@ function loadFromCloud() {
     function resetTimer() { clearInterval(tInt); isR = false; timeLeft = 0; tLaps = 0; timerMode = 'idle'; sessionElapsed = 0; updateTUI(); $('startBtn').textContent = '시작'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); saveTimerState(); }
     
     let pendingRecordSec = 0;
-    function recordTimer() { 
-        if (sessionElapsed <= 0) { alert("기록할 시간이 없습니다!"); return; }
-        pendingRecordSec = sessionElapsed; const h = Math.floor(pendingRecordSec / 3600); const m = Math.floor((pendingRecordSec % 3600) / 60);
-        $('smartRecordTimeText').textContent = `총 집중 시간 : ${h > 0 ? h + '시간 ' : ''}${m}분`;
-        const todayKey = getEffectiveDateKey(); const todayContainer = $('smartRecordTodayTasks'); todayContainer.innerHTML = '';
-        if (allTasks[todayKey] && allTasks[todayKey].length > 0) {
-            const uncompleted = allTasks[todayKey].filter(t => !t.isChecked);
-            if(uncompleted.length === 0) { todayContainer.innerHTML = '<span class="text-xs text-gray-400">남은 일정이 없습니다.</span>'; } 
-            else {
-                uncompleted.forEach((t, idx) => {
-                    const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const btn = document.createElement('button');
-                    btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border hover:opacity-80 transition-all';
-                    btn.style.backgroundColor = hexToRgba(cat.color, 0.1); btn.style.color = cat.color; btn.style.borderColor = cat.color; btn.textContent = t.text;
-                    btn.onclick = function() { selectSmartRecord(t.text, cat.color, idx, this); }; todayContainer.appendChild(btn);
-                });
-            }
+              // 1. 모든 일정 가져오기 (필터링 없이!)
+          const tasks = allTasks[todayKey] || [];
+          
+          // 2. 일정이 아예 없을 때
+          if (tasks.length === 0) {
+              todayContainer.innerHTML = '<span class="text-xs text-gray-400">등록된 일정이 없습니다.</span>';
+          } 
+          // 3. 일정이 있을 때 (완료된 것까지 전부!)
+          else {
+              tasks.forEach((t, idx) => {
+                  const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
+                  const btn = document.createElement('button');
+                  
+                  btn.className = 'px-3 py-2 rounded-xl text-xs font-bold border hover:opacity-80 transition-all';
+                  btn.style.backgroundColor = hexToRgba(cat.color, 0.1); 
+                  btn.style.color = cat.color; 
+                  btn.style.borderColor = cat.color; 
+                  btn.textContent = t.text;
+                  
+                  // 클릭하면 선택되게 하기
+                  btn.onclick = function() { selectSmartRecord(t.text, cat.color, idx, this); }; 
+                  todayContainer.appendChild(btn);
+              });
+          }
         } else { todayContainer.innerHTML = '<span class="text-xs text-gray-400">오늘 등록된 일정이 없습니다.</span>'; }
 
         const catContainer = $('smartRecordCategories'); catContainer.innerHTML = '';
@@ -2100,7 +2113,9 @@ function loadFromCloud() {
     }
 
     function submitSmartRecord() {
-        const todayKey = getEffectiveDateKey();
+        // 사용자가 선택한 날짜가 있으면 그 날짜를, 없으면 오늘 날짜를 씁니다.
+        let todayKey = $('smartRecordDateInput').value; 
+        if (!todayKey) todayKey = getDateKey(new Date());
         if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
         if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; 
         let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; 
@@ -2125,7 +2140,7 @@ function loadFromCloud() {
 
     function renderTimerHistory() {
         const list = $('timerHistoryList'); if(!list) return; list.innerHTML = '';
-        const todayKey = getEffectiveDateKey(); const data = dailyRecords[todayKey];
+        const todayKey = getDateKey(new Date()); const data = dailyRecords[todayKey];
         if (!data || !data.labels || Object.keys(data.labels).length === 0) { list.innerHTML = '<div class="text-[11px] text-gray-400 text-center py-5 font-bold bg-gray-50 rounded-2xl border border-gray-100">아직 기록된 집중 기록이 없습니다.</div>'; return; }
         const labels = data.labels; const grid = data.grid;
         Object.keys(labels).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(startIdx => {
@@ -2138,9 +2153,9 @@ function loadFromCloud() {
         });
     }
 
-    function hardResetTimer() { if(confirm("오늘 기록이 완전히 초기화됩니다. 계속하시겠습니까?")) { const todayKey = getEffectiveDateKey(); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
+    function hardResetTimer() { if(confirm("오늘 기록이 완전히 초기화됩니다. 계속하시겠습니까?")) { const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
     function formatSecs(sec) { const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
-    function updateRecordDisplay() { const todayKey = getEffectiveDateKey(); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
+    function updateRecordDisplay() { const todayKey = getDateKey(new Date()); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
     function updateModalRecordDisplay(dateKey) { const dRec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 }; const total = dRec.stopwatch + dRec.timer; const target = $('modalRecordDisplay'); if (target) { if (total > 0) target.innerHTML = `총 기록 시간: ${formatSecs(total)} <span class="text-gray-400 text-[10px] ml-1 font-normal">(⏱️ ${formatSecs(dRec.stopwatch)} / ⏳ ${formatSecs(dRec.timer)})</span>`; else target.innerHTML = ''; } }
 
     function renderInbox() {
@@ -4212,13 +4227,6 @@ function renderMemoFolders() {
         }
     }, { passive: false });
 
-      // 새벽 5시 이전이면 어제 날짜를 리턴해주는 똑똑한 함수
-      function getEffectiveDateKey() {
-          let d = new Date();
-          if (d.getHours() < 5) d.setDate(d.getDate() - 1);
-          return getDateKey(d);
-      }
-    
 
   </script>
 </body>
