@@ -2062,7 +2062,7 @@ function loadFromCloud() {
         if (sessionElapsed <= 0) { alert("기록할 시간이 없습니다!"); return; }
         pendingRecordSec = sessionElapsed; const h = Math.floor(pendingRecordSec / 3600); const m = Math.floor((pendingRecordSec % 3600) / 60);
         $('smartRecordTimeText').textContent = `총 집중 시간 : ${h > 0 ? h + '시간 ' : ''}${m}분`;
-        const todayKey = getDateKey(new Date()); const todayContainer = $('smartRecordTodayTasks'); todayContainer.innerHTML = '';
+        const todayKey = getEffectiveDateKey(); const todayContainer = $('smartRecordTodayTasks'); todayContainer.innerHTML = '';
         if (allTasks[todayKey] && allTasks[todayKey].length > 0) {
             const uncompleted = allTasks[todayKey].filter(t => !t.isChecked);
             if(uncompleted.length === 0) { todayContainer.innerHTML = '<span class="text-xs text-gray-400">남은 일정이 없습니다.</span>'; } 
@@ -2100,7 +2100,7 @@ function loadFromCloud() {
     }
 
     function submitSmartRecord() {
-        const todayKey = getDateKey(new Date());
+        const todayKey = getEffectiveDateKey();
         if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
         if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; 
         let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; 
@@ -2125,7 +2125,7 @@ function loadFromCloud() {
 
     function renderTimerHistory() {
         const list = $('timerHistoryList'); if(!list) return; list.innerHTML = '';
-        const todayKey = getDateKey(new Date()); const data = dailyRecords[todayKey];
+        const todayKey = getEffectiveDateKey(); const data = dailyRecords[todayKey];
         if (!data || !data.labels || Object.keys(data.labels).length === 0) { list.innerHTML = '<div class="text-[11px] text-gray-400 text-center py-5 font-bold bg-gray-50 rounded-2xl border border-gray-100">아직 기록된 집중 기록이 없습니다.</div>'; return; }
         const labels = data.labels; const grid = data.grid;
         Object.keys(labels).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(startIdx => {
@@ -2138,9 +2138,9 @@ function loadFromCloud() {
         });
     }
 
-    function hardResetTimer() { if(confirm("오늘 기록이 완전히 초기화됩니다. 계속하시겠습니까?")) { const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
+    function hardResetTimer() { if(confirm("오늘 기록이 완전히 초기화됩니다. 계속하시겠습니까?")) { const todayKey = getEffectiveDateKey(); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
     function formatSecs(sec) { const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
-    function updateRecordDisplay() { const todayKey = getDateKey(new Date()); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
+    function updateRecordDisplay() { const todayKey = getEffectiveDateKey(); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
     function updateModalRecordDisplay(dateKey) { const dRec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 }; const total = dRec.stopwatch + dRec.timer; const target = $('modalRecordDisplay'); if (target) { if (total > 0) target.innerHTML = `총 기록 시간: ${formatSecs(total)} <span class="text-gray-400 text-[10px] ml-1 font-normal">(⏱️ ${formatSecs(dRec.stopwatch)} / ⏳ ${formatSecs(dRec.timer)})</span>`; else target.innerHTML = ''; } }
 
     function renderInbox() {
@@ -4211,6 +4211,14 @@ function renderMemoFolders() {
             e.preventDefault(); // 사파리의 지멋대로 스크롤 기능을 완전히 얼려버립니다!
         }
     }, { passive: false });
+
+      // 새벽 5시 이전이면 어제 날짜를 리턴해주는 똑똑한 함수
+      function getEffectiveDateKey() {
+          let d = new Date();
+          if (d.getHours() < 5) d.setDate(d.getDate() - 1);
+          return getDateKey(d);
+      }
+    
 
   </script>
 </body>
