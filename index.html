@@ -2042,22 +2042,22 @@ function loadFromCloud() {
             document.querySelectorAll('.selected-range').forEach(c => c.classList.remove('selected-range')); 
         } 
         if (isResizing) {
-            isResizing = false;
+                isResizing = false;
 
-            // 1. 타임트래커(색칠) 리사이징 끝났을 때
-            if (resizeTrackerData) {
-                savePlannerData(); 
-                renderTimeGrid(currentPlannerDateKey);
-            } 
-            // 2. 캘린더 일정 리사이징 끝났을 때 (여기가 핵심!)
-            else if (resizeData) {
-                saveAndRefresh(); // 캘린더 전체를 깔끔하게 다시 그립니다.
+                // 1. 타임트래커(색칠) 리사이징 끝났을 때
+                if (resizeTrackerData) {
+                    savePlannerData();
+                    renderTimeGrid(currentPlannerDateKey);
+                } 
+                // 2. 캘린더 일정 리사이징 끝났을 때 (여기가 핵심!)
+                else if (resizeData) {
+                    saveAndRefresh(); // 캘린더 전체를 딱 한 번만 깔끔하게 다시 그립니다.
+                }
+
+                // 바구니 비우기
+                resizeTrackerData = null;
+                resizeData = null;
             }
-
-            // 바구니 비우기
-            resizeTrackerData = null;
-            resizeData = null;
-        }
     });
 
     window.startResize = function(e, id, edge) { e.preventDefault(); e.stopPropagation(); isResizing = true; resizeData = { id: id, edge: edge }; };
