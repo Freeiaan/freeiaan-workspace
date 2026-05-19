@@ -1959,46 +1959,52 @@ function loadFromCloud() {
                 const color = resizeTrackerData.color;
                 
                 // 1. 기존 블록 삭제 + 기존 글자 기억하기
-                let oldLabelText = "일정"; // 제목이 없으면 기본값
+                let oldLabelText = "일정"; 
                 for (let i = 0; i < 144; i++) {
                     if (data.grid[i] === color) data.grid[i] = null;
                 }
-                // 라벨도 같이 지우면서, 글자를 상자에 담아둡니다.
                 if (data.labels) {
                     for (let idx in data.labels) {
                         if (data.labels[idx].color === color) {
-                            oldLabelText = data.labels[idx].text; // ⭐️ 제목을 여기에 기억해!
+                            oldLabelText = data.labels[idx].text; 
                             delete data.labels[idx];
                         }
                     }
                 }
         
-                // 2. 드래그 방향에 따라 새로운 범위(newStart, newEnd)를 계산합니다.
+                // 2. 새로운 범위 계산 및 적용
                 let newStart = resizeTrackerData.start;
                 let newEnd = resizeTrackerData.end;
         
-                if (resizeTrackerData.edge === 'start') {
-                    newStart = newIdx; 
-                } else {
-                    newEnd = newIdx;
-                }
+                if (resizeTrackerData.edge === 'start') newStart = newIdx; 
+                else newEnd = newIdx;
         
-                // 3. 시작점이 끝점보다 커지면 순서를 뒤집어 방어합니다.
                 if (newStart > newEnd) { let temp = newStart; newStart = newEnd; newEnd = temp; }
         
-                // 4. 새로운 범위에 색칠
-                for (let i = newStart; i <= newEnd; i++) {
-                    data.grid[i] = color;
-                }
-                
-                // 5. 기억했던 제목을 다시 복구! (⭐️ "일정" 대신 oldLabelText 사용)
+                for (let i = newStart; i <= newEnd; i++) data.grid[i] = color;
                 if (!data.labels) data.labels = {};
                 data.labels[newStart] = { text: oldLabelText, color: color }; 
         
-                // 화면을 즉시 렌더링해서 부드럽게 보이게 합니다.
                 renderTimeGrid(resizeTrackerData.dateKey);
             }
+        } 
+        // 🔥 [추가] 여기부터 캘린더 화살표를 위한 로직을 넣어야 합니다!
+        else if (isResizing && resizeData) {
+            e.preventDefault();
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const cell = target?.closest('.group-cell');
+            if (cell) {
+                const newDate = cell.getAttribute('data-date');
+                const task = multiTasks.find(t => t.id === resizeData.id);
+                if (task && newDate) {
+                    if (resizeData.edge === 'start') task.start = newDate;
+                    else task.end = newDate;
+                    saveAndRefresh(); // 화면을 다시 그립니다.
+                }
+            }
         }
+
+      
         if (isSelecting) {
             e.preventDefault(); 
             const target = document.elementFromPoint(e.clientX, e.clientY); const hC = target?.closest('.group-cell');
