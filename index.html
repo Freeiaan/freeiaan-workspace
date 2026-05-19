@@ -2658,7 +2658,7 @@ function renderTimeGrid(dateKey) {
     const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : 'text-black'; 
     const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
     
-    // 🔥 메모 아이콘 표시 코드 다시 완벽하게 복구!
+    // 🔥 이번엔 확실하게! 메모 아이콘 로직 포함
     const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
 
     div.innerHTML = `<div class="drag-handle-dash mr-1 md:mr-0">≡</div>
@@ -2668,12 +2668,14 @@ function renderTimeGrid(dateKey) {
                         <span class="text-[13px] md:text-[13px] truncate font-medium md:font-medium ml-1.5 ${isCheckedClass}" style="color: ${colorStyle}">${t.text}${descIcon}</span>
                      </div>`;
 
-    // 🔥 핵심: 체크박스에 직접 클릭 이벤트 달고, e.stopPropagation()으로 클릭 차단!
-    div.querySelector('input').onclick = (e) => { 
-        e.stopPropagation(); // 이안님, 이게 있어야 div 전체 클릭이 안 씹힙니다!
+    // 🔥 핵심: 체크박스 이벤트 방어 (태블릿에서 안 눌리는 문제 해결)
+    const checkbox = div.querySelector('input');
+    checkbox.onchange = (e) => { 
+        e.stopPropagation(); 
         t.isChecked = e.target.checked; 
         saveAndRefresh(); 
     };
+    checkbox.onclick = (e) => { e.stopPropagation(); };
 
     div.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('dash-key', key); e.dataTransfer.setData('dash-idx', idx); }; 
     
