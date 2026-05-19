@@ -2336,11 +2336,20 @@ function renderTimeGrid(dateKey) {
             const overlay = document.createElement('div'); 
             overlay.className = 'absolute top-0 bottom-0 flex items-center pointer-events-none z-10 w-full';
             
+            // 💡 [수정] 단순 글자였던 화살표를 마우스로 잡고 끌 수 있는 '진짜 핸들'로 업그레이드!
             let innerHTML = `
-                <div class="absolute h-[2px] z-0" style="background-color: ${hexToRgba(seg.color, 0.8)}; left: ${startPos}%; width: ${widthPos}%"></div>
-                <div class="absolute flex justify-between items-center text-[10px] z-0" style="color: ${seg.color}; left: ${startPos}%; width: ${widthPos}%">
-                    <span style="transform: translateX(-2px)">${trueStart >= rowStartIdx ? '◀' : ''}</span>
-                    <span style="transform: translateX(2px)">${trueEnd <= rowEndIdx ? '▶' : ''}</span>
+                <div class="absolute h-[2px] z-0 pointer-events-none" style="background-color: ${hexToRgba(seg.color, 0.8)}; left: ${startPos}%; width: ${widthPos}%"></div>
+                <div class="absolute flex justify-between items-center text-[10px] z-0 pointer-events-none" style="color: ${seg.color}; left: ${startPos}%; width: ${widthPos}%">
+                    <div class="${trueStart >= rowStartIdx ? 'pointer-events-auto cursor-ew-resize hover:scale-150 transition-transform' : ''}" 
+                         style="transform: translateX(-4px); width:16px; height:16px; display:flex; justify-content:center; align-items:center;"
+                         ${trueStart >= rowStartIdx ? `onpointerdown="window.startTrackerResize(event, 'start', ${trueStart}, ${trueEnd}, '${seg.color}', '${dateKey}')"` : ''}>
+                        ${trueStart >= rowStartIdx ? '◀' : ''}
+                    </div>
+                    <div class="${trueEnd <= rowEndIdx ? 'pointer-events-auto cursor-ew-resize hover:scale-150 transition-transform' : ''}" 
+                         style="transform: translateX(4px); width:16px; height:16px; display:flex; justify-content:center; align-items:center;"
+                         ${trueEnd <= rowEndIdx ? `onpointerdown="window.startTrackerResize(event, 'end', ${trueStart}, ${trueEnd}, '${seg.color}', '${dateKey}')"` : ''}>
+                        ${trueEnd <= rowEndIdx ? '▶' : ''}
+                    </div>
                 </div>
             `;
 
