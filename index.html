@@ -718,7 +718,10 @@
 
   <div id="eventModal" class="hidden fixed inset-0 z-[600] flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[400px] p-8 flex flex-col max-h-[90vh]">
-      <h3 class="text-lg font-black text-gray-800 mb-5">일정 설정</h3>
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-black text-gray-800">일정 설정</h3>
+        <span id="modalDateLabel" class="text-[12px] font-bold text-gray-400"></span>
+      </div>
 
   <!-- 🍅 뽀모도로 태그 (뽀모도로 모드일 때만 표시) -->
         <div id="pomodoroRecordTag" class="hidden mb-6">
@@ -3036,6 +3039,7 @@ function renderTimeGrid(dateKey) {
         $('modalDesc').value = (data && data.description) ? data.description : ''; 
         
         buildCategoryUI(); 
+        if (data && data.dateKey) { const d = new Date(data.dateKey); $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일`; } else { $('modalDateLabel').textContent = ''; }
     }
     
     function closeModal() { $('eventModal').classList.add('hidden'); }
