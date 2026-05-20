@@ -1880,37 +1880,6 @@ function loadFromCloud() {
         container.innerHTML = html;
     }
 
-    function renderAnalyticsContent(allWeeks, selectedWeek = null) {
-        const focusChart = $('focusChart'); const habitGrid = $('habitStatsGrid'); focusChart.innerHTML = ''; habitGrid.innerHTML = '';
-        let totalSec = 0, chartData = [], totalHabitBoxes = 0, successHabitCount = 0, habitsToDisplay = [];
-        if (analyticsMode === 'month') {
-            $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 월간 집중 시간 분석`;
-            allWeeks.forEach(w => {
-                let weekTotal = 0;
-                for(let i=0; i<7; i++) { const d = new Date(w.start); d.setDate(d.getDate() + i); const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 }; weekTotal += (rec.stopwatch + rec.timer); }
-                totalSec += weekTotal; chartData.push({ label: `${w.weekNum}주차`, sec: weekTotal });
-                const wHabits = weeklyHabits[w.key] || [];
-                wHabits.forEach(h => { if(!h.text.trim()) return; const count = h.tracker.filter(v => v === 1).length; successHabitCount += count; totalHabitBoxes += 7; let existing = habitsToDisplay.find(x => x.text === h.text); if(existing) { existing.count += count; existing.total += 7; } else { habitsToDisplay.push({ text: h.text, count: count, total: 7 }); } });
-            });
-        } else if (analyticsMode === 'week' && selectedWeek) {
-            $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 주간 집중 시간 분석`;
-            const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-            for(let i=0; i<7; i++) { const d = new Date(selectedWeek.start); d.setDate(d.getDate() + i); const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 }; const dayTotal = rec.stopwatch + rec.timer; totalSec += dayTotal; chartData.push({ label: dayNames[i], sec: dayTotal }); }
-            const wHabits = weeklyHabits[selectedWeek.key] || [];
-            wHabits.forEach(h => { if(!h.text.trim()) return; const count = h.tracker.filter(v => v === 1).length; successHabitCount += count; totalHabitBoxes += 7; habitsToDisplay.push({ text: h.text, count: count, total: 7 }); });
-        }
-        $('totalFocusTime').textContent = `총 집중: ${Math.floor(totalSec/3600)}h ${Math.floor((totalSec%3600)/60)}m`;
-        const maxSec = Math.max(...chartData.map(d => d.sec), 3600); 
-        chartData.forEach(d => {
-            const barWrap = document.createElement('div'); barWrap.className = 'flex-1 flex flex-col items-center gap-2'; const hPercent = (d.sec / maxSec) * 100;
-            let timeStr = `${Math.floor(d.sec/3600)}h`; if(d.sec === 0) timeStr = '0'; else if (d.sec < 3600 || analyticsMode === 'week') timeStr = `${Math.floor(d.sec/60)}m`;
-            barWrap.innerHTML = `<div class="text-[12px] font-black text-[#1b4332] mb-1">${timeStr}</div><div class="w-full max-w-[40px] bg-[#e4f8c4] rounded-t-lg transition-all duration-500 relative group" style="height: ${hPercent}%"><div class="absolute inset-0 bg-[#22741C] opacity-0 group-hover:opacity-100 rounded-t-lg transition-opacity cursor-pointer" title="${Math.floor(d.sec/3600)}시간 ${Math.floor((d.sec%3600)/60)}분"></div></div><div class="text-[14px] font-extrabold text-gray-800 mt-2 whitespace-nowrap">${d.label}</div>`; focusChart.appendChild(barWrap);
-        });
-        if(habitsToDisplay.length === 0) { habitGrid.innerHTML = '<div class="col-span-2 text-center text-gray-400 text-[12px] font-bold py-6">기록된 해빗 목표가 없습니다.</div>'; } else { habitsToDisplay.forEach(h => { const percent = Math.round((h.count / h.total) * 100); const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center'; div.innerHTML = `<div class="flex flex-col overflow-hidden pr-2"><span class="text-[13px] font-bold text-gray-800 truncate">${h.text}</span><span class="text-[10px] text-gray-400 mt-1">${analyticsMode==='month'?'월간':'주간'} ${h.total}일 중 ${h.count}일 성공</span></div><div class="text-xl font-black text-blue-500 flex-shrink-0">${percent}%</div>`; habitGrid.appendChild(div); }); }
-        const totalPercent = totalHabitBoxes > 0 ? Math.round((successHabitCount / totalHabitBoxes) * 100) : 0; const cheerMsg = $('cheerMessage');
-        if (totalPercent >= 80) cheerMsg.textContent = `달성률 ${totalPercent}%! 완벽한 기간이었네요! 스스로에게 선물을 줘보세요 🎁`; else if (totalPercent >= 50) cheerMsg.textContent = `달성률 ${totalPercent}%! 충분히 잘하고 있어요. 조금만 더 힘내봐요! 👍`; else cheerMsg.textContent = `기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
-    }
-
     function updateTUI() {
       const h = Math.floor(timeLeft / 3600), m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60; $('digitalTime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       const angle = ((timeLeft % 3600) / 3600) * 360; pSlice.style.background = timeLeft <= 0 ? 'none' : `conic-gradient(from 0deg, #1b4332 ${angle}deg, transparent ${angle}deg)`;
@@ -2241,7 +2210,6 @@ function loadFromCloud() {
       // 🔥 [추가] 모달이 닫히면 뒷배경 스크롤을 다시 부드럽게 풀어줍니다!
       document.body.style.overflow = '';
     }
-    function savePlannerData() { if(currentPlannerDateKey) dailyRecords[currentPlannerDateKey].note = $('plannerNote').value; setLocal('ianDailyRecords', dailyRecords); }
     function renderPlannerTasks(dateKey) { 
         const list = $('plannerTaskList'); 
         list.innerHTML = ''; 
