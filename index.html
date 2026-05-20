@@ -2044,7 +2044,10 @@ function loadFromCloud() {
                 for (let i = origStart; i <= origEnd; i++) { data.grid[i] = null; }
                 if (data.labels) {
                     for (let idx in data.labels) {
-                        if (data.labels[idx].color === color) { oldLabelText = data.labels[idx].text; delete data.labels[idx]; }
+                        if (data.labels[idx].color === color && parseInt(idx) >= resizeTrackerData.start && parseInt(idx) <= resizeTrackerData.end) { 
+                            oldLabelText = data.labels[idx].text; 
+                            delete data.labels[idx]; 
+                        }
                     }
                 }
                 let newStart = resizeTrackerData.start, newEnd = resizeTrackerData.end;
