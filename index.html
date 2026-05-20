@@ -708,7 +708,15 @@
   <div id="eventModal" class="hidden fixed inset-0 z-[600] flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[400px] p-8 flex flex-col max-h-[90vh]">
       <h3 class="text-lg font-black text-gray-800 mb-5">일정 설정</h3>
-      
+
+  <!-- 🍅 뽀모도로 태그 (뽀모도로 모드일 때만 표시) -->
+        <div id="pomodoroRecordTag" class="hidden mb-6">
+          <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">🍅 뽀모도로</h3>
+          <button id="pomodoroTagBtn" onclick="togglePomodoroTag()" class="px-4 py-2 rounded-xl text-sm font-extrabold border border-red-200 bg-red-50 text-red-400 hover:bg-red-100 transition-all">
+            🍅 <span id="pomodoroTagLabel">25-5</span>
+          </button>
+        </div>
+    
       <div class="flex flex-col gap-0 mb-6">
           <input type="text" id="modalInput" class="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-t-2xl text-[14px] font-bold text-gray-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#22741C] transition-all" placeholder="일정 제목 (예: 회의 준비)">
           <textarea id="modalDesc" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 border-t-0 rounded-b-2xl text-[13px] font-medium text-gray-600 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#22741C] transition-all resize-none h-20 custom-scrollbar" placeholder="세부 내용, 링크, 참고 사항 등을 적어주세요."></textarea>
@@ -2178,7 +2186,20 @@ function loadFromCloud() {
             });
         }
         
-        // 4. 모달창 띄우기
+        // 🍅 뽀모도로 태그 표시 여부
+        const pomoTag = $('pomodoroRecordTag');
+        if (pomodoroActive) {
+            const { focus, shortBreak } = getPomodoroSettings();
+            $('pomodoroTagLabel').textContent = `${focus}-${shortBreak}`;
+            pomoTag.classList.remove('hidden');
+            $('pomodoroTagBtn').dataset.selected = 'false';
+            $('pomodoroTagBtn').classList.remove('bg-red-400', 'text-white');
+            $('pomodoroTagBtn').classList.add('bg-red-50', 'text-red-400');
+        } else {
+            pomoTag.classList.add('hidden');
+        }
+      
+      // 4. 모달창 띄우기
         $('smartRecordInput').value = ''; 
         $('smartRecordColor').value = categories.length > 0 ? categories[0].color : '#000000'; 
         $('smartRecordModal').dataset.taskIdx = ''; 
@@ -2205,17 +2226,21 @@ function loadFromCloud() {
         let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; 
         dailyRecords[todayKey].recorded[type] += pendingRecordSec; 
         const inputText = $('smartRecordInput').value.trim(); const inputColor = $('smartRecordColor').value; const taskIdx = $('smartRecordModal').dataset.taskIdx;
+      
+        // 🍅 뽀모도로 태그 선택됐으면 이름 앞에 붙이기
+          const pomoSelected = $('pomodoroTagBtn')?.dataset.selected === 'true';
+          const finalText = pomoSelected ? `🍅 ${$('pomodoroTagLabel').textContent} | ${inputText}` : inputText;
 
         // 🔥 이안님 요청: 타이머 기록 시 할 일 자동 체크(완료) 기능 제거! (이름과 색상만 복사해 옵니다)
         // if (taskIdx !== '' && allTasks[todayKey][taskIdx]) allTasks[todayKey][taskIdx].isChecked = true;
 
-        if ($('syncTrackerToggle').checked && inputText) {
+        if ($('syncTrackerToggle').checked && finalText) {
             const now = new Date(); let currentHour = now.getHours(); if (currentHour < 5) currentHour += 24; const currentMin = now.getMinutes();
             let endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
             let blocksToFill = Math.floor(pendingRecordSec / 600); if (blocksToFill < 1) blocksToFill = 1; let startIdx = Math.max(0, endIdx - blocksToFill + 1);
             for (let i = startIdx; i <= endIdx; i++) { dailyRecords[todayKey].grid[i] = inputColor; }
             if (!dailyRecords[todayKey].labels) dailyRecords[todayKey].labels = {};
-            dailyRecords[todayKey].labels[startIdx] = { text: inputText, color: inputColor };
+            dailyRecords[todayKey].labels[startIdx] = { text: finalText, color: inputColor };
         }
         savePlannerData(); saveAndRefresh(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); 
         if (currentPlannerDateKey === todayKey) { updateModalRecordDisplay(todayKey); renderTimeGrid(todayKey); renderPlannerTasks(todayKey); }
@@ -2240,6 +2265,21 @@ function loadFromCloud() {
     function hardResetTimer() { if(confirm("오늘 기록이 완전히 초기화됩니다. 계속하시겠습니까?")) { const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
 
     // 🍅 뽀모도로 모드 함수들
+    
+    function togglePomodoroTag() {
+            const btn = $('pomodoroTagBtn');
+            const selected = btn.dataset.selected === 'true';
+            if (selected) {
+                btn.dataset.selected = 'false';
+                btn.classList.remove('bg-red-400', 'text-white');
+                btn.classList.add('bg-red-50', 'text-red-400');
+            } else {
+                btn.dataset.selected = 'true';
+                btn.classList.remove('bg-red-50', 'text-red-400');
+                btn.classList.add('bg-red-400', 'text-white');
+            }
+        }
+    
     function togglePomodoroMode() {
         pomodoroActive = !pomodoroActive;
         const btn = $('pomodoroToggleBtn');
