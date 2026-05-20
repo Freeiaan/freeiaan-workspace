@@ -1355,6 +1355,7 @@ function handleContextAdd() {
             console.error("로그인 에러:", error);
             alert("로그인 중 오류가 발생했습니다.");
         });
+    }
     
     function logout() { if(confirm("로그아웃 하시겠습니까?")) { auth.signOut(); resetTimer(); } }
       
