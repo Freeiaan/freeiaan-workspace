@@ -23,7 +23,10 @@
   <script src="https://bernardo-castilho.github.io/DragDropTouch/DragDropTouch.js"></script>
 
   <style>
-    body { font-family: 'Pretendard', sans-serif !important; color: #000; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow: hidden; height: 100vh; }
+    body { font-family: 'Pretendard', sans-serif !important; color: #000; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;}
+    @media (min-width: 768px) {
+    body { overflow: hidden; height: 100vh; }
+}
     .drag-over { background-color: #f0fdf4 !important; }
     .selected-range { background-color: #f3f4f6 !important; border: 1px dashed #9ca3af !important; }
     
