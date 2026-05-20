@@ -733,6 +733,37 @@
           <button id="toggleEditBtn" onclick="toggleCategoryEdit()" class="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1.5 rounded-lg font-bold hover:bg-gray-200 transition">✏️ 변경</button>
         </div>
       </div>
+
+      <!-- 🔁 반복 설정 -->
+      <div class="mb-6">
+        <button onclick="toggleRepeatPanel()" id="repeatToggleBtn" class="flex items-center gap-2 text-[11px] font-bold text-gray-400 hover:text-gray-600 transition">
+          🔁 <span id="repeatToggleLabel">반복 없음</span> ▾
+        </button>
+        <div id="repeatPanel" class="hidden mt-3 p-4 bg-gray-50 rounded-2xl flex flex-col gap-3">
+          <!-- 반복 타입 -->
+          <div class="flex gap-2">
+            <button onclick="setRepeatType('daily')" data-rtype="daily" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매일</button>
+            <button onclick="setRepeatType('weekly')" data-rtype="weekly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매주</button>
+            <button onclick="setRepeatType('monthly')" data-rtype="monthly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매월</button>
+          </div>
+          <!-- 매주: 요일 선택 -->
+          <div id="repeatDaysRow" class="hidden flex gap-1 justify-between">
+            <button onclick="toggleRepeatDay(0)" data-day="0" class="repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border border-gray-200 bg-white text-gray-500 transition">일</button>
+            <button onclick="toggleRepeatDay(1)" data-day="1" class="repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border border-gray-200 bg-white text-gray-500 transition">월</button>
+            <button onclick="toggleRepeatDay(2)" data-day="2" class="repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border border-gray-200 bg-white text-gray-500 transition">화</button>
+            <button onclick="toggleRepeatDay(3)" data-day="3" class="repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border border-gray-200 bg-white text-gray-500 transition">수</button>
+            <button onclick="toggleRepeatDay(4)" data-day="4" class="repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border border-gray-200 bg-white text-gray-500 transition">목</button>
+            <button onclick="toggleRepeatDay(5)" data-day="5" class="repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border border-gray-200 bg-white text-gray-500 transition">금</button>
+            <button onclick="toggleRepeatDay(6)" data-day="6" class="repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border border-gray-200 bg-white text-gray-500 transition">토</button>
+          </div>
+          <!-- 종료일 -->
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-bold text-gray-400">종료일</span>
+            <input type="date" id="repeatEndDate" class="flex-1 text-[11px] font-bold bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-1 focus:ring-green-400">
+            <button onclick="clearRepeatEndDate()" class="text-[10px] text-gray-400 hover:text-gray-600 font-bold">없음</button>
+          </div>
+        </div>
+      </div>
       
       <div id="categoryContainer" class="grid grid-cols-7 gap-y-4 justify-items-center mb-8 pb-3 pt-2 px-2 min-h-[80px]"></div>
       
@@ -1049,6 +1080,7 @@
     let multiTasks = getLocal('ianMultiTasks', []).filter(t => t && t.start && t.end);
     let dailyRecords = getLocal('ianDailyRecords', {}); 
     let inboxTasks = getLocal('ianInboxTasks', []); if (!Array.isArray(inboxTasks)) inboxTasks = [];
+    let repeatTasks = getLocal('ianRepeatTasks', []);
     let weeklyMemos = getLocal('ianWeeklyMemos', {});
     let weeklyHabits = getLocal('ianWeeklyHabits', {});
     let extendedMemos = getLocal('ianExtendedMemos', [{title:'메모 1', content:''},{title:'메모 2', content:''},{title:'메모 3', content:''},{title:'메모 4', content:''}]);
@@ -2957,6 +2989,7 @@ function renderTimeGrid(dateKey) {
                 allTasks[dateKey].sort((a, b) => (a.isChecked === b.isChecked ? 0 : a.isChecked ? -1 : 1));
             }
         }
+        setLocal('ianRepeatTasks', repeatTasks);
         setLocal('ianSchedulerTasks', allTasks); 
         setLocal('ianMultiTasks', multiTasks); 
         renderCalendar(); 
@@ -2995,6 +3028,59 @@ function renderTimeGrid(dateKey) {
     }
     
     function closeModal() { $('eventModal').classList.add('hidden'); }
+    // 🔁 반복 일정 상태
+    let currentRepeatType = null, currentRepeatDays = [], currentRepeatEndDate = null;
+
+    function toggleRepeatPanel() {
+        const panel = $('repeatPanel');
+        const isHidden = panel.classList.toggle('hidden');
+        if (isHidden) {
+            currentRepeatType = null; currentRepeatDays = []; currentRepeatEndDate = null;
+            $('repeatToggleLabel').textContent = '반복 없음';
+        } else {
+            if (!currentRepeatType) setRepeatType('weekly');
+        }
+    }
+
+    function setRepeatType(type) {
+        currentRepeatType = type;
+        document.querySelectorAll('.repeat-type-btn').forEach(b => {
+            const active = b.dataset.rtype === type;
+            b.className = `repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition ${active ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600'}`;
+        });
+        $('repeatDaysRow').classList.toggle('hidden', type !== 'weekly');
+        const labels = { daily: '매일 반복', weekly: '매주 반복', monthly: '매월 반복' };
+        $('repeatToggleLabel').textContent = labels[type];
+    }
+
+    function toggleRepeatDay(day) {
+        const idx = currentRepeatDays.indexOf(day);
+        if (idx > -1) currentRepeatDays.splice(idx, 1); else currentRepeatDays.push(day);
+        document.querySelectorAll('.repeat-day-btn').forEach(b => {
+            const active = currentRepeatDays.includes(parseInt(b.dataset.day));
+            b.className = `repeat-day-btn flex-1 py-1.5 rounded-lg text-[10px] font-bold border transition ${active ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-200 bg-white text-gray-500'}`;
+        });
+    }
+
+    function clearRepeatEndDate() { $('repeatEndDate').value = ''; }
+
+    function getRepeatDatesInMonth(task, year, month) {
+        const results = [];
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const endDate = task.endDate ? new Date(task.endDate) : null;
+        const startDate = new Date(task.startDate);
+        for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(year, month, d);
+            if (date < startDate) continue;
+            if (endDate && date > endDate) continue;
+            let match = false;
+            if (task.type === 'daily') match = true;
+            else if (task.type === 'weekly') match = task.days.includes(date.getDay());
+            else if (task.type === 'monthly') match = date.getDate() === startDate.getDate();
+            if (match) results.push(getDateKey(date));
+        }
+        return results;
+    }
     
     function openDetailModal(key, date) { const m = $('mobileDetailModal'), l = $('detailList'); $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 일정`; l.innerHTML = ''; m.classList.remove('hidden'); (allTasks[key] || []).forEach((t, i) => { const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const div = document.createElement('div'); div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"; 
     
@@ -3009,7 +3095,20 @@ function renderTimeGrid(dateKey) {
       const txt = $('modalInput').value.trim() || '새 일정';
       const desc = $('modalDesc').value.trim(); // 세부 내용 가져오기
       
-      if (currentMode === 'createSingle') { if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = []; allTasks[editData.dateKey].push({ text: txt, description: desc, categoryId: selectedCategoryId, isChecked: false }); } 
+      if (currentMode === 'createSingle') {
+      if (currentRepeatType) {
+          // 반복 일정으로 저장
+          repeatTasks.push({
+              id: Date.now(), text: txt, description: desc,
+              categoryId: selectedCategoryId, type: currentRepeatType,
+              days: [...currentRepeatDays], startDate: editData.dateKey,
+              endDate: $('repeatEndDate').value || null
+          });
+      } else {
+          if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
+          allTasks[editData.dateKey].push({ text: txt, description: desc, categoryId: selectedCategoryId, isChecked: false });
+      }
+  }
       else if (currentMode === 'editSingle') { allTasks[editData.dateKey][editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked }; } 
       else if (currentMode === 'createMulti') { multiTasks.push({ id: Date.now(), start: pendingStart, end: pendingEnd, text: txt, description: desc, categoryId: selectedCategoryId }); } 
       else if (currentMode === 'editMulti') { const t = multiTasks.find(x => x.id === editData.id); t.text = txt; t.description = desc; t.categoryId = selectedCategoryId; } 
@@ -3299,6 +3398,16 @@ function renderCalendar() {
         }
         
         const todoContainer = document.createElement('div'); todoContainer.className = "mt-1 flex flex-col gap-0.5 overflow-hidden todo-list-container flex-1 px-0.5 md:px-1";
+        
+        // 🔁 반복 일정 합치기
+        const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, new Date(key).getFullYear(), new Date(key).getMonth()).includes(key));
+        repeatForDay.forEach(r => {
+            if (!allTasks[key]) allTasks[key] = [];
+            if (!allTasks[key].find(t => t._repeatId === r.id)) {
+                allTasks[key].unshift({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id });
+            }
+        });
+        
         if (Array.isArray(allTasks[key])) {
           allTasks[key].forEach((t, idx) => {
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
