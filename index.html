@@ -3435,7 +3435,32 @@ function renderCalendar() {
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
               item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; 
-              item.onclick = (e) => { e.stopPropagation(); if (e.target.tagName !== 'INPUT') openModal('editSingle', { dateKey: key, index: idx, ...t }); }; 
+              let itemPressTimer = null;
+              item.addEventListener('pointerdown', (e) => {
+                  if (e.target.tagName === 'INPUT') return;
+                  if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                      itemPressTimer = setTimeout(() => {
+                          itemPressTimer = null;
+                          e.stopPropagation();
+                          selectedTaskDateKey = key; selectedTaskIndex = idx;
+                          const ctx = $('contextMenu');
+                          ctx.classList.remove('hidden');
+                          const menuH = ctx.offsetHeight || 200;
+                          const menuW = ctx.offsetWidth || 160;
+                          ctx.style.left = Math.min(e.clientX, window.innerWidth - menuW - 10) + 'px';
+                          ctx.style.top = Math.min(e.clientY, window.innerHeight - menuH - 10) + 'px';
+                          if (navigator.vibrate) navigator.vibrate(50);
+                      }, 500);
+                  }
+              });
+              item.addEventListener('pointerup', (e) => { if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; } });
+              item.addEventListener('pointermove', (e) => { if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; } });
+              item.onclick = (e) => {
+                  e.stopPropagation();
+                  if (e.target.tagName === 'INPUT') return;
+                  if ((e.pointerType === 'touch' || e.pointerType === 'pen') && !itemPressTimer) return;
+                  openModal('editSingle', { dateKey: key, index: idx, ...t });
+              };
               todoContainer.appendChild(item);
             }
           });
