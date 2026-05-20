@@ -3125,10 +3125,12 @@ function renderTimeGrid(dateKey) {
       if (currentMode.includes('Multi')) multiTasks = multiTasks.filter(x => x.id !== editData.id);
       else if (currentMode === 'editInbox') { inboxTasks.splice(editData.index, 1); setLocal('ianInboxTasks', inboxTasks); renderInbox(); } 
       else if (allTasks[editData.dateKey]?.[editData.index]?._repeatId) {
-                // 반복 일정 이 날만 삭제
-            if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
-            allTasks[editData.dateKey] = allTasks[editData.dateKey].filter(t => t._repeatId !== repeatId);
-            else allTasks[editData.dateKey].splice(editData.index, 1);
+          // 반복 일정 이 날만 삭제
+          const repeatId = allTasks[editData.dateKey][editData.index]._repeatId;
+          if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
+          allTasks[editData.dateKey] = allTasks[editData.dateKey].filter(t => t._repeatId !== repeatId);
+      }
+      else allTasks[editData.dateKey].splice(editData.index, 1);
       if (currentMode !== 'editInbox') saveAndRefresh(); closeModal(); if(currentPlannerDateKey) { activeBrushColor = null; renderPlannerTasks(currentPlannerDateKey); }
     };
 
