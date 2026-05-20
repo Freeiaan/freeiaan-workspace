@@ -3440,7 +3440,7 @@ function renderCalendar() {
               const fontColor = getContrastColor(cat.color);
               
               // 🔥 달력 위 일반 일정 메모 아이콘 표시!
-              const descBar = (t.description && t.description.trim() !== '') ? `<span style="width:8px;height:8px;background-color:#ef4444;border:1.5px solid white;border-radius:50%;flex-shrink:0;display:inline-block;margin:0 1px;"></span>` : `<span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block;margin:0 1px;"></span>`;
+              const descBar = (t.description && t.description.trim() !== '') ? `<span style="width:8px;height:8px;background-color:#ef4444;border:1.5px solid white;border-radius:50%;flex-shrink:0;display:inline-block;margin:0;"></span>` : `<span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block;margin:0;"></span>`;
               
               item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0">${descBar}<span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="background-color: ${bgColor}; color: ${fontColor};">${t.text}</span>`;
               
