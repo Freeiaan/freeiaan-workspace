@@ -3407,16 +3407,15 @@ function renderCalendar() {
         
         const todoContainer = document.createElement('div'); todoContainer.className = "mt-1 flex flex-col gap-0.5 overflow-hidden todo-list-container flex-1 px-0.5 md:px-1";
         
-        // 🔁 반복 일정 합치기
+        // 🔁 반복 일정 합치기 (렌더링용 임시 배열, allTasks 직접 수정 안 함)
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, new Date(key).getFullYear(), new Date(key).getMonth()).includes(key));
-        repeatForDay.forEach(r => {
-            if (!allTasks[key]) allTasks[key] = [];
-            if (!allTasks[key].find(t => t._repeatId === r.id)) {
-                allTasks[key].unshift({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id });
-            }
-        });
+        const repeatItems = repeatForDay
+            .filter(r => !(allTasks[key] || []).some(t => t._repeatId === r.id))
+            .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+        const dayTasks = [...repeatItems, ...(allTasks[key] || [])];
         
-        if (Array.isArray(allTasks[key])) {
+        if (dayTasks.length > 0) {
+          dayTasks.forEach((t, idx) => { {
           allTasks[key].forEach((t, idx) => {
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
