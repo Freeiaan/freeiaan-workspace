@@ -294,6 +294,49 @@
         <button onclick="resetTimer()" class="text-gray-500 hover:text-black flex-shrink-0 text-[10px] font-bold transition">초기화</button>
         <button onclick="hardResetTimer()" class="text-red-400 hover:text-red-600 flex-shrink-0 text-[10px] font-bold transition">완전 초기화</button>
       </div>
+
+      <!-- 🍅 뽀모도로 모드 -->
+      <div class="w-full mb-3 flex-shrink-0">
+        <button onclick="togglePomodoroMode()" id="pomodoroToggleBtn" class="w-full py-2 rounded-xl text-[12px] font-extrabold border border-dashed border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-400 transition-all flex items-center justify-center gap-1.5">
+          🍅 뽀모도로 모드
+        </button>
+      </div>
+      <!-- 뽀모도로 패널 (기본 숨김) -->
+      <div id="pomodoroPanel" class="hidden w-full mb-3 flex-shrink-0 bg-red-50 border border-red-100 rounded-2xl p-4 flex flex-col gap-3">
+        <!-- 세션 상태 표시 -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span id="pomodoroStatusIcon" class="text-lg">🍅</span>
+            <span id="pomodoroStatusText" class="text-[12px] font-extrabold text-red-500">집중 세션</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-bold text-gray-400">세션</span>
+            <span id="pomodoroSessionCount" class="text-[13px] font-black text-red-500">0 / 4</span>
+          </div>
+        </div>
+        <!-- 뽀모도로 아이콘 진행 표시 -->
+        <div id="pomodoroIcons" class="flex gap-1 justify-center flex-wrap"></div>
+        <!-- 설정 -->
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-red-100">
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold text-gray-500">집중 (분)</label>
+            <input id="pomodoroFocusMin" type="number" min="1" max="120" value="25" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold text-gray-500">짧은 휴식 (분)</label>
+            <input id="pomodoroShortBreak" type="number" min="1" max="60" value="5" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold text-gray-500">긴 휴식 (분)</label>
+            <input id="pomodoroLongBreak" type="number" min="1" max="120" value="15" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold text-gray-500">긴 휴식 주기</label>
+            <input id="pomodoroLongBreakEvery" type="number" min="1" max="10" value="4" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
+          </div>
+        </div>
+        <button onclick="resetPomodoro()" class="text-[10px] font-bold text-red-300 hover:text-red-500 transition text-center">🔄 세션 초기화</button>
+      </div>
       
       <div id="timerHistoryContainer" class="w-full flex-col gap-2 mt-4 hidden md:hidden flex-1 overflow-y-auto custom-scrollbar border-t border-gray-100 pt-4">
           <h3 class="font-bold text-gray-800 text-sm mb-2 flex items-center gap-2">📋 오늘의 집중 기록</h3>
@@ -1625,7 +1668,9 @@ function loadFromCloud() {
     let downTime = 0, pressTimer = null, quickMenuTargetKey = null;
 
     let analyticsDate = new Date(), analyticsMode = 'month', analyticsSelectedWeekKey = null;
-    let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0, timerMode = 'idle', sessionElapsed = 0, timerLastTick = 0; 
+    let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0, timerMode = 'idle', sessionElapsed = 0, timerLastTick = 0;
+    // 🍅 뽀모도로 상태
+    let pomodoroActive = false, pomodoroPhase = 'focus', pomodoroSessionCount = 0; 
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
     function initAppRenders() {
@@ -2051,7 +2096,28 @@ function loadFromCloud() {
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
             if (deltaSec > 0) { 
                 if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState(); 
-                if (timerMode === 'timer' && timeLeft <= 0) { pauseTimer(); recordTimer(); } 
+                if (timerMode === 'timer' && timeLeft <= 0) {
+                    timeLeft = 0; updateTUI(); pauseTimer();
+                    if (pomodoroActive) {
+                        // 🍅 뽀모도로 자동 전환
+                        const { longEvery } = getPomodoroSettings();
+                        if (pomodoroPhase === 'focus') {
+                            pomodoroSessionCount++;
+                            updatePomodoroUI();
+                            if (pomodoroSessionCount >= longEvery) {
+                                pomodoroSessionCount = 0;
+                                setTimeout(() => startPomodoroPhase('longBreak'), 800);
+                            } else {
+                                setTimeout(() => startPomodoroPhase('shortBreak'), 800);
+                            }
+                        } else {
+                            // 휴식 끝 → 집중으로 복귀
+                            setTimeout(() => startPomodoroPhase('focus'), 800);
+                        }
+                    } else {
+                        recordTimer();
+                    }
+                }
             } 
         }, 500); saveTimerState(); 
     }
@@ -2172,6 +2238,99 @@ function loadFromCloud() {
     }
 
     function hardResetTimer() { if(confirm("오늘 기록이 완전히 초기화됩니다. 계속하시겠습니까?")) { const todayKey = getDateKey(new Date()); if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } }; dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; savePlannerData(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); if (currentPlannerDateKey === todayKey) updateModalRecordDisplay(todayKey); } }
+
+    // 🍅 뽀모도로 모드 함수들
+    function togglePomodoroMode() {
+        pomodoroActive = !pomodoroActive;
+        const btn = $('pomodoroToggleBtn');
+        const panel = $('pomodoroPanel');
+        if (pomodoroActive) {
+            btn.className = 'w-full py-2 rounded-xl text-[12px] font-extrabold border border-red-400 text-red-500 bg-red-50 hover:bg-red-100 transition-all flex items-center justify-center gap-1.5';
+            btn.innerHTML = '🍅 뽀모도로 ON';
+            panel.classList.remove('hidden');
+            resetPomodoro();
+            if (Notification.permission === 'default') Notification.requestPermission();
+        } else {
+            btn.className = 'w-full py-2 rounded-xl text-[12px] font-extrabold border border-dashed border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-400 transition-all flex items-center justify-center gap-1.5';
+            btn.innerHTML = '🍅 뽀모도로 모드';
+            panel.classList.add('hidden');
+            resetTimer();
+        }
+    }
+
+    function getPomodoroSettings() {
+        const focus = Math.max(1, parseInt($('pomodoroFocusMin').value) || 25);
+        const shortBreak = Math.max(1, parseInt($('pomodoroShortBreak').value) || 5);
+        const longBreak = Math.max(1, parseInt($('pomodoroLongBreak').value) || 15);
+        const longEvery = Math.max(1, parseInt($('pomodoroLongBreakEvery').value) || 4);
+        return { focus, shortBreak, longBreak, longEvery };
+    }
+
+    function resetPomodoro() {
+        pomodoroPhase = 'focus';
+        pomodoroSessionCount = 0;
+        resetTimer();
+        const { focus } = getPomodoroSettings();
+        timeLeft = focus * 60;
+        timerMode = 'timer';
+        updateTUI();
+        updatePomodoroUI();
+    }
+
+    function updatePomodoroUI() {
+        if (!pomodoroActive) return;
+        const { longEvery } = getPomodoroSettings();
+        const statusIcon = $('pomodoroStatusIcon');
+        const statusText = $('pomodoroStatusText');
+        const countEl = $('pomodoroSessionCount');
+        const iconsEl = $('pomodoroIcons');
+        if (!statusIcon) return;
+
+        if (pomodoroPhase === 'focus') {
+            statusIcon.textContent = '🍅';
+            statusText.textContent = '집중 세션';
+            statusText.className = 'text-[12px] font-extrabold text-red-500';
+        } else if (pomodoroPhase === 'shortBreak') {
+            statusIcon.textContent = '☕';
+            statusText.textContent = '짧은 휴식';
+            statusText.className = 'text-[12px] font-extrabold text-green-500';
+        } else {
+            statusIcon.textContent = '🛌';
+            statusText.textContent = '긴 휴식';
+            statusText.className = 'text-[12px] font-extrabold text-blue-500';
+        }
+
+        countEl.textContent = `${pomodoroSessionCount} / ${longEvery}`;
+
+        iconsEl.innerHTML = '';
+        for (let i = 0; i < longEvery; i++) {
+            const span = document.createElement('span');
+            span.className = 'text-lg transition-all';
+            span.textContent = i < pomodoroSessionCount ? '🍅' : '⬜';
+            iconsEl.appendChild(span);
+        }
+    }
+
+    function startPomodoroPhase(phase) {
+        const { focus, shortBreak, longBreak } = getPomodoroSettings();
+        pomodoroPhase = phase;
+        if (phase === 'focus') timeLeft = focus * 60;
+        else if (phase === 'shortBreak') timeLeft = shortBreak * 60;
+        else timeLeft = longBreak * 60;
+        timerMode = 'timer';
+        sessionElapsed = 0;
+        tLaps = 0;
+        isR = false;
+        clearInterval(tInt);
+        updateTUI();
+        updatePomodoroUI();
+        startTimer();
+        if (Notification.permission === 'granted') {
+            const msg = phase === 'focus' ? '🍅 집중 세션 시작! 화이팅!' : (phase === 'shortBreak' ? '☕ 수고했어요! 잠깐 쉬어요.' : '🛌 긴 휴식 시간! 충분히 쉬세요.');
+            new Notification('Task Scheduler', { body: msg });
+        }
+    }
+
     function formatSecs(sec) { const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
     function updateRecordDisplay() { const todayKey = getDateKey(new Date()); const rec = dailyRecords[todayKey]?.recorded || { stopwatch: 0, timer: 0 }; $('recordDisplayGlobal').innerHTML = `<span title="스톱워치 기록">⏱️ ${formatSecs(rec.stopwatch)}</span> <span class="text-gray-300">|</span> <span title="타이머 기록">⏳ ${formatSecs(rec.timer)}</span>`; }
     function updateModalRecordDisplay(dateKey) { const dRec = dailyRecords[dateKey]?.recorded || { stopwatch: 0, timer: 0 }; const total = dRec.stopwatch + dRec.timer; const target = $('modalRecordDisplay'); if (target) { if (total > 0) target.innerHTML = `총 기록 시간: ${formatSecs(total)} <span class="text-gray-400 text-[10px] ml-1 font-normal">(⏱️ ${formatSecs(dRec.stopwatch)} / ⏳ ${formatSecs(dRec.timer)})</span>`; else target.innerHTML = ''; } }
