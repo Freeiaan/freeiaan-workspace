@@ -2404,7 +2404,7 @@ function loadFromCloud() {
       inboxTasks.forEach((t, idx) => {
         const cat = categories.find(c => c.id === t.categoryId) || categories[0];
         const item = document.createElement('div'); item.draggable = true; item.className = 'dashboard-item bg-gray-50 rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0';
-        const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black'; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+        const isCheckedClass = t.isChecked ? 'opacity-60 line-through' : 'text-black'; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color; const textColor = getContrastColor(cat.color);
         
         // 🔥 메모 아이콘 표시
         const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
@@ -2470,7 +2470,10 @@ function loadFromCloud() {
             const textSpan = document.createElement('span'); 
             textSpan.className = `text-[12px] pt-px leading-tight font-bold truncate block w-full ${isDoneClass} hover:underline`;  
             textSpan.innerHTML = `${t.text}${descIcon}`; 
-            textSpan.style.color = colorStyle; 
+            textSpan.style.backgroundColor = hexToRgba(cat.color, t.isChecked ? 0.4 : 1);
+            textSpan.style.color = t.isChecked ? '#888' : textColor;
+            textSpan.style.borderRadius = '6px';
+            textSpan.style.padding = '1px 6px';
             textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); }; 
             textWrapper.appendChild(textSpan); 
             item.appendChild(circle); 
