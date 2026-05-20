@@ -2452,6 +2452,7 @@ function loadFromCloud() {
             item.className = 'flex items-center gap-2.5 py-0.5 px-2 rounded-xl cursor-pointer transition-all border-2 border-transparent hover:bg-white hover:shadow-sm brush-item'; 
             const isDoneClass = t.isChecked ? 'line-through opacity-60' : ''; 
             const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color; 
+            const textColor = getContrastColor(cat.color);
             const circle = document.createElement('div'); 
             circle.className = 'w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border-2'; 
             circle.style.borderColor = colorStyle; 
