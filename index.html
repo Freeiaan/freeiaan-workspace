@@ -1748,12 +1748,15 @@ function loadFromCloud() {
     function toggleDashList(type) {
         const list = $(type + 'TasksList');
         const icon = $(type + 'ToggleIcon');
+        const card = list.closest('.mobile-today-card, .mobile-week-card');
         if (list.style.display === 'none') {
             list.style.display = 'flex';
+            if (card) card.style.minHeight = '';
             icon.style.transform = 'rotate(0deg)';
         } else {
             list.style.display = 'none';
-            icon.style.transform = 'rotate(180deg)'; // 화살표 뒤집기!
+            if (card) card.style.minHeight = '0';
+            icon.style.transform = 'rotate(180deg)';
         }
     }
     // 🔥 [추가] 탭 상태를 기억하는 두뇌 변수!
