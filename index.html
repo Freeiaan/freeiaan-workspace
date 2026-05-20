@@ -107,8 +107,8 @@
       body[data-mobile-tab="memo"] #mainApp { display: none !important; }
       body[data-mobile-tab="home"] #dashboardDrawer > div:first-child { display: none !important; } 
       
-      .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; min-height: 260px !important; overflow: hidden !important; }
-      .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; min-height: 260px !important; overflow: hidden !important; }
+      .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; overflow: hidden !important; }
+      .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; overflow: hidden !important; }
       .mobile-today-card .dashboard-item, .mobile-week-card .dashboard-item { background: transparent !important; border: none !important; box-shadow: none !important; padding-left: 0 !important; padding-top: 1px !important; padding-bottom: 1px !important; }
 
       #todayTasksList, #weekTasksList { max-height: none; overflow-y: auto; height: 100%; flex: 1; padding-top: 1px; padding-bottom: 1px; }
@@ -1749,13 +1749,15 @@ function loadFromCloud() {
         const list = $(type + 'TasksList');
         const icon = $(type + 'ToggleIcon');
         const card = list.closest('.mobile-today-card, .mobile-week-card');
-        if (list.style.display === 'none') {
-            list.style.display = 'flex';
-            if (card) card.style.height = '';
+        if (list.style.maxHeight === '0px' || list.style.maxHeight === '') {
+            list.style.maxHeight = list.scrollHeight + 'px';
+            list.style.opacity = '1';
+            if (card) card.style.paddingBottom = '20px';
             icon.style.transform = 'rotate(0deg)';
         } else {
-            list.style.display = 'none';
-            if (card) card.style.height = 'auto';
+            list.style.maxHeight = '0px';
+            list.style.opacity = '0';
+            if (card) card.style.paddingBottom = '0px';
             icon.style.transform = 'rotate(180deg)';
         }
     }
