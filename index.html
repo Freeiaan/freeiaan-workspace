@@ -297,10 +297,11 @@
 
       <!-- 🍅 뽀모도로 모드 -->
       <div class="w-full mb-3 flex-shrink-0">
-        <button onclick="togglePomodoroMode()" id="pomodoroToggleBtn" class="w-full py-2 rounded-xl text-[12px] font-extrabold border border-dashed border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-400 transition-all flex items-center justify-center gap-1.5">
+        <<button onclick="togglePomodoroPanel()" id="pomodoroToggleBtn" class="w-full py-2 rounded-xl text-[12px] font-extrabold border border-dashed border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-400 transition-all flex items-center justify-center gap-1.5">
           🍅 뽀모도로 모드
         </button>
       </div>
+      
       <!-- 뽀모도로 패널 (기본 숨김) -->
       <div id="pomodoroPanel" class="hidden w-full mb-3 flex-shrink-0 bg-red-50 border border-red-100 rounded-2xl p-4 flex flex-col gap-3">
         <!-- 세션 상태 표시 -->
@@ -335,7 +336,10 @@
             <input id="pomodoroLongBreakEvery" type="number" min="1" max="10" value="4" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
           </div>
         </div>
-        <button onclick="resetPomodoro()" class="text-[10px] font-bold text-red-300 hover:text-red-500 transition text-center">🔄 세션 초기화</button>
+        <div class="flex justify-between items-center pt-1 border-t border-red-100">
+          <button onclick="resetPomodoro()" class="text-[10px] font-bold text-red-300 hover:text-red-500 transition">🔄 세션 초기화</button>
+          <button onclick="deactivatePomodoro()" class="text-[10px] font-bold text-gray-300 hover:text-gray-500 transition">❌ 뽀모도로 끄기</button>
+        </div>
       </div>
       
       <div id="timerHistoryContainer" class="w-full flex-col gap-2 mt-4 hidden md:hidden flex-1 overflow-y-auto custom-scrollbar border-t border-gray-100 pt-4">
@@ -2280,22 +2284,32 @@ function loadFromCloud() {
             }
         }
     
-    function togglePomodoroMode() {
-        pomodoroActive = !pomodoroActive;
+    function togglePomodoroPanel() {
         const btn = $('pomodoroToggleBtn');
         const panel = $('pomodoroPanel');
-        if (pomodoroActive) {
+        if (!pomodoroActive) {
+            // 처음 켤 때만 초기화
+            pomodoroActive = true;
             btn.className = 'w-full py-2 rounded-xl text-[12px] font-extrabold border border-red-400 text-red-500 bg-red-50 hover:bg-red-100 transition-all flex items-center justify-center gap-1.5';
-            btn.innerHTML = '🍅 뽀모도로 ON';
+            btn.innerHTML = '🍅 뽀모도로 ON ▲';
             panel.classList.remove('hidden');
             resetPomodoro();
             if (Notification.permission === 'default') Notification.requestPermission();
         } else {
-            btn.className = 'w-full py-2 rounded-xl text-[12px] font-extrabold border border-dashed border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-400 transition-all flex items-center justify-center gap-1.5';
-            btn.innerHTML = '🍅 뽀모도로 모드';
-            panel.classList.add('hidden');
-            resetTimer();
+            // 이미 ON 상태면 패널만 접기/펼치기 (세션 유지!)
+            const isHidden = panel.classList.toggle('hidden');
+            btn.innerHTML = isHidden ? '🍅 뽀모도로 ON ▼' : '🍅 뽀모도로 ON ▲';
         }
+    }
+
+    function deactivatePomodoro() {
+        if (!confirm('뽀모도로를 끄면 현재 세션이 초기화됩니다. 계속할까요?')) return;
+        pomodoroActive = false;
+        const btn = $('pomodoroToggleBtn');
+        btn.className = 'w-full py-2 rounded-xl text-[12px] font-extrabold border border-dashed border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-400 transition-all flex items-center justify-center gap-1.5';
+        btn.innerHTML = '🍅 뽀모도로 모드';
+        $('pomodoroPanel').classList.add('hidden');
+        resetTimer();
     }
 
     function getPomodoroSettings() {
