@@ -321,11 +321,11 @@
         <div class="grid grid-cols-2 gap-2 pt-1 border-t border-red-100">
           <div class="flex flex-col gap-1">
             <label class="text-[10px] font-bold text-gray-500">집중 (분)</label>
-            <input id="pomodoroFocusMin" type="number" min="1" max="120" value="25" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
+            <input id="pomodoroFocusMin" type="number" min="1" max="120" value="25" oninput="onPomodoroSettingChange()" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-[10px] font-bold text-gray-500">짧은 휴식 (분)</label>
-            <input id="pomodoroShortBreak" type="number" min="1" max="60" value="5" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
+            <input id="pomodoroShortBreak" type="number" min="1" max="60" value="5" oninput="onPomodoroSettingChange()" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-[10px] font-bold text-gray-500">긴 휴식 (분)</label>
@@ -2329,6 +2329,16 @@ function loadFromCloud() {
         timerMode = 'timer';
         updateTUI();
         updatePomodoroUI();
+    }
+
+    function onPomodoroSettingChange() {
+        if (!pomodoroActive) return;
+        const { focus } = getPomodoroSettings();
+        if (pomodoroPhase === 'focus' && !isR) {
+            timeLeft = focus * 60;
+            timerMode = 'timer';
+            updateTUI();
+        }
     }
 
     function updatePomodoroUI() {
