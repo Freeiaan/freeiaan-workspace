@@ -2031,7 +2031,7 @@ function loadFromCloud() {
                 
                 // 기존 데이터 초기화 로직은 그대로 두되, 여기선 새로고침하지 마세요!
                 let oldLabelText = "일정"; 
-                for (let i = 0; i < 144; i++) { if (data.grid[i] === color) data.grid[i] = null; }
+                for (let i = resizeTrackerData.start; i <= resizeTrackerData.end; i++) { if (data.grid[i] === color) data.grid[i] = null; }
                 if (data.labels) {
                     for (let idx in data.labels) {
                         if (data.labels[idx].color === color) { oldLabelText = data.labels[idx].text; delete data.labels[idx]; }
