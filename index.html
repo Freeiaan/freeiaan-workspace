@@ -3415,8 +3415,7 @@ function renderCalendar() {
         const dayTasks = [...repeatItems, ...(allTasks[key] || [])];
         
         if (dayTasks.length > 0) {
-          dayTasks.forEach((t, idx) => { {
-          allTasks[key].forEach((t, idx) => {
+          dayTasks.forEach((t, idx) => {
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
               const item = document.createElement('div'); item.draggable = true; 
