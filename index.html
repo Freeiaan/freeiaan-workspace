@@ -242,6 +242,13 @@
               <button id="prevBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">◀</button>
               <h1 id="monthYear" class="text-base md:text-xl font-bold text-black"></h1>
               <button id="nextBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">▶</button>
+
+              <!-- 🔍 일정 검색 -->
+              <div class="relative ml-3">
+                <input id="scheduleSearchInput" type="text" placeholder="🔍 일정 검색..." oninput="searchSchedule(this.value)"
+                  class="text-[11px] font-bold border border-gray-200 rounded-xl px-3 py-1.5 w-[140px] outline-none focus:ring-1 focus:ring-green-400 bg-white">
+                <div id="scheduleSearchResult" class="hidden absolute top-9 left-0 w-[260px] bg-white border border-gray-200 rounded-2xl shadow-xl z-[9999] max-h-[300px] overflow-y-auto flex flex-col"></div>
+              </div>
     
           </div>
             <div class="flex gap-1.5 md:hidden">
@@ -3489,6 +3496,49 @@ function renderCalendar() {
     }
 
     window.goToToday = function() { displayDate = new Date(); renderCalendar(); };
+    function searchSchedule(query) {
+            const resultBox = $('scheduleSearchResult');
+            if (!query.trim()) { resultBox.classList.add('hidden'); resultBox.innerHTML = ''; return; }
+            const q = query.toLowerCase();
+            const results = [];
+            for (const dateKey in allTasks) {
+                (allTasks[dateKey] || []).forEach((t, idx) => {
+                    const inTitle = t.text?.toLowerCase().includes(q);
+                    const inDesc = t.description?.toLowerCase().includes(q);
+                    if (inTitle || inDesc) results.push({ dateKey, idx, t, matchDesc: !inTitle && inDesc });
+                });
+            }
+            if (results.length === 0) {
+                resultBox.innerHTML = '<div class="text-[11px] text-gray-400 font-bold text-center py-4">검색 결과가 없어요</div>';
+            } else {
+                resultBox.innerHTML = results.map((r, i) => {
+                    const d = new Date(r.dateKey);
+                    const dateStr = `${d.getMonth()+1}월 ${d.getDate()}일`;
+                    const descPreview = r.matchDesc ? `<div class="text-[10px] text-gray-400 truncate mt-0.5">📝 ${r.t.description}</div>` : '';
+                    return `<div class="px-3 py-2.5 hover:bg-green-50 cursor-pointer border-b border-gray-50 last:border-0" onclick="selectSearchResult('${r.dateKey}', ${r.idx})">
+                        <div class="text-[11px] font-bold text-gray-700">${dateStr} · ${r.t.text}</div>
+                        ${descPreview}
+                    </div>`;
+                }).join('');
+            }
+            resultBox.classList.remove('hidden');
+        }
+    
+        function selectSearchResult(dateKey, idx) {
+            $('scheduleSearchResult').classList.add('hidden');
+            $('scheduleSearchInput').value = '';
+            const t = allTasks[dateKey]?.[idx];
+            if (t) openModal('editSingle', { dateKey, index: idx, ...t });
+        }
+    
+        // 검색창 외부 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#scheduleSearchInput') && !e.target.closest('#scheduleSearchResult')) {
+                const r = $('scheduleSearchResult');
+                if (r) r.classList.add('hidden');
+            }
+        });
+    
     window.toggleWeekends = function() { 
         document.body.classList.toggle('hide-weekends'); 
         const btn = document.getElementById('weekendToggleBtn');
