@@ -1351,14 +1351,19 @@ function handleContextAdd() {
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
         // iOS 홈화면 추가 시 튕김 방지를 위해 무조건 팝업 방식으로 통일
-        auth.signInWithPopup(provider).catch(error => { 
-            console.error("로그인 에러:", error); 
-            alert("로그인 중 오류가 발생했습니다."); 
-        });
-    }
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isPWA) {
+            auth.signInWithRedirect(provider);
+        } else {
+            auth.signInWithPopup(provider).catch(error => {
+                console.error("로그인 에러:", error);
+                alert("로그인 중 오류가 발생했습니다.");
+            });
+        }
     
     function logout() { if(confirm("로그아웃 하시겠습니까?")) { auth.signOut(); resetTimer(); } }
-
+      
+    auth.getRedirectResult().catch(error => { console.error("redirect 에러:", error); });
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
