@@ -2469,7 +2469,7 @@ function loadFromCloud() {
             textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; 
             textWrapper.title = "클릭하여 일정 수정"; 
             const textSpan = document.createElement('span'); 
-            textSpan.className = `text-[12px] pt-px leading-tight font-bold truncate block w-full ${isDoneClass} hover:underline`;  
+            textSpan.className = `text-[12px] pt-px leading-tight font-bold truncate inline ${isDoneClass} hover:underline`;
             textSpan.innerHTML = `${t.text}${descIcon}`; 
             textSpan.style.backgroundColor = hexToRgba(cat.color, t.isChecked ? 0.4 : 1);
             textSpan.style.color = t.isChecked ? '#888' : textColor;
