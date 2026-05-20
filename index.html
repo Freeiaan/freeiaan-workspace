@@ -3440,9 +3440,9 @@ function renderCalendar() {
               const fontColor = getContrastColor(cat.color);
               
               // 🔥 달력 위 일반 일정 메모 아이콘 표시!
-              const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[9px] opacity-70" title="메모 있음">📝</span>' : '';
+              const descBar = (t.description && t.description.trim() !== '') ? `<span style="display:inline-block;width:3px;height:12px;background-color:${fontColor};opacity:0.7;border-radius:2px;margin-right:3px;flex-shrink:0;vertical-align:middle;"></span>` : '';
               
-              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1" style="background-color: ${bgColor}; color: ${fontColor};">${t.text}${descIcon}</span>`;
+              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="background-color: ${bgColor}; color: ${fontColor};">${descBar}${t.text}</span>`;
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
               item.querySelector('input').onclick = (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); }; 
