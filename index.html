@@ -1198,8 +1198,12 @@ document.addEventListener('contextmenu', function(e) {
         btnPaste.style.display = clipboardTask ? 'flex' : 'none';
 
         menu.classList.remove('hidden');
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
+        const menuHeight = menu.offsetHeight || 200;
+        const menuWidth = menu.offsetWidth || 150;
+        const maxTop = window.innerHeight - menuHeight - 10;
+        const maxLeft = window.innerWidth - menuWidth - 10;
+        menu.style.left = Math.min(e.pageX, maxLeft) + 'px';
+        menu.style.top = Math.min(e.pageY, maxTop) + 'px';
         
     } else if (cellElement) {
         e.preventDefault();
@@ -2927,7 +2931,7 @@ function renderTimeGrid(dateKey) {
     // div 전체 클릭 (일정 수정 모달용)
     div.onclick = (e) => { 
         if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('drag-handle-dash')) { 
-            openModal('editSingle', { dateKey: key, index: idx, ...t }); 
+            openModal('editSingle', { dateKey: key, index: idx, ...t, _repeatId: t._repeatId });
         } 
     }; 
     
@@ -3122,7 +3126,7 @@ function renderTimeGrid(dateKey) {
       else if (currentMode === 'editInbox') { inboxTasks.splice(editData.index, 1); setLocal('ianInboxTasks', inboxTasks); renderInbox(); } 
       else if (allTasks[editData.dateKey]?.[editData.index]?._repeatId) {
                 // 반복 일정 삭제 옵션
-                const repeatId = allTasks[editData.dateKey][editData.index]._repeatId;
+                const repeatId = allTasks[editData.dateKey]?.[editData.index]?._repeatId || editData._repeatId;
                 const choice = confirm('반복 일정을 어떻게 삭제할까요?\n\n확인 → 전체 삭제\n취소 → 이 날만 삭제');
                 if (choice) {
                     repeatTasks = repeatTasks.filter(r => r.id !== repeatId);
