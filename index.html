@@ -3443,6 +3443,14 @@ function renderCalendar() {
               item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0" style="${t.description && t.description.trim() !== '' ? 'box-shadow:0 0 0 2px #000000;' : ''}"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="position:relative;background-color: ${bgColor}; color: ${fontColor};">${t.text}</span>`;
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
+              item.querySelector('input').addEventListener('pointerdown', (e) => {
+                  e.stopPropagation();
+                  if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                      t.isChecked = !t.isChecked;
+                      e.target.checked = t.isChecked;
+                      saveAndRefresh();
+                  }
+              });
               item.querySelector('input').addEventListener('click', (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); });
               let itemPressTimer = null;
               item.addEventListener('pointerdown', (e) => {
@@ -3467,7 +3475,7 @@ function renderCalendar() {
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
-                  if ((e.pointerType === 'touch' || e.pointerType === 'pen') && !itemPressTimer) return;
+                  if (e.pointerType === 'touch' || e.pointerType === 'pen') return;
                   openModal('editSingle', { dateKey: key, index: idx, ...t });
               };
               todoContainer.appendChild(item);
