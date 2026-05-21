@@ -623,16 +623,15 @@
 
   <div id="weeklyPlannerModal" class="hidden fixed inset-0 z-[400] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-2 md:p-6" onclick="if(event.target === this) closeWeeklyPlanner()">
     <div class="bg-[#faf8f5] w-full max-w-6xl h-[90vh] md:h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
-      <header class="p-6 md:p-8 flex justify-between items-end border-b border-[#e6e2d8] flex-shrink-0">
-         <div>
+      <header class="px-6 pt-5 pb-4 md:px-8 md:pt-6 md:pb-4 flex flex-col border-b border-[#e6e2d8] flex-shrink-0">
+         <div class="flex justify-between items-start mb-1">
            <h2 class="text-3xl font-serif italic font-extrabold text-black tracking-tight">Weekly Record</h2>
-           <p id="weeklySubtitle" class="text-xs font-bold text-gray-500 mt-2 uppercase tracking-widest"></p>
+           <button onclick="closeWeeklyPlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
          </div>
-         <!-- ◀ ▶ 주차 이동 + 닫기 버튼 -->
          <div class="flex items-center gap-2">
-           <button onclick="moveWeeklyPlanner(-1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-bold transition active:scale-95 flex items-center justify-center">◀</button>
-           <button onclick="moveWeeklyPlanner(1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-bold transition active:scale-95 flex items-center justify-center">▶</button>
-           <button onclick="closeWeeklyPlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light ml-2">&times;</button>
+           <p id="weeklySubtitle" class="text-xs font-bold text-gray-500 uppercase tracking-widest flex-1"></p>
+           <button onclick="moveWeeklyPlanner(-1)" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition active:scale-95 flex items-center justify-center">◀</button>
+           <button onclick="moveWeeklyPlanner(1)" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition active:scale-95 flex items-center justify-center">▶</button>
          </div>
       </header>
 
@@ -3194,7 +3193,7 @@ function renderTimeGrid(dateKey) {
     function openWeeklyPlanner(startDate, endDate) {
       window.currentWeekKey = getDateKey(startDate);
       const _dayNames = ['일','월','화','수','목','금','토'];
-      $('weeklySubtitle').textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')}(${_dayNames[startDate.getDay()]}) - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}(${_dayNames[endDate.getDay()]})`;
+      $('weeklySubtitle').textContent = `${String(startDate.getFullYear()).slice(2)}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')}(${_dayNames[startDate.getDay()]}) - ${String(endDate.getFullYear()).slice(2)}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}(${_dayNames[endDate.getDay()]})`;
       const wMemoArea = $('weeklySpecificMemo'); if(wMemoArea) { wMemoArea.value = weeklyMemos[window.currentWeekKey] || ''; wMemoArea.oninput = (e) => { if(window.currentWeekKey) { weeklyMemos[window.currentWeekKey] = e.target.value; saveWeeklySpecifics(); } }; }
       renderHabits(); const slotHeight = 20; const timeLabels = $('weeklyTimeLabels'); timeLabels.innerHTML = '';
       for(let h = 5; h < 29; h++) { const div = document.createElement('div'); div.className = `flex-shrink-0 w-full border-b border-[#e6e2d8] flex justify-center items-center text-[10px] text-gray-500 font-bold box-border leading-none`; div.style.height = `${slotHeight}px`; div.textContent = `${h % 24}:00`; timeLabels.appendChild(div); }
@@ -4527,7 +4526,7 @@ function renderMemoFolders() {
         
         const subtitle = document.getElementById('weeklySubtitle');
         const _dn = ['일','월','화','수','목','금','토'];
-        if(subtitle) subtitle.textContent = `${startDate.getFullYear()}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')}(${_dn[startDate.getDay()]}) - ${endDate.getFullYear()}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}(${_dn[endDate.getDay()]})`;
+        if(subtitle) subtitle.textContent = `${String(startDate.getFullYear()).slice(2)}.${String(startDate.getMonth()+1).padStart(2,'0')}.${String(startDate.getDate()).padStart(2,'0')}(${_dn[startDate.getDay()]}) - ${String(endDate.getFullYear()).slice(2)}.${String(endDate.getMonth()+1).padStart(2,'0')}.${String(endDate.getDate()).padStart(2,'0')}(${_dn[endDate.getDay()]})`;
         
         const modal = document.getElementById('weeklyPlannerModal');
         if(modal) modal.classList.remove('hidden');
