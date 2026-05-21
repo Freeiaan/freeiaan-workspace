@@ -3819,7 +3819,7 @@ function renderCalendar() {
         if (dy > 80) { 
             pSpinner.style.top = '20px'; 
             if(currentUser) {
-                db.collection('users').doc(currentUser.uid).get().then(doc => {
+                db.collection('users').doc(currentUser.email).get().then(doc => {
                     if (doc.exists) {
                         const data = doc.data();
                         if(data.categories) categories = data.categories; 
