@@ -1289,6 +1289,8 @@ document.addEventListener('contextmenu', function(e) {
 
         btnAdd.style.display = 'flex';
         divMove.style.display = 'none';
+        const btnEdit = document.getElementById('btnCtxEdit');
+        if(btnEdit) btnEdit.style.display = 'none';
         btnCopy.style.display = 'none';
         btnDup.style.display = 'none';
         btnDel.style.display = 'none';
@@ -1304,8 +1306,8 @@ document.addEventListener('contextmenu', function(e) {
         }
         
         menu.classList.remove('hidden');
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
     } else {
         menu.classList.add('hidden');
     }
