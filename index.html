@@ -3784,18 +3784,6 @@ function renderCalendar() {
         switchMobileTab(lastTab);
     }
 
-    let pStartY = 0;
-    let pIsPulling = false;
-
-    document.addEventListener('touchstart', (e) => {
-        if (e.target.closest('#timerClickArea') || e.target.closest('.time-cell') || e.target.closest('.multi-task')) return;
-        const scrollContainer = e.target.closest('.overflow-y-auto') || document.documentElement;
-        if (scrollContainer.scrollTop <= 0) {
-            pStartY = e.touches[0].clientY;
-            pIsPulling = true;
-        }
-    }, { passive: true });
-
     document.addEventListener('touchmove', (e) => {
         if (!pIsPulling) return;
         const y = e.touches[0].clientY;
