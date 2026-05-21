@@ -3814,10 +3814,15 @@ function renderCalendar() {
             switchMobileTab(lastTab);
         }
     });
-    // 🔥 [수정됨] 맨 처음 로드될 때 무조건 home이 아니라 마지막 탭으로 이동!
     if (window.innerWidth < 768) {
         const lastTab = localStorage.getItem('ianLastTab') || 'home';
         switchMobileTab(lastTab);
+        // 모바일 기본값: 주말 숨김
+        if (!document.body.classList.contains('hide-weekends')) {
+            document.body.classList.add('hide-weekends');
+            const btn = document.getElementById('weekendToggleBtn');
+            if (btn) btn.textContent = '주말 보기';
+        }
     }
 
     let pStartY = 0;
