@@ -239,29 +239,36 @@
         <div id="filterBar" class="flex gap-1.5 no-scrollbar overflow-x-auto"></div>
       </div>
 
-      <header class="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-4 px-1 gap-3 w-full">
-        <div class="flex items-center justify-between w-full md:w-auto">
-            <div class="flex items-center gap-2 md:gap-3">
-              <button id="prevBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">◀</button>
-              <h1 id="monthYear" class="text-base md:text-xl font-bold text-black"></h1>
-              <button id="nextBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs">▶</button>
+      <!-- 기존 242~264줄을 아래로 교체 -->
+<header class="flex items-center gap-2 mb-4 px-1 w-full">
+  <!-- 월 네비게이션 -->
+  <button id="prevBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs flex-shrink-0">◀</button>
+  <h1 id="monthYear" class="text-sm font-bold text-black whitespace-nowrap flex-shrink-0"></h1>
+  <button id="nextBtn" class="w-7 h-7 rounded-full bg-gray-100 text-black text-xs flex-shrink-0">▶</button>
 
-              <!-- 🔍 일정 검색 -->
-              <div class="relative ml-3">
-                <input id="scheduleSearchInput" type="text" placeholder="🔍 일정 검색..." oninput="searchSchedule(this.value)"
-                  class="text-[11px] font-bold border border-gray-200 rounded-xl px-3 py-1.5 w-[140px] outline-none focus:ring-1 focus:ring-green-400 bg-white">
-                <div id="scheduleSearchResult" class="hidden absolute top-9 left-0 w-[260px] bg-white border border-gray-200 rounded-2xl shadow-xl z-[9999] max-h-[300px] overflow-y-auto flex flex-col"></div>
-              </div>
-    
-          </div>
-            <div class="flex gap-1.5 md:hidden">
-                <button onclick="openModal('createSingle', { dateKey: getDateKey(new Date()) })" class="px-2.5 py-1 bg-[#22741C] border border-[#22741C] rounded-[8px] text-[10px] font-extrabold text-white shadow-sm active:scale-95 transition-all">+ 추가</button>
-                <button onclick="goToToday()" class="px-2.5 py-1 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px] text-[10px] font-extrabold text-[#22741C] shadow-sm active:scale-95 transition-all">오늘</button>
-                <button onclick="toggleWeekends()" id="weekendToggleBtn" class="px-2.5 py-1 bg-white border border-gray-200 rounded-[8px] text-[10px] font-bold text-gray-600 shadow-sm active:scale-95 transition-all">주말 숨김</button>
-            </div>
-        </div>
-        <div id="mobileWeekButtons" class="md:hidden flex gap-2 overflow-x-auto w-full custom-scrollbar pb-1"></div>
-      </header>
+  <!-- 검색창 -->
+  <div class="relative flex-1 min-w-0">
+    <input id="scheduleSearchInput" type="text" placeholder="🔍 일정 검색..." oninput="searchSchedule(this.value)"
+      class="text-[11px] font-bold border border-gray-200 rounded-xl px-3 py-1.5 w-full outline-none focus:ring-1 focus:ring-green-400 bg-white">
+    <div id="scheduleSearchResult" class="hidden absolute top-9 left-0 w-[260px] bg-white border border-gray-200 rounded-2xl shadow-xl z-[9999] max-h-[300px] overflow-y-auto flex flex-col"></div>
+  </div>
+
+  <!-- 오늘 / 주말보기 버튼 (가로 배치, md 이상에서만 숨김 없이 표시) -->
+  <div class="flex gap-1.5 flex-shrink-0 md:hidden">
+    <button onclick="goToToday()" class="px-2.5 py-1 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px] text-[10px] font-extrabold text-[#22741C] shadow-sm active:scale-95 transition-all whitespace-nowrap">오늘</button>
+    <button onclick="toggleWeekends()" id="weekendToggleBtn" class="px-2.5 py-1 bg-white border border-gray-200 rounded-[8px] text-[10px] font-bold text-gray-600 shadow-sm active:scale-95 transition-all whitespace-nowrap">주말</button>
+  </div>
+
+  <!-- PC/태블릿용 버튼들 (기존 유지) -->
+  <div class="hidden md:flex gap-2 flex-shrink-0">
+    <button onclick="openModal('createSingle', { dateKey: getDateKey(new Date()) })" class="px-3 py-1.5 bg-[#22741C] text-white rounded-lg text-[11px] font-bold">+ 추가</button>
+    <button onclick="goToToday()" class="px-3 py-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg text-[11px] font-extrabold text-[#22741C]">오늘</button>
+    <button onclick="toggleWeekends()" id="weekendToggleBtn" class="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[11px] font-bold text-gray-600">주말 숨김</button>
+  </div>
+</header>
+
+<!-- 주차 버튼 (모바일) -->
+<div id="mobileWeekButtons" class="md:hidden flex gap-2 overflow-x-auto w-full custom-scrollbar pb-1 mb-4"></div>
 
       <div id="calendarArea" class="rounded-xl border border-gray-200 overflow-hidden bg-gray-200 gap-px relative" style="display: grid; grid-template-columns: 24px repeat(7, minmax(0, 1fr));">
         <div class="day-header bg-gray-100 border-b border-gray-200 empty-corner"></div>
