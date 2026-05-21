@@ -3592,7 +3592,7 @@ function renderCalendar() {
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
-                  if (e.pointerType === 'touch' || e.pointerType === 'pen') return; // 모바일 짧은 터치 무시
+                  if (window.innerWidth < 768) return; // 모바일에서는 완전 차단
                   openModal('editSingle', { dateKey: key, index: idx, ...t });
               };
               todoContainer.appendChild(item);
