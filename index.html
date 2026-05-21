@@ -3197,7 +3197,11 @@ function renderTimeGrid(dateKey) {
         const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
         $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 ${dayNames[date.getDay()]}`; 
         l.innerHTML = ''; 
-        m.classList.remove('hidden'); 
+        m.classList.remove('hidden');
+
+        // 바깥 블러 배경 터치 → 닫기
+        m.onclick = (e) => { if (e.target === m) closeDetailModal(); };
+
         (allTasks[key] || []).forEach((t, i) => { 
             const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
             const div = document.createElement('div'); 
@@ -3217,7 +3221,49 @@ function renderTimeGrid(dateKey) {
                 if (t.isChecked) { span.classList.add('line-through', 'opacity-40'); } 
                 else { span.classList.remove('line-through', 'opacity-40'); }
                 saveAndRefresh(); 
-            }; 
+            };
+
+            // 꾹 누르기 → 컨텍스트 팝업
+            let divPressTimer = null;
+            div.addEventListener('pointerdown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                    divPressTimer = setTimeout(() => {
+                        divPressTimer = null;
+                        selectedTaskDateKey = key; selectedTaskIndex = i;
+                        const btnEdit = document.getElementById('btnCtxEdit');
+                        const btnAdd = document.getElementById('btnCtxAdd');
+                        const divMove = document.getElementById('ctxMoveContainer');
+                        const btnCopy = document.getElementById('btnCtxCopy');
+                        const btnDup = document.getElementById('btnCtxDuplicate');
+                        const btnDel = document.getElementById('btnCtxDelete');
+                        const btnPaste = document.getElementById('btnCtxPaste');
+                        const divTop = document.getElementById('ctxDividerTop');
+                        const divider = document.getElementById('ctxDivider');
+                        if(btnEdit) btnEdit.style.display = 'flex';
+                        if(btnAdd) btnAdd.style.display = 'none';
+                        if(divMove) divMove.style.display = 'flex';
+                        if(btnCopy) btnCopy.style.display = 'flex';
+                        if(btnDup) btnDup.style.display = 'flex';
+                        if(btnDel) btnDel.style.display = 'flex';
+                        if(btnPaste) btnPaste.style.display = 'none';
+                        if(divTop) divTop.style.display = 'none';
+                        if(divider) divider.style.display = 'block';
+                        if(btnDup) btnDup.onclick = handleContextDuplicate;
+                        if(btnDel) btnDel.onclick = handleContextDelete;
+                        const ctx = $('contextMenu');
+                        ctx.classList.remove('hidden');
+                        const menuH = ctx.offsetHeight || 200;
+                        const menuW = ctx.offsetWidth || 160;
+                        ctx.style.left = Math.min(e.clientX, window.innerWidth - menuW - 10) + 'px';
+                        ctx.style.top = Math.min(e.clientY, window.innerHeight - menuH - 10) + 'px';
+                        if (navigator.vibrate) navigator.vibrate(50);
+                    }, 500);
+                }
+            });
+            div.addEventListener('pointerup', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
+            div.addEventListener('pointermove', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
+
             div.onclick = (e) => { 
                 if (e.target.tagName !== 'INPUT') { 
                     closeDetailModal(); 
@@ -3553,7 +3599,7 @@ function renderCalendar() {
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
               const item = document.createElement('div'); item.draggable = true; 
-              item.className = 'todo-item text-[10px] md:text-[11px] truncate px-0.5 md:px-1 rounded flex items-start md:items-center w-full gap-0 md:gap-1.5';
+              item.className = 'todo-item text-[9px] md:text-[11px] truncate px-0.5 md:px-1 rounded flex items-start md:items-center w-full gap-0 md:gap-1.5';
               item.setAttribute('data-datekey', key);
               item.setAttribute('data-index', idx);
               const isCheckedClass = t.isChecked ? 'opacity-50 line-through' : '';
@@ -3564,12 +3610,12 @@ function renderCalendar() {
               item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0" style="${t.description && t.description.trim() !== '' ? 'box-shadow:0 0 0 2px #000000;' : ''}"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="position:relative;background-color: ${bgColor}; color: ${fontColor};">${t.text}</span>`;
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
+              // ✅ 체크박스: 모바일 터치 즉시 반영
               item.querySelector('input').addEventListener('pointerdown', (e) => {
                   e.stopPropagation();
                   if (e.pointerType === 'touch' || e.pointerType === 'pen') {
                       t.isChecked = !t.isChecked;
                       e.target.checked = t.isChecked;
-                      // 즉시 시각 반영
                       const span = item.querySelector('span');
                       if (t.isChecked) { span.classList.add('opacity-50', 'line-through'); } 
                       else { span.classList.remove('opacity-50', 'line-through'); }
@@ -3577,47 +3623,14 @@ function renderCalendar() {
                   }
               });
               item.querySelector('input').addEventListener('click', (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); });
+              
               let itemPressTimer = null;
-              let itemLongPressed = false;
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
-                  e.stopPropagation(); // 셀 이벤트 전파 차단
+                  e.stopPropagation();
                   if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                      itemLongPressed = false;
-                      itemPressTimer = setTimeout(() => {
-                          itemPressTimer = null;
-                          itemLongPressed = true;
-                          selectedTaskDateKey = key; selectedTaskIndex = idx;
-                          // 컨텍스트 메뉴 버튼 표시 설정
-                          const btnEdit = document.getElementById('btnCtxEdit');
-                          const btnAdd = document.getElementById('btnCtxAdd');
-                          const divMove = document.getElementById('ctxMoveContainer');
-                          const btnCopy = document.getElementById('btnCtxCopy');
-                          const btnDup = document.getElementById('btnCtxDuplicate');
-                          const btnDel = document.getElementById('btnCtxDelete');
-                          const btnPaste = document.getElementById('btnCtxPaste');
-                          const divTop = document.getElementById('ctxDividerTop');
-                          const divider = document.getElementById('ctxDivider');
-                          if(btnEdit) btnEdit.style.display = 'flex';
-                          if(btnAdd) btnAdd.style.display = 'none';
-                          if(divMove) divMove.style.display = 'flex';
-                          if(btnCopy) btnCopy.style.display = 'flex';
-                          if(btnDup) btnDup.style.display = 'flex';
-                          if(btnDel) btnDel.style.display = 'flex';
-                          if(btnPaste) btnPaste.style.display = 'none';
-                          if(divTop) divTop.style.display = 'none';
-                          if(divider) divider.style.display = 'block';
-                          // 복제/삭제 onclick 원래대로
-                          if(btnDup) btnDup.onclick = handleContextDuplicate;
-                          if(btnDel) btnDel.onclick = handleContextDelete;
-                          const ctx = $('contextMenu');
-                          ctx.classList.remove('hidden');
-                          const menuH = ctx.offsetHeight || 200;
-                          const menuW = ctx.offsetWidth || 160;
-                          ctx.style.left = Math.min(e.clientX, window.innerWidth - menuW - 10) + 'px';
-                          ctx.style.top = Math.min(e.clientY, window.innerHeight - menuH - 10) + 'px';
-                          if (navigator.vibrate) navigator.vibrate(50);
-                      }, 500);
+                      // 모바일: 꾹 눌러도 아무것도 안 나옴 (플로팅카드에서만 컨텍스트)
+                      itemPressTimer = setTimeout(() => { itemPressTimer = null; }, 500);
                   }
               });
               item.addEventListener('pointerup', (e) => { if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; } });
@@ -3625,7 +3638,11 @@ function renderCalendar() {
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
-                  if (window.innerWidth < 768) return; // 모바일에서는 완전 차단
+                  if (window.innerWidth < 768) {
+                      // 모바일: 일정 터치 → 플로팅카드 열기
+                      openDetailModal(key, d);
+                      return;
+                  }
                   openModal('editSingle', { dateKey: key, index: idx, ...t });
               };
               todoContainer.appendChild(item);
