@@ -731,11 +731,21 @@
     </div>
   </div>
 
-  <div id="mobileDetailModal" class="hidden fixed inset-0 z-[200] flex items-end justify-center bg-black bg-opacity-40 backdrop-blur-sm md:hidden">
-    <div class="bg-white w-full rounded-t-3xl p-6 shadow-2xl overflow-y-auto max-h-[80vh] pb-24">
-      <div class="flex justify-between items-center mb-6"><h3 id="detailTitle" class="text-xl font-bold">상세 일정</h3><button onclick="closeDetailModal()" class="text-2xl">×</button></div>
-      <div id="detailList" class="flex flex-col gap-3"></div>
-      <button id="detailAddBtn" class="w-full mt-6 py-4 bg-gray-100 rounded-2xl font-bold">+ 추가</button>
+  <div id="mobileDetailModal" class="hidden fixed inset-0 z-[5000] flex items-center justify-center bg-black/40 backdrop-blur-sm md:hidden px-5">
+    <div class="bg-white w-full max-w-sm rounded-[28px] shadow-2xl overflow-hidden flex flex-col relative" style="max-height: 75vh;">
+      
+      <div class="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-white z-10 flex-shrink-0">
+        <div class="flex flex-col">
+          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">상세 일정</span>
+          <h3 id="detailTitle" class="text-xl font-black text-gray-800 tracking-tight"></h3>
+        </div>
+        <button onclick="closeDetailModal()" class="text-3xl text-gray-300 hover:text-gray-600 transition-colors leading-none font-light pb-1">&times;</button>
+      </div>
+      <div id="detailList" class="flex-1 overflow-y-auto custom-scrollbar px-4 pt-4 pb-24 flex flex-col gap-1 relative">
+      </div>
+      <button id="detailAddBtn" class="absolute bottom-6 right-6 w-12 h-12 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full flex items-center justify-center shadow-md transition-all text-2xl font-light active:scale-95 pb-1">
+        +
+      </button>
     </div>
   </div>
 
@@ -3184,24 +3194,28 @@ function renderTimeGrid(dateKey) {
     
     function openDetailModal(key, date) { 
         const m = $('mobileDetailModal'), l = $('detailList'); 
-        const dayNames = ['일','월','화','수','목','금','토'];
-        $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 (${dayNames[date.getDay()]}) 일정`; 
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 ${dayNames[date.getDay()]}`; 
         l.innerHTML = ''; 
         m.classList.remove('hidden'); 
         (allTasks[key] || []).forEach((t, i) => { 
             const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
             const div = document.createElement('div'); 
-            div.className = "flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"; 
-            const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70">📝</span>' : '';
-            div.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-5 h-5"> <span class="flex-1 font-bold ${t.isChecked ? 'line-through opacity-60' : ''}">${t.text}${descIcon}</span> <span class="text-[10px] px-2 py-1 rounded-lg" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>`; 
+            div.className = "flex items-center gap-3 py-2.5 px-2 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group"; 
+            const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
+            div.innerHTML = `
+                <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 flex-shrink-0"> 
+                <span class="flex-1 text-[13px] font-bold text-gray-700 ${t.isChecked ? 'line-through opacity-40' : ''} transition-all">${t.text}${descIcon}</span> 
+                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold shrink-0" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>
+            `; 
             const cb = div.querySelector('input');
             cb.addEventListener('pointerdown', (e) => e.stopPropagation());
             cb.onclick = (e) => { 
-                e.stopPropagation();
+                e.stopPropagation(); 
                 t.isChecked = e.target.checked; 
                 const span = div.querySelector('span.flex-1');
-                if (t.isChecked) { span.classList.add('line-through', 'opacity-60'); } 
-                else { span.classList.remove('line-through', 'opacity-60'); }
+                if (t.isChecked) { span.classList.add('line-through', 'opacity-40'); } 
+                else { span.classList.remove('line-through', 'opacity-40'); }
                 saveAndRefresh(); 
             }; 
             div.onclick = (e) => { 
@@ -3212,7 +3226,10 @@ function renderTimeGrid(dateKey) {
             }; 
             l.appendChild(div); 
         }); 
-        $('detailAddBtn').onclick = () => { closeDetailModal(); openModal('createSingle', { dateKey: key }); }; 
+        $('detailAddBtn').onclick = () => { 
+            closeDetailModal(); 
+            openModal('createSingle', { dateKey: key }); 
+        }; 
     }
     function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); }
 
