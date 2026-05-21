@@ -3470,10 +3470,10 @@ function renderCalendar() {
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
         cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         
-        cell.onclick = (e) => { 
+        cell.onclick = (e) => {
+            if (window.innerWidth < 768) return; // 모바일에서는 완전 차단
             if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                // 모바일에서는 한 번 터치로 일정 등록 안 함 (꾹 눌러서 팝업으로만 등록)
-                if (window.innerWidth >= 768 && (Date.now() - downTime < 300)) { 
+                if (Date.now() - downTime < 300) { 
                     openModal('createSingle', { dateKey: key }); 
                 }
             }
