@@ -1407,6 +1407,9 @@ function handleContextDelete() {
         const t = allTasks[selectedTaskDateKey]?.[selectedTaskIndex];
         if (t) openModal('editSingle', { dateKey: selectedTaskDateKey, index: parseInt(selectedTaskIndex), ...t });
     }
+
+// ✨ 일정 추가 기능 (달력 빈 공간 우클릭)
+function handleContextAdd() {
     if (!targetPasteDateKey) return;
     
     // 이안님의 기존 일정 추가 창(모달)을 띄우는 마법 주문!
