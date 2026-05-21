@@ -184,6 +184,10 @@
           </button>
           <div id="ctxDividerTop" class="h-px bg-gray-200 my-1 mx-2 hidden"></div>
 
+          <button id="btnCtxEdit" onclick="handleContextEdit()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
+              <span>✏️</span>
+              <span class="font-bold text-gray-700">일정 수정</span>
+          </button>
           <button id="btnCtxCopy" onclick="handleContextCopy()" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 transition-colors">
               <span>📄</span>
               <span class="font-bold text-gray-700">복사</span>
@@ -229,7 +233,7 @@
         </div>
       </div>
       
-      <div class="hidden md:flex items-center gap-2 mb-6 pb-1">
+      <div class="flex items-center gap-2 mb-6 pb-1">
         <span class="text-[10px] font-bold text-black flex-shrink-0 mr-1 uppercase">Filter:</span>
         <div id="filterBar" class="flex gap-1.5 no-scrollbar overflow-x-auto"></div>
       </div>
@@ -1397,8 +1401,12 @@ function handleContextDelete() {
     }
 }
 
-    // ✨ 일정 추가 기능 (달력 빈 공간 우클릭)
-function handleContextAdd() {
+    // ✏️ 일정 수정 (컨텍스트 메뉴 → 모바일용)
+    function handleContextEdit() {
+        if (!selectedTaskDateKey || selectedTaskIndex === null) return;
+        const t = allTasks[selectedTaskDateKey]?.[selectedTaskIndex];
+        if (t) openModal('editSingle', { dateKey: selectedTaskDateKey, index: parseInt(selectedTaskIndex), ...t });
+    }
     if (!targetPasteDateKey) return;
     
     // 이안님의 기존 일정 추가 창(모달)을 띄우는 마법 주문!
@@ -3459,10 +3467,9 @@ function renderCalendar() {
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
         cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         
-        // 🔥 태블릿(터치 기기)에서는 가볍게 톡! 쳐서 일정 추가되는 기능 끄기
         cell.onclick = (e) => { 
             if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                // 모바일에서는 톡! 터치로 일정 등록 안 함 (꾹 눌러서 팝업으로만 등록)
+                // 모바일에서는 한 번 터치로 일정 등록 안 함 (꾹 눌러서 팝업으로만 등록)
                 if (window.innerWidth >= 768 && (Date.now() - downTime < 300)) { 
                     openModal('createSingle', { dateKey: key }); 
                 }
@@ -3533,14 +3540,38 @@ function renderCalendar() {
               });
               item.querySelector('input').addEventListener('click', (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); });
               let itemPressTimer = null;
+              let itemLongPressed = false;
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
-                  e.stopPropagation();
+                  e.stopPropagation(); // 셀 이벤트 전파 차단
                   if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                      itemLongPressed = false;
                       itemPressTimer = setTimeout(() => {
                           itemPressTimer = null;
-                          e.stopPropagation();
+                          itemLongPressed = true;
                           selectedTaskDateKey = key; selectedTaskIndex = idx;
+                          // 컨텍스트 메뉴 버튼 표시 설정
+                          const btnEdit = document.getElementById('btnCtxEdit');
+                          const btnAdd = document.getElementById('btnCtxAdd');
+                          const divMove = document.getElementById('ctxMoveContainer');
+                          const btnCopy = document.getElementById('btnCtxCopy');
+                          const btnDup = document.getElementById('btnCtxDuplicate');
+                          const btnDel = document.getElementById('btnCtxDelete');
+                          const btnPaste = document.getElementById('btnCtxPaste');
+                          const divTop = document.getElementById('ctxDividerTop');
+                          const divider = document.getElementById('ctxDivider');
+                          if(btnEdit) btnEdit.style.display = 'flex';
+                          if(btnAdd) btnAdd.style.display = 'none';
+                          if(divMove) divMove.style.display = 'flex';
+                          if(btnCopy) btnCopy.style.display = 'flex';
+                          if(btnDup) btnDup.style.display = 'flex';
+                          if(btnDel) btnDel.style.display = 'flex';
+                          if(btnPaste) btnPaste.style.display = 'none';
+                          if(divTop) divTop.style.display = 'none';
+                          if(divider) divider.style.display = 'block';
+                          // 복제/삭제 onclick 원래대로
+                          if(btnDup) btnDup.onclick = handleContextDuplicate;
+                          if(btnDel) btnDel.onclick = handleContextDelete;
                           const ctx = $('contextMenu');
                           ctx.classList.remove('hidden');
                           const menuH = ctx.offsetHeight || 200;
@@ -3556,7 +3587,7 @@ function renderCalendar() {
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
-                  if (e.pointerType === 'touch' || e.pointerType === 'pen') return;
+                  if (e.pointerType === 'touch' || e.pointerType === 'pen') return; // 모바일 짧은 터치 무시
                   openModal('editSingle', { dateKey: key, index: idx, ...t });
               };
               todoContainer.appendChild(item);
@@ -3784,6 +3815,18 @@ function renderCalendar() {
         switchMobileTab(lastTab);
     }
 
+    let pStartY = 0;
+    let pIsPulling = false;
+
+    document.addEventListener('touchstart', (e) => {
+        if (e.target.closest('#timerClickArea') || e.target.closest('.time-cell') || e.target.closest('.multi-task')) return;
+        const scrollContainer = e.target.closest('.overflow-y-auto') || document.documentElement;
+        if (scrollContainer.scrollTop <= 0) {
+            pStartY = e.touches[0].clientY;
+            pIsPulling = true;
+        }
+    }, { passive: true });
+
     document.addEventListener('touchmove', (e) => {
         if (!pIsPulling) return;
         const y = e.touches[0].clientY;
@@ -3807,7 +3850,7 @@ function renderCalendar() {
         if (dy > 80) { 
             pSpinner.style.top = '20px'; 
             if(currentUser) {
-                db.collection('users').doc(currentUser.email).get().then(doc => {
+                db.collection('users').doc(currentUser.uid).get().then(doc => {
                     if (doc.exists) {
                         const data = doc.data();
                         if(data.categories) categories = data.categories; 
