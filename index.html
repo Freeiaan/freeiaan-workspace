@@ -2263,11 +2263,11 @@ function loadFromCloud() {
     function startTimer() { 
         if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
         isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
-        tInt = setInterval(() => { 
+        tInt = setInterval(() => {
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
             if (deltaSec > 0) {
                 if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState(); 
-                if (timerMode === 'timer' && timeLeft <= 0) { 
+                if (timerMode === 'timer' && timeLeft <= 0) {
                         timeLeft = 0;
                         updateTUI();
                         pauseTimer(); 
@@ -2302,7 +2302,7 @@ function loadFromCloud() {
                     }
                 }
             }
-        }, 500); saveTimerState(); 
+        }, 500); saveTimerState();
     }
     
     function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); saveTimerState(); }
@@ -2310,7 +2310,7 @@ function loadFromCloud() {
     
     let pendingRecordSec = 0;
 
-    function recordTimer() { 
+    function recordTimer() {
         if (sessionElapsed <= 0) { alert("기록할 시간이 없습니다!"); return; }
         
         pendingRecordSec = sessionElapsed; 
