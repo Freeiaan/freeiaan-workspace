@@ -2246,19 +2246,24 @@ function loadFromCloud() {
     }
 
     function startTimer() { 
-        if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
-        isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
-        tInt = setInterval(() => { 
+        if (isR) return; 
+        if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
+        isR = true; $('startBtn').textContent = '진행중'; 
+        $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
+        tInt = setInterval(() => {
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
-            if (deltaSec > 0) { 
+            if (deltaSec > 0) {
                 if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState(); 
+              
                 if (timerMode === 'timer' && timeLeft <= 0) {
-                        timeLeft = 0; updateTUI(); pauseTimer();
-                        playTimerEndSound();
-                        alert("⏱️ 설정하신 타이머 시간이 완료되었습니다!");
-                  
+                    timeLeft = 0;
+                    updateTUI();
+                    pauseTimer(); 
+           
+                    playTimerEndSound(); // 🔔 맑은 딩동 소리 재생
+                    
                     if (pomodoroActive) {
-                        // 🍅 뽀모도로 자동 전환
+                        // 🍅 뽀모도로 자동 전환 (팝업 없이 자동 진행)
                         const { longEvery } = getPomodoroSettings();
                         if (pomodoroPhase === 'focus') {
                             pomodoroSessionCount++;
@@ -2270,15 +2275,26 @@ function loadFromCloud() {
                                 setTimeout(() => startPomodoroPhase('shortBreak'), 800);
                             }
                         } else {
-                            // 휴식 끝 → 집중으로 복귀
                             setTimeout(() => startPomodoroPhase('focus'), 800);
                         }
                     } else {
-                        recordTimer();
+                        // 🍎 일반 타이머 종료 시 애플 감성 팝업 띄우기
+                        const alertModal = $('appleTimerAlert');
+                        if(alertModal) {
+                            alertModal.classList.remove('hidden');
+                            setTimeout(() => {
+                                alertModal.classList.remove('opacity-0');
+                                alertModal.children[0].classList.remove('scale-95');
+                                alertModal.children[0].classList.add('scale-100');
+                            }, 10);
+                        } else {
+                            recordTimer(); // 팝업이 없을 경우 안전장치
+                        }
                     }
                 }
-            } 
-        }, 500); saveTimerState(); 
+            }
+        }, 500);
+        saveTimerState();
     }
     
     function pauseTimer() { if (!isR) return; clearInterval(tInt); isR = false; $('startBtn').textContent = '계속'; $('startBtn').classList.replace('bg-[#1b5e16]', 'bg-[#22741C]'); saveTimerState(); }
