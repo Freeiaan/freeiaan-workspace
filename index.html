@@ -823,6 +823,21 @@
     </div>
   </div>
 
+  <div id="appleTimerAlert" class="hidden fixed inset-0 z-[6000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-300">
+      <div class="bg-white/95 backdrop-blur-xl w-full max-w-[280px] rounded-[24px] shadow-2xl flex flex-col items-center p-6 text-center transform scale-95 transition-transform duration-300 border border-white/50">
+        
+        <div class="text-[55px] leading-none mb-3 animate-bounce" style="text-shadow: 0 10px 20px rgba(0,0,0,0.1);">🎉</div>
+        
+        <h3 class="text-[18px] font-black text-gray-900 mb-1.5 tracking-tight">집중 완료!</h3>
+        <p class="text-[13px] font-medium text-gray-500 mb-6 leading-relaxed">설정하신 타이머 시간이<br>모두 끝났습니다.</p>
+        
+        <button id="appleTimerAlertBtn" class="w-full bg-[#22741C] text-white text-[15px] font-black py-3.5 rounded-[14px] transition-all active:scale-95 shadow-md">
+          기록하기
+        </button>
+  
+      </div>
+    </div>
+  
   <div id="smartRecordModal" class="hidden fixed inset-0 z-[4000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#faf8f5] w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
       <div class="flex justify-between items-center mb-6">
@@ -2252,10 +2267,19 @@ function loadFromCloud() {
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
             if (deltaSec > 0) { 
                 if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState(); 
-                if (timerMode === 'timer' && timeLeft <= 0) {
-                        timeLeft = 0; updateTUI(); pauseTimer();
-                        playTimerEndSound();
-                        alert("⏱️ 설정하신 타이머 시간이 완료되었습니다!");
+                if (timerMode === 'timer' && timeLeft <= 0) { 
+                        timeLeft = 0;
+                        updateTUI();
+                        pauseTimer(); 
+                        playTimerEndSound(); 
+                        const alertModal = $('appleTimerAlert');
+                        alertModal.classList.remove('hidden');
+                        setTimeout(() => {
+                            alertModal.classList.remove('opacity-0');
+                            alertModal.children[0].classList.remove('scale-95');
+                            alertModal.children[0].classList.add('scale-100');
+                        }, 10);
+                    }
                   
                     if (pomodoroActive) {
                         // 🍅 뽀모도로 자동 전환
@@ -4979,6 +5003,19 @@ function renderMemoFolders() {
         }
     }
 
+    if (timerMode === 'timer' && timeLeft <= 0) { 
+                        timeLeft = 0;
+                        updateTUI();
+                        pauseTimer(); 
+                        playTimerEndSound(); 
+                        const alertModal = $('appleTimerAlert');
+                        alertModal.classList.remove('hidden');
+                        setTimeout(() => {
+                            alertModal.classList.remove('opacity-0');
+                            alertModal.children[0].classList.remove('scale-95');
+                            alertModal.children[0].classList.add('scale-100');
+                        }, 10);
+                    }
 
   </script>
 </body>
