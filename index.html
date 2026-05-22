@@ -5003,19 +5003,19 @@ function renderMemoFolders() {
         }
     }
 
-    if (timerMode === 'timer' && timeLeft <= 0) { 
-                        timeLeft = 0;
-                        updateTUI();
-                        pauseTimer(); 
-                        playTimerEndSound(); 
-                        const alertModal = $('appleTimerAlert');
-                        alertModal.classList.remove('hidden');
-                        setTimeout(() => {
-                            alertModal.classList.remove('opacity-0');
-                            alertModal.children[0].classList.remove('scale-95');
-                            alertModal.children[0].classList.add('scale-100');
-                        }, 10);
-                    }
+    // 🍎 애플 스타일 팝업 '기록하기' 버튼 동작
+    if ($('appleTimerAlertBtn')) {
+        $('appleTimerAlertBtn').onclick = () => {
+            const alertModal = $('appleTimerAlert');
+            alertModal.classList.add('opacity-0');
+            alertModal.children[0].classList.remove('scale-100');
+            alertModal.children[0].classList.add('scale-95');
+            setTimeout(() => {
+                alertModal.classList.add('hidden');
+                recordTimer();
+            }, 300);
+        };
+    }
 
   </script>
 </body>
