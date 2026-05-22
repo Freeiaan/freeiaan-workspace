@@ -2253,7 +2253,10 @@ function loadFromCloud() {
             if (deltaSec > 0) { 
                 if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState(); 
                 if (timerMode === 'timer' && timeLeft <= 0) {
-                    timeLeft = 0; updateTUI(); pauseTimer();
+                        timeLeft = 0; updateTUI(); pauseTimer();
+                        playTimerEndSound();
+                        alert("⏱️ 설정하신 타이머 시간이 완료되었습니다!");
+                  
                     if (pomodoroActive) {
                         // 🍅 뽀모도로 자동 전환
                         const { longEvery } = getPomodoroSettings();
@@ -4953,6 +4956,28 @@ function renderMemoFolders() {
             e.preventDefault(); // 사파리의 지멋대로 스크롤 기능을 완전히 얼려버립니다!
         }
     }, { passive: false });
+
+    function playTimerEndSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const playChime = (freq, startTime, duration) => {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, startTime);
+                gainNode.gain.setValueAtTime(0.2, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            };
+            playChime(523.25, audioCtx.currentTime, 0.4);
+            playChime(659.25, audioCtx.currentTime + 0.15, 0.5);
+        } catch (e) {
+            console.error("오디오 재생 에러:", e);
+        }
+    }
 
 
   </script>
