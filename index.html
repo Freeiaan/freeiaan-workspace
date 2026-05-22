@@ -2260,46 +2260,41 @@ function loadFromCloud() {
         }
     }
 
-    function startTimer() { 
-        if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
+    function startTimer() {
+        if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer';
         isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
         tInt = setInterval(() => {
-            const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
+            const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000);
             if (deltaSec > 0) {
-                if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState(); 
+                if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState();
                 if (timerMode === 'timer' && timeLeft <= 0) {
-                        timeLeft = 0;
-                        updateTUI();
-                        pauseTimer(); 
-                        playTimerEndSound(); 
-                        const alertModal = $('appleTimerAlert');
-                        alertModal.classList.remove('hidden');
-                        setTimeout(() => {
-                            alertModal.classList.remove('opacity-0');
-                            alertModal.children[0].classList.remove('scale-95');
-                            alertModal.children[0].classList.add('scale-100');
-                        }, 10);
-                    }
-                  
-                    if (pomodoroActive) {
-                        // 🍅 뽀모도로 자동 전환
-                        const { longEvery } = getPomodoroSettings();
-                        if (pomodoroPhase === 'focus') {
-                            pomodoroSessionCount++;
-                            updatePomodoroUI();
-                            if (pomodoroSessionCount >= longEvery) {
-                                pomodoroSessionCount = 0;
-                                setTimeout(() => startPomodoroPhase('longBreak'), 800);
-                            } else {
-                                setTimeout(() => startPomodoroPhase('shortBreak'), 800);
-                            }
+                    timeLeft = 0;
+                    updateTUI();
+                    pauseTimer();
+                    playTimerEndSound();
+                    const alertModal = $('appleTimerAlert');
+                    alertModal.classList.remove('hidden');
+                    setTimeout(() => {
+                        alertModal.classList.remove('opacity-0');
+                        alertModal.children[0].classList.remove('scale-95');
+                        alertModal.children[0].classList.add('scale-100');
+                    }, 10);
+                } else if (pomodoroActive) {
+                    const { longEvery } = getPomodoroSettings();
+                    if (pomodoroPhase === 'focus') {
+                        pomodoroSessionCount++;
+                        updatePomodoroUI();
+                        if (pomodoroSessionCount >= longEvery) {
+                            pomodoroSessionCount = 0;
+                            setTimeout(() => startPomodoroPhase('longBreak'), 800);
                         } else {
-                            // 휴식 끝 → 집중으로 복귀
-                            setTimeout(() => startPomodoroPhase('focus'), 800);
+                            setTimeout(() => startPomodoroPhase('shortBreak'), 800);
                         }
                     } else {
-                        recordTimer();
+                        setTimeout(() => startPomodoroPhase('focus'), 800);
                     }
+                } else {
+                    recordTimer();
                 }
             }
         }, 500); saveTimerState();
