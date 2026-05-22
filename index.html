@@ -2265,7 +2265,7 @@ function loadFromCloud() {
         isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
         tInt = setInterval(() => { 
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
-            if (deltaSec > 0) { 
+            if (deltaSec > 0) {
                 if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState(); 
                 if (timerMode === 'timer' && timeLeft <= 0) { 
                         timeLeft = 0;
