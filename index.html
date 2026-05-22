@@ -2270,6 +2270,8 @@ function loadFromCloud() {
                 if (timerMode === 'timer' && timeLeft <= 0 && isR) {
                     timeLeft = 0;
                     updateTUI();
+                    clearInterval(tInt);
+                    isR = false;
                     pauseTimer();
                     playTimerEndSound();
                     const alertModal = $('appleTimerAlert');
