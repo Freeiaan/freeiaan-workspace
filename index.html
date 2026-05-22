@@ -2267,7 +2267,7 @@ function loadFromCloud() {
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000);
             if (deltaSec > 0) {
                 if (timerMode === 'stopwatch') timeLeft += deltaSec; else timeLeft -= deltaSec; sessionElapsed += deltaSec; timerLastTick += deltaSec * 1000; updateTUI(); saveTimerState();
-                if (timerMode === 'timer' && timeLeft <= 0) {
+                if (timerMode === 'timer' && timeLeft <= 0 && isR) {
                     timeLeft = 0;
                     updateTUI();
                     pauseTimer();
