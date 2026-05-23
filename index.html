@@ -438,8 +438,8 @@
           <!-- 📝 인덱스 메모장 (탭별 리치 텍스트) -->
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col min-h-[280px] flex-1 relative mb-16 md:mb-0">
             <!-- 탭 헤더 -->
-            <div class="flex items-center px-3 pt-2 pb-0 flex-shrink-0 border-b border-gray-100 gap-1.5">
-              <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-2 flex-1" id="richMemoTabContainer"></div>
+            <div class="flex items-center px-2 pt-2 pb-0 flex-shrink-0 border-b border-gray-100 overflow-hidden">
+              <div class="flex gap-1.5 overflow-x-auto pb-2 flex-1 min-w-0" id="richMemoTabContainer" style="scrollbar-width:none;-ms-overflow-style:none;"></div>
               <button onclick="openAddRichMemoTabModal()" class="flex-shrink-0 ml-1 mb-2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-base font-bold flex items-center justify-center transition-colors" title="탭 추가">+</button>
             </div>
             <!-- 에디터 영역 -->
@@ -5321,7 +5321,7 @@ function renderMemoFolders() {
             const isActive = tab.id === richMemoActiveId;
             const c = getMemoColorEntry(tab.color);
             const btn = document.createElement('button');
-            btn.className = 'flex-shrink-0 px-3 py-1 text-[11px] font-bold rounded-t-lg transition-all whitespace-nowrap border '
+            btn.className = 'flex-shrink-0 px-3 py-1 text-[11px] font-bold rounded-t-lg transition-all whitespace-nowrap border cursor-pointer '
                 + (isActive ? 'border-b-0 border-gray-200 shadow-sm' : 'border-transparent text-gray-400 hover:text-gray-600');
             btn.style.backgroundColor = isActive ? c.bg : 'transparent';
             btn.style.color           = isActive ? c.text : '';
