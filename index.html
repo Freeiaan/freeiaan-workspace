@@ -454,6 +454,7 @@
               <div class="w-full h-px bg-gray-100 mb-2"></div>
               <div id="richMemoEditor"
                 contenteditable="true"
+                spellcheck="false"
                 class="flex-1 text-[13px] leading-relaxed text-gray-700 outline-none custom-scrollbar overflow-y-auto"
                 style="min-height: 120px; background: white;"
                 data-placeholder="탭에 마우스를 대고 Shift 마우스 스크롤하면 더 많은 탭이 보여요.&#10;텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
@@ -5682,6 +5683,99 @@ function renderMemoFolders() {
             if (card) { card.content = this.innerHTML; saveMemoData(); }
         });
         editor.addEventListener('blur', saveMemoData);
+
+        // ── TAB 들여쓰기 + 엔터 동작 + [] 체크박스 ──
+        editor.addEventListener('keydown', function(e) {
+            // TAB → 들여쓰기
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    // Shift+TAB → 내어쓰기
+                    document.execCommand('outdent');
+                } else {
+                    document.execCommand('indent');
+                }
+                saveAndUpdate();
+                return;
+            }
+
+            // Enter 처리 (들여쓰기 상태 유지 / 두 번 누르면 내어쓰기)
+            if (e.key === 'Enter') {
+                const sel = window.getSelection();
+                if (!sel.rangeCount) return;
+                const range = sel.getRangeAt(0);
+                const block = range.startContainer.parentElement.closest('blockquote, ul, ol, li') ||
+                              range.startContainer.closest && range.startContainer.closest('blockquote, ul, ol, li');
+                if (block) {
+                    // 현재 줄이 비어있으면 내어쓰기
+                    const lineText = (range.startContainer.textContent || '').trim();
+                    if (lineText === '') {
+                        e.preventDefault();
+                        document.execCommand('outdent');
+                        saveAndUpdate();
+                        return;
+                    }
+                }
+            }
+        });
+
+        // ── input: [] → 체크박스 자동 변환 ──
+        editor.addEventListener('input', function(e) {
+            const sel = window.getSelection();
+            if (!sel.rangeCount) return;
+            const range = sel.getRangeAt(0);
+            const node  = range.startContainer;
+            if (node.nodeType !== Node.TEXT_NODE) return;
+            const text = node.textContent;
+            const offset = range.startOffset;
+
+            // 방금 ] 입력해서 [] 완성됐는지 확인
+            if (offset >= 2 && text.slice(offset - 2, offset) === '[]') {
+                // [] 를 체크박스로 교체
+                const before = text.slice(0, offset - 2);
+                const after  = text.slice(offset);
+
+                // 체크박스 span 생성
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'memo-checkbox';
+                cb.style.cssText = 'width:14px;height:14px;cursor:pointer;margin-right:4px;vertical-align:middle;flex-shrink:0;accent-color:#22741C;';
+                cb.addEventListener('change', () => { saveAndUpdate(); });
+                cb.addEventListener('click', (ev) => ev.stopPropagation());
+
+                const wrapper = document.createElement('span');
+                wrapper.className = 'memo-cb-wrap';
+                wrapper.style.cssText = 'display:inline-flex;align-items:center;';
+                wrapper.appendChild(cb);
+                wrapper.appendChild(document.createTextNode(' '));
+
+                // 텍스트 노드 교체
+                const frag = document.createDocumentFragment();
+                if (before) frag.appendChild(document.createTextNode(before));
+                frag.appendChild(wrapper);
+                const afterNode = document.createTextNode(after || '​');
+                frag.appendChild(afterNode);
+
+                node.parentNode.replaceChild(frag, node);
+
+                // 커서를 체크박스 뒤로
+                const newRange = document.createRange();
+                newRange.setStart(afterNode, 0);
+                newRange.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+
+                saveAndUpdate();
+            }
+        });
+
+        function saveAndUpdate() {
+            updateMemoPlaceholder();
+            if (!richMemoActiveCardId) return;
+            const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
+            const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
+            if (card) { card.content = editor.innerHTML; saveMemoData(); }
+        }
 
         editor.addEventListener('contextmenu', (e) => {
             const sel = window.getSelection();
