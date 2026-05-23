@@ -360,9 +360,21 @@
             <input id="pomodoroLongBreak" type="number" min="1" max="120" value="15" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-[10px] font-bold text-gray-500">긴 휴식 주기</label>
-            <input id="pomodoroLongBreakEvery" type="number" min="1" max="10" value="4" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
+            <label class="text-[10px] font-bold text-gray-500">세션 수</label>
+            <div class="flex items-center gap-1 bg-white border border-red-200 rounded-lg py-1.5 px-2">
+              <button onclick="changePomodoroSessions(-1)" class="w-5 h-5 flex items-center justify-center text-red-400 font-black text-base hover:bg-red-50 rounded transition">−</button>
+              <input id="pomodoroLongBreakEvery" type="number" min="3" max="6" value="4" oninput="onPomodoroSettingChange()" class="flex-1 text-center text-[13px] font-black bg-transparent outline-none border-none">
+              <button onclick="changePomodoroSessions(1)" class="w-5 h-5 flex items-center justify-center text-red-400 font-black text-base hover:bg-red-50 rounded transition">+</button>
+            </div>
           </div>
+        </div>
+        <!-- 자동 멈춤 토글 -->
+        <div class="flex items-center justify-between bg-white border border-red-100 rounded-xl px-3 py-2">
+          <span id="pomodoroAutoStopLabel" class="text-[11px] font-bold text-gray-600">4세션 완료 후 자동 멈춤</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="pomodoroAutoStop" class="sr-only peer">
+            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-400"></div>
+          </label>
         </div>
         <div class="flex justify-between items-center pt-1 border-t border-red-100">
           <button onclick="resetPomodoro()" class="text-[10px] font-bold text-red-300 hover:text-red-500 transition">🔄 세션 초기화</button>
@@ -1423,12 +1435,32 @@ function handleContextDelete() {
     if (!selectedTaskDateKey || selectedTaskIndex === null) return;
     if (!confirm('이 일정을 삭제하시겠습니까?')) return;
     
-    const tasks = allTasks[selectedTaskDateKey];
-    if (tasks) {
-        tasks.splice(selectedTaskIndex, 1);
-        syncToCloud();
-        initAppRenders();
+    const idx = parseInt(selectedTaskIndex);
+    const dateKey = selectedTaskDateKey;
+    const year = new Date(dateKey).getFullYear();
+    const month = new Date(dateKey).getMonth();
+
+    // renderCalendar와 동일하게 dayTasks 배열 재구성
+    const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey));
+    const repeatItems = repeatForDay
+        .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id))
+        .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+    const dayTasks = [...repeatItems, ...(allTasks[dateKey] || [])];
+
+    const targetTask = dayTasks[idx];
+    if (!targetTask) return;
+
+    if (targetTask._repeatId) {
+        // 반복 일정 → repeatTasks에서 완전 삭제
+        repeatTasks = repeatTasks.filter(r => r.id !== targetTask._repeatId);
+        setLocal('ianRepeatTasks', repeatTasks);
+    } else {
+        // 일반 일정 → allTasks에서 실제 객체 위치 찾아 삭제
+        const realIdx = (allTasks[dateKey] || []).indexOf(targetTask);
+        if (realIdx !== -1) allTasks[dateKey].splice(realIdx, 1);
     }
+    syncToCloud();
+    initAppRenders();
 }
 
     // ✏️ 일정 수정 (컨텍스트 메뉴 → 모바일용)
@@ -2279,8 +2311,22 @@ function loadFromCloud() {
                                 pomodoroSessionCount++;
                                 updatePomodoroUI();
                                 if (pomodoroSessionCount >= longEvery) {
-                                    pomodoroSessionCount = 0;
-                                    setTimeout(() => startPomodoroPhase('longBreak'), 800);
+                                    // 자동 멈춤 켜져 있으면 집중완료 팝업 띄우기
+                                    const autoStop = document.getElementById('pomodoroAutoStop');
+                                    if (autoStop && autoStop.checked) {
+                                        pomodoroSessionCount = 0;
+                                        updatePomodoroUI();
+                                        const alertModal = $('appleTimerAlert');
+                                        alertModal.classList.remove('hidden');
+                                        setTimeout(() => {
+                                            alertModal.classList.remove('opacity-0');
+                                            alertModal.children[0].classList.remove('scale-95');
+                                            alertModal.children[0].classList.add('scale-100');
+                                        }, 10);
+                                    } else {
+                                        pomodoroSessionCount = 0;
+                                        setTimeout(() => startPomodoroPhase('longBreak'), 800);
+                                    }
                                 } else {
                                     setTimeout(() => startPomodoroPhase('shortBreak'), 800);
                                 }
@@ -2463,6 +2509,9 @@ function loadFromCloud() {
             btn.innerHTML = '🍅 뽀모도로 ON ▲';
             panel.classList.remove('hidden');
             resetPomodoro();
+            // 자동멈춤 라벨 초기화
+            const label = $('pomodoroAutoStopLabel');
+            if (label) { const { longEvery } = getPomodoroSettings(); label.textContent = `${longEvery}세션 완료 후 자동 멈춤`; }
             if (Notification.permission === 'default') Notification.requestPermission();
         } else {
             // 이미 ON 상태면 패널만 접기/펼치기 (세션 유지!)
@@ -2489,6 +2538,15 @@ function loadFromCloud() {
         return { focus, shortBreak, longBreak, longEvery };
     }
 
+    // +/- 버튼으로 세션 수 조절
+    function changePomodoroSessions(delta) {
+        const input = $('pomodoroLongBreakEvery');
+        let val = parseInt(input.value) || 4;
+        val = Math.min(6, Math.max(3, val + delta));
+        input.value = val;
+        onPomodoroSettingChange();
+    }
+
     function resetPomodoro() {
         pomodoroPhase = 'focus';
         pomodoroSessionCount = 0;
@@ -2502,12 +2560,15 @@ function loadFromCloud() {
 
     function onPomodoroSettingChange() {
         if (!pomodoroActive) return;
-        const { focus } = getPomodoroSettings();
+        const { focus, longEvery } = getPomodoroSettings();
         if (pomodoroPhase === 'focus' && !isR) {
             timeLeft = focus * 60;
             timerMode = 'timer';
             updateTUI();
         }
+        // 세션 수 바뀌면 자동멈춤 라벨도 업데이트
+        const label = $('pomodoroAutoStopLabel');
+        if (label) label.textContent = `${longEvery}세션 완료 후 자동 멈춤`;
     }
 
     function updatePomodoroUI() {
@@ -2605,8 +2666,15 @@ function loadFromCloud() {
     function renderPlannerTasks(dateKey) { 
         const list = $('plannerTaskList'); 
         list.innerHTML = ''; 
-        let tasks = []; 
-        if (Array.isArray(allTasks[dateKey])) { tasks = allTasks[dateKey]; } 
+        
+        // 반복일정도 포함해서 달력과 동일하게 dayTasks 구성
+        const year = new Date(dateKey).getFullYear();
+        const month = new Date(dateKey).getMonth();
+        const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey));
+        const repeatItems = repeatForDay
+            .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id))
+            .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+        let tasks = [...repeatItems, ...(allTasks[dateKey] || [])];
         
         // 💡 [실시간 연동] 남은 할 일(체크 안 된 것) 개수를 세어서 아코디언 바 텍스트에 즉시 반영!
         const remainingCount = tasks.filter(t => !t.isChecked).length;
