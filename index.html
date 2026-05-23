@@ -368,7 +368,7 @@
         <input type="hidden" id="pomodoroAutoStop">
         <div class="flex justify-between items-center pt-1 border-t border-red-100">
           <button onclick="resetPomodoro()" class="text-[10px] font-bold text-red-300 hover:text-red-500 transition">🔄 세션 초기화</button>
-          <button onclick="deactivatePomodoro()" class="text-[10px] font-bold text-gray-300 hover:text-gray-500 transition">❌ 뽀모도로 끄기</button>
+          <button onclick="deactivatePomodoro()" class="text-[10px] font-bold text-red-500 hover:text-red-700 transition">❌ 뽀모도로 끄기</button>
         </div>
       </div>
       
@@ -2382,6 +2382,8 @@ function loadFromCloud() {
     function startTimer() { 
         if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
         isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
+        // 뽀모도로 ON이면 타이머 시작 시 설정 접기
+        if (pomodoroActive) { const sa = $('pomodoroSettingsArea'); if (sa) { sa.classList.add('hidden'); sa.style.display = 'none'; } }
         tInt = setInterval(() => {
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
             if (deltaSec > 0) {
@@ -2578,20 +2580,24 @@ function loadFromCloud() {
         const panel = $('pomodoroPanel');
         const inboxSection = $('inboxSection');
         if (!pomodoroActive) {
+            // 처음 ON
             pomodoroActive = true;
             btn.className = 'w-full py-2 rounded-xl text-[12px] font-extrabold border border-red-400 text-red-500 bg-red-50 hover:bg-red-100 transition-all flex items-center justify-center gap-1.5';
             btn.innerHTML = '🍅 뽀모도로 ON ▲';
             panel.classList.remove('hidden');
+            // 설정 펼쳐서 보이게
+            const sa = $('pomodoroSettingsArea');
+            if (sa) { sa.classList.remove('hidden'); sa.style.display = 'flex'; }
             resetPomodoro();
-            // 설정 영역 접기 (공간 절약)
-            const settingsArea = $('pomodoroSettingsArea');
-            if (settingsArea) settingsArea.classList.add('hidden');
-            // 할 일 보관함 접기
+            // 패널 열려있으니 inbox 숨기기
             if (inboxSection) inboxSection.style.display = 'none';
             if (Notification.permission === 'default') Notification.requestPermission();
         } else {
+            // 이미 ON — 패널 접기/펼치기
             const isHidden = panel.classList.toggle('hidden');
             btn.innerHTML = isHidden ? '🍅 뽀모도로 ON ▼' : '🍅 뽀모도로 ON ▲';
+            // 패널 닫히면 inbox 보이고, 패널 열리면 inbox 숨기기
+            if (inboxSection) inboxSection.style.display = isHidden ? '' : 'none';
         }
     }
 
@@ -2614,9 +2620,7 @@ function loadFromCloud() {
         // 할 일 보관함 다시 보이기
         const inboxSection = $('inboxSection');
         if (inboxSection) inboxSection.style.display = '';
-        // 설정 영역도 다시 펼치기 (다음번 ON시 기본 열린 상태)
-        const settingsArea = $('pomodoroSettingsArea');
-        if (settingsArea) { settingsArea.classList.remove('hidden'); settingsArea.style.display = 'flex'; }
+        // 설정은 건드리지 않음 (다음 ON 시 togglePomodoroPanel에서 펼침)
         resetTimer();
     }
 
