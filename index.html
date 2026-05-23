@@ -1418,32 +1418,19 @@ function handleContextDuplicate() {
     }
 }
 
+// 🗑️ 삭제 기능
 function handleContextDelete() {
     if (!selectedTaskDateKey || selectedTaskIndex === null) return;
     if (!confirm('이 일정을 삭제하시겠습니까?')) return;
     
-    const idx = parseInt(selectedTaskIndex);
-    const repeatForDay = repeatTasks.filter(r => 
-        getRepeatDatesInMonth(r, new Date(selectedTaskDateKey).getFullYear(), new Date(selectedTaskDateKey).getMonth()).includes(selectedTaskDateKey)
-    );
-    const repeatItems = repeatForDay.filter(r => !(allTasks[selectedTaskDateKey] || []).some(t => t._repeatId === r.id));
-    const dayTasks = [...repeatItems, ...(allTasks[selectedTaskDateKey] || [])];
-    
-    const targetTask = dayTasks[idx];
-    if (!targetTask) return;
-    
-    if (targetTask._repeatId) {
-        // 반복 일정 → repeatTasks에서 완전 삭제
-        repeatTasks = repeatTasks.filter(r => r.id !== targetTask._repeatId);
-        setLocal('ianRepeatTasks', repeatTasks);
-    } else {
-        // 일반 일정 → allTasks에서 실제 인덱스 찾아서 삭제
-        const realIdx = (allTasks[selectedTaskDateKey] || []).findIndex(t => t === targetTask);
-        if (realIdx !== -1) allTasks[selectedTaskDateKey].splice(realIdx, 1);
+    const tasks = allTasks[selectedTaskDateKey];
+    if (tasks) {
+        tasks.splice(selectedTaskIndex, 1);
+        syncToCloud();
+        initAppRenders();
     }
-    syncToCloud();
-    initAppRenders();
 }
+
     // ✏️ 일정 수정 (컨텍스트 메뉴 → 모바일용)
     function handleContextEdit() {
         if (!selectedTaskDateKey || selectedTaskIndex === null) return;
