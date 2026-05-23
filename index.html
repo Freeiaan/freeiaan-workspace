@@ -438,8 +438,8 @@
           <!-- 📝 인덱스 메모장 (탭별 리치 텍스트) -->
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col min-h-[280px] flex-1 relative mb-16 md:mb-0 overflow-hidden">
             <!-- 탭 헤더 -->
-            <div class="flex items-center justify-between px-3 pt-2 pb-0 flex-shrink-0 border-b border-gray-100">
-              <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-2" id="richMemoTabContainer"></div>
+            <div class="flex items-center px-3 pt-2 pb-0 flex-shrink-0 border-b border-gray-100 gap-1.5">
+              <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-2 flex-1" id="richMemoTabContainer"></div>
               <button onclick="openAddRichMemoTabModal()" class="flex-shrink-0 ml-1 mb-2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-base font-bold flex items-center justify-center transition-colors" title="탭 추가">+</button>
             </div>
             <!-- 에디터 영역 -->
@@ -5265,6 +5265,26 @@ function renderMemoFolders() {
             if (!richMemoTabs.length) richMemoTabs = JSON.parse(JSON.stringify(DEFAULT_RICH_MEMO_TABS));
         } catch(e) {
             richMemoTabs = JSON.parse(JSON.stringify(DEFAULT_RICH_MEMO_TABS));
+        }
+
+
+        // 🔄 기존 ianRichMemoTabs → freeiaan_memoTabs 마이그레이션 (키 변경 전 데이터 복구)
+        var oldRichTabs = localStorage.getItem('ianRichMemoTabs');
+        if (oldRichTabs && !localStorage.getItem('ianRichMemoMigrated')) {
+            try {
+                var parsedOld = JSON.parse(oldRichTabs);
+                if (parsedOld && parsedOld.length) {
+                    richMemoTabs = parsedOld.map(function(t) {
+                        var colorName = 'blue';
+                        for (var k in MEMO_COLOR_MAP) {
+                            if (MEMO_COLOR_MAP[k].bg === t.color) { colorName = k; break; }
+                        }
+                        return { id: t.id, label: t.label || t.title || '메모', color: colorName, content: t.content || '' };
+                    });
+                    localStorage.setItem(RICH_MEMO_KEY, JSON.stringify(richMemoTabs));
+                }
+            } catch(e) {}
+            localStorage.setItem('ianRichMemoMigrated', '1');
         }
 
         // 🔄 기존 ianMemo 마이그레이션 (한 번만)
