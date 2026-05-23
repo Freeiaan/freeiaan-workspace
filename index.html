@@ -5742,13 +5742,46 @@ function renderMemoFolders() {
                     const newCb = document.createElement('input');
                     newCb.type = 'checkbox';
                     newCb.className = 'memo-checkbox';
-                    newCb.style.cssText = 'width:14px;height:14px;cursor:pointer;margin-right:4px;vertical-align:middle;flex-shrink:0;accent-color:#22741C;';
-                    newCb.addEventListener('change', () => saveAndUpdate());
+                    newCb.style.cssText = 'width:13px;height:13px;cursor:pointer;margin-right:5px;vertical-align:-2px;flex-shrink:0;accent-color:#22741C;position:relative;top:1px;';
+                    newCb.addEventListener('change', function() {
+                    const textNodes = newWrap.parentNode ? Array.from(newWrap.parentNode.childNodes).filter(n => n !== newWrap) : [];
+                    textNodes.forEach(n => {
+                        if (n.nodeType === Node.TEXT_NODE && n.parentElement) {
+                            n.parentElement.style.textDecoration = this.checked ? 'line-through' : '';
+                            n.parentElement.style.color = this.checked ? '#9ca3af' : '';
+                        }
+                    });
+                    // 줄 전체에 취소선
+                    const lineDiv = newWrap.closest('div') || newWrap.parentElement;
+                    if (lineDiv) {
+                        const allText = lineDiv.querySelectorAll('span:not(.memo-cb-wrap), b, i, font');
+                        allText.forEach(el => {
+                            el.style.textDecoration = this.checked ? 'line-through' : '';
+                            el.style.color = this.checked ? '#9ca3af' : '';
+                        });
+                        // 직접 텍스트 노드는 span으로 감싸서 처리
+                        lineDiv.childNodes.forEach(node => {
+                            if (node.nodeType === Node.TEXT_NODE && node.textContent.replace(/\u200B/g,'').trim()) {
+                                const sp = document.createElement('span');
+                                sp.className = 'cb-text';
+                                sp.style.textDecoration = this.checked ? 'line-through' : '';
+                                sp.style.color = this.checked ? '#9ca3af' : '';
+                                node.parentNode.replaceChild(sp, node);
+                                sp.appendChild(node);
+                            }
+                        });
+                        lineDiv.querySelectorAll('.cb-text').forEach(el => {
+                            el.style.textDecoration = this.checked ? 'line-through' : '';
+                            el.style.color = this.checked ? '#9ca3af' : '';
+                        });
+                    }
+                    saveAndUpdate();
+                });
                     newCb.addEventListener('click', (ev) => ev.stopPropagation());
 
                     const newWrap = document.createElement('span');
                     newWrap.className = 'memo-cb-wrap';
-                    newWrap.style.cssText = 'display:inline-flex;align-items:center;';
+                    newWrap.style.cssText = 'display:inline;';
                     newWrap.appendChild(newCb);
 
                     const newLine = document.createElement('div');
@@ -5810,13 +5843,32 @@ function renderMemoFolders() {
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
                 cb.className = 'memo-checkbox';
-                cb.style.cssText = 'width:14px;height:14px;cursor:pointer;margin-right:4px;vertical-align:middle;flex-shrink:0;accent-color:#22741C;';
-                cb.addEventListener('change', () => { saveAndUpdate(); });
+                cb.style.cssText = 'width:13px;height:13px;cursor:pointer;margin-right:5px;vertical-align:-2px;flex-shrink:0;accent-color:#22741C;position:relative;top:1px;';
+                cb.addEventListener('change', function() {
+                    const lineDiv = this.closest('div') || this.parentElement.parentElement;
+                    if (lineDiv) {
+                        lineDiv.querySelectorAll('span:not(.memo-cb-wrap), b, i, font, .cb-text').forEach(el => {
+                            el.style.textDecoration = this.checked ? 'line-through' : '';
+                            el.style.color = this.checked ? '#9ca3af' : '';
+                        });
+                        lineDiv.childNodes.forEach(node => {
+                            if (node.nodeType === Node.TEXT_NODE && node.textContent.replace(/\u200B/g,'').trim()) {
+                                const sp = document.createElement('span');
+                                sp.className = 'cb-text';
+                                sp.style.textDecoration = this.checked ? 'line-through' : '';
+                                sp.style.color = this.checked ? '#9ca3af' : '';
+                                node.parentNode.replaceChild(sp, node);
+                                sp.appendChild(node);
+                            }
+                        });
+                    }
+                    saveAndUpdate();
+                });
                 cb.addEventListener('click', (ev) => ev.stopPropagation());
 
                 const wrapper = document.createElement('span');
                 wrapper.className = 'memo-cb-wrap';
-                wrapper.style.cssText = 'display:inline-flex;align-items:center;';
+                wrapper.style.cssText = 'display:inline;';
                 wrapper.appendChild(cb);
                 wrapper.appendChild(document.createTextNode(' '));
 
