@@ -332,20 +332,21 @@
       
       <!-- 뽀모도로 패널 (기본 숨김) -->
       <div id="pomodoroPanel" class="hidden w-full mb-3 flex-shrink-0 bg-red-50 border border-red-100 rounded-2xl p-4 flex flex-col gap-3">
-        <!-- 세션 상태 표시 -->
+        <!-- 세션 상태 -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span id="pomodoroStatusIcon" class="text-lg">🍅</span>
             <span id="pomodoroStatusText" class="text-[12px] font-extrabold text-red-500">집중 세션</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="text-[10px] font-bold text-gray-400">세션</span>
-            <span id="pomodoroSessionCount" class="text-[13px] font-black text-red-500">0 / 4</span>
-          </div>
+          <span id="pomodoroSessionCount" class="text-[12px] font-black text-red-400">0 / 4</span>
         </div>
-        <!-- 뽀모도로 아이콘 진행 표시 -->
-        <div id="pomodoroIcons" class="flex gap-1 justify-center flex-wrap"></div>
-        <!-- 설정 -->
+        <!-- 체크박스 ◀ □□□□ ▶ -->
+        <div class="flex items-center justify-center gap-3">
+          <button onclick="changePomodoroSessions(-1)" class="w-6 h-6 flex items-center justify-center text-red-300 hover:text-red-500 font-black text-base transition rounded-full hover:bg-red-100">◀</button>
+          <div id="pomodoroIcons" class="flex gap-1.5 justify-center"></div>
+          <button onclick="changePomodoroSessions(1)" class="w-6 h-6 flex items-center justify-center text-red-300 hover:text-red-500 font-black text-base transition rounded-full hover:bg-red-100">▶</button>
+        </div>
+        <!-- 집중/휴식 설정 -->
         <div class="grid grid-cols-2 gap-2 pt-1 border-t border-red-100">
           <div class="flex flex-col gap-1">
             <label class="text-[10px] font-bold text-gray-500">집중 (분)</label>
@@ -355,27 +356,11 @@
             <label class="text-[10px] font-bold text-gray-500">짧은 휴식 (분)</label>
             <input id="pomodoroShortBreak" type="number" min="1" max="60" value="5" oninput="onPomodoroSettingChange()" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
           </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-[10px] font-bold text-gray-500">긴 휴식 (분)</label>
-            <input id="pomodoroLongBreak" type="number" min="1" max="120" value="15" class="w-full text-center text-[13px] font-black bg-white border border-red-200 rounded-lg py-1.5 outline-none focus:ring-1 focus:ring-red-300">
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-[10px] font-bold text-gray-500">세션 수</label>
-            <div class="flex items-center gap-1 bg-white border border-red-200 rounded-lg py-1.5 px-2">
-              <button onclick="changePomodoroSessions(-1)" class="w-5 h-5 flex items-center justify-center text-red-400 font-black text-base hover:bg-red-50 rounded transition">−</button>
-              <input id="pomodoroLongBreakEvery" type="number" min="3" max="6" value="4" oninput="onPomodoroSettingChange()" class="flex-1 text-center text-[13px] font-black bg-transparent outline-none border-none">
-              <button onclick="changePomodoroSessions(1)" class="w-5 h-5 flex items-center justify-center text-red-400 font-black text-base hover:bg-red-50 rounded transition">+</button>
-            </div>
-          </div>
         </div>
-        <!-- 자동 멈춤 토글 -->
-        <div class="flex items-center justify-between bg-white border border-red-100 rounded-xl px-3 py-2">
-          <span id="pomodoroAutoStopLabel" class="text-[11px] font-bold text-gray-600">4세션 완료 후 자동 멈춤</span>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="pomodoroAutoStop" class="sr-only peer">
-            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-400"></div>
-          </label>
-        </div>
+        <!-- 숨김 필드 (JS 호환용) -->
+        <input id="pomodoroLongBreak" type="hidden" value="15">
+        <input id="pomodoroLongBreakEvery" type="hidden" value="4">
+        <input type="hidden" id="pomodoroAutoStop">
         <div class="flex justify-between items-center pt-1 border-t border-red-100">
           <button onclick="resetPomodoro()" class="text-[10px] font-bold text-red-300 hover:text-red-500 transition">🔄 세션 초기화</button>
           <button onclick="deactivatePomodoro()" class="text-[10px] font-bold text-gray-300 hover:text-gray-500 transition">❌ 뽀모도로 끄기</button>
@@ -2406,23 +2391,10 @@ function loadFromCloud() {
                                 pomodoroSessionCount++;
                                 updatePomodoroUI();
                                 if (pomodoroSessionCount >= longEvery) {
-                                    // 자동 멈춤 켜져 있으면 집중완료 팝업 띄우기
-                                    const autoStop = document.getElementById('pomodoroAutoStop');
-                                    if (autoStop && autoStop.checked) {
-                                        pomodoroSessionCount = 0;
-                                        updatePomodoroUI();
-                                        const alertModal = $('appleTimerAlert');
-                                        alertModal.classList.remove('hidden');
-                                        setTimeout(() => {
-                                            alertModal.classList.remove('opacity-0');
-                                            alertModal.children[0].classList.remove('scale-95');
-                                            alertModal.children[0].classList.add('scale-100');
-                                        }, 10);
-                                    } else {
-                                        pomodoroSessionCount = 0;
-                                        setTimeout(() => startPomodoroPhase('longBreak'), 800);
-                                    }
+                                    // 모든 세션 완료 → 종료 팝업
+                                    setTimeout(() => startPomodoroPhase('done'), 800);
                                 } else {
+                                    // 짧은 휴식으로
                                     setTimeout(() => startPomodoroPhase('shortBreak'), 800);
                                 }
                             } else {
@@ -2626,18 +2598,18 @@ function loadFromCloud() {
     }
 
     function getPomodoroSettings() {
-        const focus = Math.max(1, parseInt($('pomodoroFocusMin').value) || 25);
-        const shortBreak = Math.max(1, parseInt($('pomodoroShortBreak').value) || 5);
-        const longBreak = Math.max(1, parseInt($('pomodoroLongBreak').value) || 15);
-        const longEvery = Math.max(1, parseInt($('pomodoroLongBreakEvery').value) || 4);
+        const focus      = Math.max(1, parseInt($('pomodoroFocusMin').value)      || 25);
+        const shortBreak = Math.max(1, parseInt($('pomodoroShortBreak').value)    || 5);
+        const longBreak  = Math.max(1, parseInt($('pomodoroLongBreak').value)     || 15);
+        const longEvery  = Math.max(1, parseInt($('pomodoroLongBreakEvery').value) || 4);
         return { focus, shortBreak, longBreak, longEvery };
     }
 
-    // +/- 버튼으로 세션 수 조절
+    // ◀ ▶ 버튼으로 체크박스 수 조절 (1~6)
     function changePomodoroSessions(delta) {
         const input = $('pomodoroLongBreakEvery');
         let val = parseInt(input.value) || 4;
-        val = Math.min(6, Math.max(3, val + delta));
+        val = Math.min(6, Math.max(1, val + delta));
         input.value = val;
         onPomodoroSettingChange();
     }
@@ -2655,15 +2627,13 @@ function loadFromCloud() {
 
     function onPomodoroSettingChange() {
         if (!pomodoroActive) return;
-        const { focus, longEvery } = getPomodoroSettings();
+        const { focus } = getPomodoroSettings();
         if (pomodoroPhase === 'focus' && !isR) {
             timeLeft = focus * 60;
             timerMode = 'timer';
             updateTUI();
         }
-        // 세션 수 바뀌면 자동멈춤 라벨도 업데이트
-        const label = $('pomodoroAutoStopLabel');
-        if (label) label.textContent = `${longEvery}세션 완료 후 자동 멈춤`;
+        updatePomodoroUI();
     }
 
     function updatePomodoroUI() {
@@ -2671,22 +2641,18 @@ function loadFromCloud() {
         const { longEvery } = getPomodoroSettings();
         const statusIcon = $('pomodoroStatusIcon');
         const statusText = $('pomodoroStatusText');
-        const countEl = $('pomodoroSessionCount');
-        const iconsEl = $('pomodoroIcons');
+        const countEl   = $('pomodoroSessionCount');
+        const iconsEl   = $('pomodoroIcons');
         if (!statusIcon) return;
 
         if (pomodoroPhase === 'focus') {
             statusIcon.textContent = '🍅';
             statusText.textContent = '집중 세션';
             statusText.className = 'text-[12px] font-extrabold text-red-500';
-        } else if (pomodoroPhase === 'shortBreak') {
+        } else {
             statusIcon.textContent = '☕';
             statusText.textContent = '짧은 휴식';
             statusText.className = 'text-[12px] font-extrabold text-green-500';
-        } else {
-            statusIcon.textContent = '🛌';
-            statusText.textContent = '긴 휴식';
-            statusText.className = 'text-[12px] font-extrabold text-blue-500';
         }
 
         countEl.textContent = `${pomodoroSessionCount} / ${longEvery}`;
@@ -2694,18 +2660,17 @@ function loadFromCloud() {
         iconsEl.innerHTML = '';
         for (let i = 0; i < longEvery; i++) {
             const span = document.createElement('span');
-            span.className = 'text-lg transition-all';
-            span.textContent = i < pomodoroSessionCount ? '🍅' : '⬜';
+            span.className = 'text-xl transition-all select-none';
+            span.textContent = i < pomodoroSessionCount ? '✅' : '☐';
             iconsEl.appendChild(span);
         }
     }
 
     function startPomodoroPhase(phase) {
-        const { focus, shortBreak, longBreak } = getPomodoroSettings();
+        const { focus, shortBreak, longEvery } = getPomodoroSettings();
         pomodoroPhase = phase;
         if (phase === 'focus') timeLeft = focus * 60;
-        else if (phase === 'shortBreak') timeLeft = shortBreak * 60;
-        else timeLeft = longBreak * 60;
+        else timeLeft = shortBreak * 60;
         timerMode = 'timer';
         sessionElapsed = 0;
         tLaps = 0;
@@ -2713,9 +2678,24 @@ function loadFromCloud() {
         clearInterval(tInt);
         updateTUI();
         updatePomodoroUI();
+
+        // 모든 체크박스 채워지면 종료 팝업
+        if (phase === 'done' || pomodoroSessionCount >= longEvery) {
+            pomodoroSessionCount = longEvery;
+            updatePomodoroUI();
+            const alertModal = $('appleTimerAlert');
+            alertModal.classList.remove('hidden');
+            setTimeout(() => {
+                alertModal.classList.remove('opacity-0');
+                alertModal.children[0].classList.remove('scale-95');
+                alertModal.children[0].classList.add('scale-100');
+            }, 10);
+            return;
+        }
+
         startTimer();
         if (Notification.permission === 'granted') {
-            const msg = phase === 'focus' ? '🍅 집중 세션 시작! 화이팅!' : (phase === 'shortBreak' ? '☕ 수고했어요! 잠깐 쉬어요.' : '🛌 긴 휴식 시간! 충분히 쉬세요.');
+            const msg = phase === 'focus' ? '🍅 집중 세션 시작! 화이팅!' : '☕ 수고했어요! 잠깐 쉬어요.';
             new Notification('Task Scheduler', { body: msg });
         }
     }
