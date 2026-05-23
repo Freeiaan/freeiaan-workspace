@@ -1324,8 +1324,8 @@ document.addEventListener('contextmenu', function(e) {
         const menuWidth = menu.offsetWidth || 150;
         const maxTop = window.innerHeight - menuHeight - 10;
         const maxLeft = window.innerWidth - menuWidth - 10;
-        menu.style.left = Math.min(e.pageX, maxLeft) + 'px';
-        menu.style.top = Math.min(e.pageY, maxTop) + 'px';
+        menu.style.left = Math.min(e.clientX, maxLeft) + 'px';
+        menu.style.top = Math.min(e.clientY, maxTop) + 'px';
 
     } else if (multiElement) {
         // 긴 일정(구간 일정) 우클릭
@@ -1354,8 +1354,8 @@ document.addEventListener('contextmenu', function(e) {
         menu.classList.remove('hidden');
         const menuHeight = menu.offsetHeight || 150;
         const menuWidth = menu.offsetWidth || 150;
-        menu.style.left = Math.min(e.pageX, window.innerWidth - menuWidth - 10) + 'px';
-        menu.style.top = Math.min(e.pageY, window.innerHeight - menuHeight - 10) + 'px';
+        menu.style.left = Math.min(e.clientX, window.innerWidth - menuWidth - 10) + 'px';
+        menu.style.top = Math.min(e.clientY, window.innerHeight - menuHeight - 10) + 'px';
 
     } else if (cellElement) {
         e.preventDefault();
@@ -5440,8 +5440,8 @@ function renderMemoFolders() {
             menu.appendChild(btn);
         });
 
-        menu.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
-        menu.style.top  = (e.pageY + 4) + 'px';
+        menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+        menu.style.top  = (e.clientY + 4) + 'px';
         menu.style.display = 'block';
     }
 
@@ -5452,8 +5452,8 @@ function renderMemoFolders() {
             + Object.entries(MEMO_COLOR_MAP).map(([key, c]) =>
                 '<button onclick="changeTabColor(\'' + tabId + '\',\'' + key + '\')" class="w-7 h-7 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform" style="background-color:' + c.bg + '"></button>'
             ).join('') + '</div>';
-        picker.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
-        picker.style.top  = (e.pageY + 4) + 'px';
+        picker.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+        picker.style.top  = (e.clientY + 4) + 'px';
         picker.style.display = 'block';
     }
 
@@ -5567,8 +5567,8 @@ function renderMemoFolders() {
             menu.appendChild(btn);
         });
 
-        menu.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
-        menu.style.top  = Math.min(e.pageY + 4, window.innerHeight - 220) + 'px';
+        menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+        menu.style.top  = Math.min(e.clientY + 4, window.innerHeight - 220) + 'px';
         menu.style.display = 'block';
     }
 
@@ -5579,8 +5579,8 @@ function renderMemoFolders() {
             + CARD_COLOR_OPTIONS.map(c =>
                 '<button onclick="changeCardColor(\'' + cardId + '\',\'' + c.name + '\')" class="w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform" style="background-color:' + c.bg + ';border-color:' + c.border + '"></button>'
             ).join('') + '</div>';
-        picker.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
-        picker.style.top  = Math.min(e.pageY + 4, window.innerHeight - 150) + 'px';
+        picker.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+        picker.style.top  = Math.min(e.clientY + 4, window.innerHeight - 150) + 'px';
         picker.style.display = 'block';
     }
 
@@ -5603,8 +5603,8 @@ function renderMemoFolders() {
             btn.onclick = () => { closeAllMemoContextMenus(); moveCardToTab(cardId, richMemoActiveId, tab.id); };
             menu.appendChild(btn);
         });
-        menu.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
-        menu.style.top  = Math.min(e.pageY + 4, window.innerHeight - 200) + 'px';
+        menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+        menu.style.top  = Math.min(e.clientY + 4, window.innerHeight - 200) + 'px';
         menu.style.display = 'block';
     }
 
