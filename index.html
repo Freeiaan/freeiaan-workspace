@@ -5685,12 +5685,13 @@ function renderMemoFolders() {
         editor.addEventListener('blur', saveMemoData);
 
         // ── TAB 들여쓰기 + 엔터 동작 + [] 체크박스 ──
+        let _lastEnterHadCheckbox = false; // 직전 Enter가 체크박스 줄이었는지 추적
+
         editor.addEventListener('keydown', function(e) {
             // TAB → 들여쓰기
             if (e.key === 'Tab') {
                 e.preventDefault();
                 if (e.shiftKey) {
-                    // Shift+TAB → 내어쓰기
                     document.execCommand('outdent');
                 } else {
                     document.execCommand('indent');
@@ -5699,15 +5700,83 @@ function renderMemoFolders() {
                 return;
             }
 
-            // Enter 처리 (들여쓰기 상태 유지 / 두 번 누르면 내어쓰기)
+            // Enter 처리
             if (e.key === 'Enter') {
                 const sel = window.getSelection();
                 if (!sel.rangeCount) return;
                 const range = sel.getRangeAt(0);
-                const block = range.startContainer.parentElement.closest('blockquote, ul, ol, li') ||
-                              range.startContainer.closest && range.startContainer.closest('blockquote, ul, ol, li');
+
+                // 현재 커서가 체크박스 줄(.memo-cb-wrap)에 있는지 확인
+                const node = range.startContainer;
+                const parentEl = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+                const cbWrap = parentEl ? parentEl.closest('.memo-cb-wrap') : null;
+                const lineEl = parentEl ? (parentEl.closest('div') || parentEl.closest('p') || parentEl) : null;
+                const hasCbInLine = lineEl && lineEl.querySelector && lineEl.querySelector('.memo-cb-wrap');
+
+                if (hasCbInLine) {
+                    // 이 줄에 텍스트 내용이 있는지 확인 (체크박스 제외)
+                    const lineText = lineEl.textContent.replace(/​/g, '').trim();
+
+                    if (lineText === '' && _lastEnterHadCheckbox) {
+                        // 두 번째 엔터 → 일반 줄로
+                        e.preventDefault();
+                        _lastEnterHadCheckbox = false;
+                        // 체크박스 줄 제거 후 빈 줄 삽입
+                        const br = document.createElement('br');
+                        lineEl.parentNode.insertBefore(br, lineEl.nextSibling);
+                        // 커서 이동
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(br);
+                        newRange.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(newRange);
+                        if (lineEl.textContent.replace(/​/g,'').trim() === '') lineEl.remove();
+                        saveAndUpdate();
+                        return;
+                    }
+
+                    // 첫 번째 엔터 → 새 체크박스 줄 생성
+                    e.preventDefault();
+                    _lastEnterHadCheckbox = true;
+
+                    const newCb = document.createElement('input');
+                    newCb.type = 'checkbox';
+                    newCb.className = 'memo-checkbox';
+                    newCb.style.cssText = 'width:14px;height:14px;cursor:pointer;margin-right:4px;vertical-align:middle;flex-shrink:0;accent-color:#22741C;';
+                    newCb.addEventListener('change', () => saveAndUpdate());
+                    newCb.addEventListener('click', (ev) => ev.stopPropagation());
+
+                    const newWrap = document.createElement('span');
+                    newWrap.className = 'memo-cb-wrap';
+                    newWrap.style.cssText = 'display:inline-flex;align-items:center;';
+                    newWrap.appendChild(newCb);
+
+                    const newLine = document.createElement('div');
+                    newLine.appendChild(newWrap);
+                    const textNode = document.createTextNode('​');
+                    newLine.appendChild(textNode);
+
+                    // 현재 줄 다음에 삽입
+                    const insertAfter = lineEl.nextSibling;
+                    if (insertAfter) {
+                        lineEl.parentNode.insertBefore(newLine, insertAfter);
+                    } else {
+                        lineEl.parentNode.appendChild(newLine);
+                    }
+
+                    // 커서를 새 체크박스 줄로
+                    const newRange = document.createRange();
+                    newRange.setStart(textNode, 1);
+                    newRange.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(newRange);
+                    saveAndUpdate();
+                    return;
+                }
+
+                // 일반 들여쓰기 블록에서 Enter
+                const block = range.startContainer.parentElement && range.startContainer.parentElement.closest('blockquote, ul, ol, li');
                 if (block) {
-                    // 현재 줄이 비어있으면 내어쓰기
                     const lineText = (range.startContainer.textContent || '').trim();
                     if (lineText === '') {
                         e.preventDefault();
@@ -5716,6 +5785,8 @@ function renderMemoFolders() {
                         return;
                     }
                 }
+
+                _lastEnterHadCheckbox = false;
             }
         });
 
