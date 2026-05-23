@@ -849,6 +849,28 @@
   
       </div>
     </div>
+
+  <!-- 🔁 반복일정 삭제 선택 모달 (애플 감성) -->
+  <div id="repeatDeleteModal" class="hidden fixed inset-0 z-[6000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-white/95 backdrop-blur-xl w-full max-w-[280px] rounded-[24px] shadow-2xl flex flex-col items-center p-6 text-center transform scale-95 transition-transform duration-300 border border-white/50">
+      
+      <div class="text-[42px] leading-none mb-3">🔁</div>
+      
+      <h3 class="text-[18px] font-black text-gray-900 mb-1.5 tracking-tight">반복 일정 삭제</h3>
+      <p class="text-[13px] font-medium text-gray-500 mb-6 leading-relaxed">이 일정만 삭제할까요?<br>아니면 전체 반복 일정을<br>모두 삭제할까요?</p>
+      
+      <button id="repeatDeleteOnlyBtn" class="w-full bg-[#22741C] text-white text-[14px] font-black py-3 rounded-[14px] transition-all active:scale-95 shadow-md mb-2">
+        이 날만 삭제
+      </button>
+      <button id="repeatDeleteAllBtn" class="w-full bg-red-500 text-white text-[14px] font-black py-3 rounded-[14px] transition-all active:scale-95 shadow-md mb-2">
+        전체 삭제
+      </button>
+      <button id="repeatDeleteCancelBtn" class="w-full text-gray-400 text-[13px] font-bold py-2 transition-all active:scale-95">
+        취소
+      </button>
+
+    </div>
+  </div>
   
     <div id="smartRecordModal" class="hidden fixed inset-0 z-[4000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#faf8f5] w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-[#e6e2d8]">
@@ -1433,8 +1455,7 @@ function handleContextDuplicate() {
 // 🗑️ 삭제 기능
 function handleContextDelete() {
     if (!selectedTaskDateKey || selectedTaskIndex === null) return;
-    if (!confirm('이 일정을 삭제하시겠습니까?')) return;
-    
+
     const idx = parseInt(selectedTaskIndex);
     const dateKey = selectedTaskDateKey;
     const year = new Date(dateKey).getFullYear();
@@ -1451,16 +1472,59 @@ function handleContextDelete() {
     if (!targetTask) return;
 
     if (targetTask._repeatId) {
-        // 반복 일정 → repeatTasks에서 완전 삭제
-        repeatTasks = repeatTasks.filter(r => r.id !== targetTask._repeatId);
-        setLocal('ianRepeatTasks', repeatTasks);
+        // 반복일정 → 애플 감성 선택 모달 표시
+        const modal = document.getElementById('repeatDeleteModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.children[0].classList.remove('scale-95');
+            modal.children[0].classList.add('scale-100');
+        }, 10);
+
+        // 이 날만 삭제
+        document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
+            closeRepeatDeleteModal();
+            // allTasks에 _repeatId가 붙은 "이 날만 제외" 항목 추가
+            if (!allTasks[dateKey]) allTasks[dateKey] = [];
+            // 이미 없는 경우에만 추가 (중복 방지)
+            const alreadyExcluded = allTasks[dateKey].some(t => t._repeatId === targetTask._repeatId);
+            if (!alreadyExcluded) {
+                allTasks[dateKey].push({ ...targetTask, _deleted: true });
+            }
+            syncToCloud();
+            initAppRenders();
+        };
+
+        // 전체 삭제
+        document.getElementById('repeatDeleteAllBtn').onclick = () => {
+            closeRepeatDeleteModal();
+            repeatTasks = repeatTasks.filter(r => r.id !== targetTask._repeatId);
+            setLocal('ianRepeatTasks', repeatTasks);
+            syncToCloud();
+            initAppRenders();
+        };
+
+        // 취소
+        document.getElementById('repeatDeleteCancelBtn').onclick = () => {
+            closeRepeatDeleteModal();
+        };
+
     } else {
-        // 일반 일정 → allTasks에서 실제 객체 위치 찾아 삭제
+        // 일반 일정
+        if (!confirm('이 일정을 삭제하시겠습니까?')) return;
         const realIdx = (allTasks[dateKey] || []).indexOf(targetTask);
         if (realIdx !== -1) allTasks[dateKey].splice(realIdx, 1);
+        syncToCloud();
+        initAppRenders();
     }
-    syncToCloud();
-    initAppRenders();
+}
+
+function closeRepeatDeleteModal() {
+    const modal = document.getElementById('repeatDeleteModal');
+    modal.classList.add('opacity-0');
+    modal.children[0].classList.remove('scale-100');
+    modal.children[0].classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
 }
 
     // ✏️ 일정 수정 (컨텍스트 메뉴 → 모바일용)
@@ -2674,7 +2738,8 @@ function loadFromCloud() {
         const repeatItems = repeatForDay
             .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id))
             .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
-        let tasks = [...repeatItems, ...(allTasks[dateKey] || [])];
+        const allTasksForDay = (allTasks[dateKey] || []).filter(t => !t._deleted);
+        let tasks = [...repeatItems, ...allTasksForDay];
         
         // 💡 [실시간 연동] 남은 할 일(체크 안 된 것) 개수를 세어서 아코디언 바 텍스트에 즉시 반영!
         const remainingCount = tasks.filter(t => !t.isChecked).length;
@@ -3686,9 +3751,11 @@ function renderCalendar() {
         // 🔁 반복 일정 합치기 (렌더링용 임시 배열, allTasks 직접 수정 안 함)
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, new Date(key).getFullYear(), new Date(key).getMonth()).includes(key));
         const repeatItems = repeatForDay
-            .filter(r => !(allTasks[key] || []).some(t => t._repeatId === r.id))
+            .filter(r => !(allTasks[key] || []).some(t => t._repeatId === r.id)) // 이 날 삭제됐거나 수정된 것 제외
             .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
-        const dayTasks = [...repeatItems, ...(allTasks[key] || [])];
+        // _deleted 플래그가 있는 항목(이 날만 삭제)은 렌더링에서 제외
+        const allTasksForDay = (allTasks[key] || []).filter(t => !t._deleted);
+        const dayTasks = [...repeatItems, ...allTasksForDay];
         
         if (dayTasks.length > 0) {
           dayTasks.forEach((t, idx) => {
