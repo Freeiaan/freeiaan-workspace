@@ -5442,7 +5442,7 @@ function renderMemoFolders() {
         const picker = document.getElementById('memoTabColorPicker');
         picker.innerHTML = '<p class="text-[11px] text-gray-500 font-bold px-3 pt-2 pb-1">색상 선택</p><div class="flex flex-wrap gap-2 px-3 pb-3">'
             + Object.entries(MEMO_COLOR_MAP).map(([key, c]) =>
-                '<button onclick="changeTabColor('' + tabId + '','' + key + '')" class="w-7 h-7 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform" style="background-color:' + c.bg + '"></button>'
+                '<button onclick="changeTabColor(\'' + tabId + '\',\'' + key + '\')" class="w-7 h-7 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform" style="background-color:' + c.bg + '"></button>'
             ).join('') + '</div>';
         picker.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
         picker.style.top  = (e.pageY + 4) + 'px';
@@ -5569,7 +5569,7 @@ function renderMemoFolders() {
         const picker = document.getElementById('memoCardColorPicker');
         picker.innerHTML = '<p class="text-[11px] text-gray-500 font-bold px-3 pt-2 pb-1">카드 색상</p><div class="flex flex-wrap gap-2 px-3 pb-3">'
             + CARD_COLOR_OPTIONS.map(c =>
-                '<button onclick="changeCardColor('' + cardId + '','' + c.name + '')" class="w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform" style="background-color:' + c.bg + ';border-color:' + c.border + '"></button>'
+                '<button onclick="changeCardColor(\'' + cardId + '\',\'' + c.name + '\')" class="w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform" style="background-color:' + c.bg + ';border-color:' + c.border + '"></button>'
             ).join('') + '</div>';
         picker.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
         picker.style.top  = Math.min(e.pageY + 4, window.innerHeight - 150) + 'px';
