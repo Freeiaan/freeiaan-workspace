@@ -5381,7 +5381,7 @@ function renderMemoFolders() {
         });
         const inp = document.getElementById('newTabNameInput');
         if (inp) inp.value = '';
-        document.getElementById('addMemoTabModal').classList.remove('hidden');
+        document.getElementById('addMemoTabModal').style.display='flex';
     };
 
     window.selectMemoColor = function(el, colorName) {
@@ -5398,7 +5398,7 @@ function renderMemoFolders() {
         const newTab = { id: 'tab_' + Date.now(), label: name, color: richMemoSelectedColor, content: '' };
         richMemoTabs.push(newTab);
         richMemoActiveId = newTab.id;
-        document.getElementById('addMemoTabModal').classList.add('hidden');
+        document.getElementById('addMemoTabModal').style.display='none';
         saveRichMemoTabs(); renderRichMemoTabs(); loadRichMemoEditorContent();
     };
 
@@ -5512,7 +5512,7 @@ function renderMemoFolders() {
 
 
   <!-- 새 메모 탭 추가 팝업 -->
-  <div id="addMemoTabModal" class="hidden fixed inset-0 z-[7000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+  <div id="addMemoTabModal" style="display:none" class="fixed inset-0 z-[7000] items-center justify-center bg-black/40 backdrop-blur-sm px-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl">
       <h3 class="text-base font-black text-gray-800 mb-4">새 메모 탭 추가</h3>
       <input type="text" id="newTabNameInput" placeholder="탭 이름 (예: 아이디어)" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 mb-4 outline-none focus:border-blue-400 text-sm font-medium">
@@ -5524,7 +5524,7 @@ function renderMemoFolders() {
         <button onclick="selectMemoColor(this,'purple')" data-color="purple" style="border-width:2px" class="w-8 h-8 rounded-full bg-purple-100 border-purple-400 focus:outline-none transition-all"></button>
       </div>
       <div class="flex gap-2">
-        <button onclick="document.getElementById('addMemoTabModal').classList.add('hidden')" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold active:scale-95 transition-transform">취소</button>
+        <button onclick="document.getElementById('addMemoTabModal').style.display='none'" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold active:scale-95 transition-transform">취소</button>
         <button onclick="createNewMemoTab()" class="flex-1 py-2.5 bg-[#22741C] text-white rounded-xl text-sm font-bold active:scale-95 transition-transform">추가하기</button>
       </div>
     </div>
