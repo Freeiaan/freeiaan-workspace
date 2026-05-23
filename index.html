@@ -5233,6 +5233,16 @@ function renderMemoFolders() {
         } catch(e) {
             richMemoTabs = JSON.parse(JSON.stringify(DEFAULT_RICH_MEMO_TABS));
         }
+        // 🔄 기존 ianMemo 마이그레이션 (한 번만 실행)
+        const oldMemo = localStorage.getItem('ianMemo');
+        const migrated = localStorage.getItem('ianMemoMigrated');
+        if (oldMemo && !migrated) {
+            const htmlContent = oldMemo.replace(/\n/g, '<br>');
+            if (richMemoTabs[0]) richMemoTabs[0].content = htmlContent;
+            localStorage.setItem(RICH_MEMO_KEY, JSON.stringify(richMemoTabs));
+            localStorage.setItem('ianMemoMigrated', '1');
+        }
+
         richMemoActiveId = richMemoTabs[0].id;
     }
 
