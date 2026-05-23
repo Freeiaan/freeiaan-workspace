@@ -1418,19 +1418,24 @@ function handleContextDuplicate() {
     }
 }
 
-// 🗑️ 삭제 기능
 function handleContextDelete() {
     if (!selectedTaskDateKey || selectedTaskIndex === null) return;
     if (!confirm('이 일정을 삭제하시겠습니까?')) return;
     
     const tasks = allTasks[selectedTaskDateKey];
-    if (tasks) {
-        tasks.splice(selectedTaskIndex, 1);
+    if (tasks && tasks[selectedTaskIndex]) {
+        const repeatId = tasks[selectedTaskIndex]._repeatId;
+        if (repeatId) {
+            // 반복 일정 → repeatTasks에서 완전 삭제
+            repeatTasks = repeatTasks.filter(r => r.id !== repeatId);
+            setLocal('ianRepeatTasks', repeatTasks);
+        } else {
+            tasks.splice(selectedTaskIndex, 1);
+        }
         syncToCloud();
         initAppRenders();
     }
 }
-
     // ✏️ 일정 수정 (컨텍스트 메뉴 → 모바일용)
     function handleContextEdit() {
         if (!selectedTaskDateKey || selectedTaskIndex === null) return;
