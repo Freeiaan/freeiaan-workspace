@@ -436,37 +436,39 @@
           </div>
           
           <!-- 📝 인덱스 메모장 (탭 + 카드 리스트 + 에디터) -->
-          <div id="memoWidgetContainer" class="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col min-h-[280px] flex-1 relative mb-16 md:mb-0 transition-colors duration-300">
-            <!-- 탭 헤더 -->
-            <div class="flex items-center px-2 pt-2 pb-0 flex-shrink-0 border-b border-gray-100 gap-1.5">
+          <div id="memoWidgetContainer" class="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col min-h-[280px] flex-1 relative mb-16 md:mb-0">
+            <!-- 탭 헤더 (색상 적용 영역) -->
+            <div id="memoTabHeader" class="flex items-center px-2 pt-2 pb-0 flex-shrink-0 border-b border-gray-100 gap-1.5 rounded-t-xl transition-colors duration-300">
               <div class="flex flex-wrap gap-1.5 pb-2 flex-1 min-w-0 pt-1" id="richMemoTabContainer"></div>
-              <button onclick="openAddRichMemoTabModal()" class="flex-shrink-0 mb-2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-base font-bold flex items-center justify-center transition-colors" title="탭 추가">+</button>
+              <button onclick="openAddRichMemoTabModal()" class="flex-shrink-0 mb-2 w-6 h-6 rounded-full bg-white/60 hover:bg-white text-gray-500 text-base font-bold flex items-center justify-center transition-colors" title="탭 추가">+</button>
             </div>
 
             <!-- 카드 리스트 뷰 -->
-            <div class="flex-1 p-3 overflow-y-auto custom-scrollbar flex flex-col gap-2" id="memoCardListView">
-              <button onclick="createNewMemoCard()" class="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 font-bold text-xs hover:border-gray-300 hover:text-gray-500 hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5">
+            <div class="flex-1 p-3 overflow-y-auto custom-scrollbar bg-white rounded-b-xl" id="memoCardListView">
+              <button onclick="createNewMemoCard()" class="w-full py-2.5 mb-2 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 font-bold text-xs hover:border-gray-300 hover:text-gray-500 hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5">
                 <span class="text-base leading-none">+</span> 새 메모 추가
               </button>
-              <div id="memoCardContainer" class="flex flex-col gap-2"></div>
+              <div id="memoCardContainer" class="grid grid-cols-2 gap-2"></div>
             </div>
 
             <!-- 에디터 뷰 (카드 열었을 때) -->
-            <div class="flex-1 p-3 hidden flex-col" id="memoEditorView">
-              <button onclick="closeMemoEditor()" class="text-xs font-bold text-gray-400 mb-3 flex items-center gap-1 hover:text-gray-700 transition-colors w-fit">◀ 목록으로</button>
+            <div class="flex-1 p-3 hidden flex-col bg-white rounded-b-xl" id="memoEditorView">
+              <div class="flex items-center justify-between mb-2">
+                <button onclick="closeMemoEditor()" class="text-xs font-bold text-gray-400 flex items-center gap-1 hover:text-gray-700 transition-colors">◀ 목록으로</button>
+              </div>
               <input type="text" id="memoCardTitleInput" placeholder="제목을 입력하세요"
                 class="text-sm font-black text-gray-800 bg-transparent border-none outline-none mb-2 w-full placeholder-gray-300">
               <div class="w-full h-px bg-gray-100 mb-2"></div>
               <div id="richMemoEditor"
                 contenteditable="true"
                 class="flex-1 text-[13px] leading-relaxed text-gray-700 outline-none custom-scrollbar overflow-y-auto"
-                style="min-height: 120px;"
+                style="min-height: 120px; background: white;"
                 data-placeholder="탭에 마우스를 대고 Shift 마우스 스크롤하면 더 많은 탭이 보여요.&#10;텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
               </div>
             </div>
 
             <!-- 하단: 확장메모 버튼들 -->
-            <div class="flex gap-1.5 px-3 py-2 border-t border-gray-100 flex-shrink-0 overflow-x-hidden">
+            <div class="flex gap-1.5 px-3 py-2 border-t border-gray-100 flex-shrink-0 overflow-x-hidden bg-white rounded-b-xl">
               <button id="extMemoBtn0" onclick="openExtendedMemo(0)" class="flex-1 text-[10px] font-bold bg-gray-50 border border-gray-200 text-gray-600 py-1.5 rounded-lg hover:bg-gray-100 truncate px-1 transition-colors">메모 1</button>
               <button id="extMemoBtn1" onclick="openExtendedMemo(1)" class="flex-1 text-[10px] font-bold bg-gray-50 border border-gray-200 text-gray-600 py-1.5 rounded-lg hover:bg-gray-100 truncate px-1 transition-colors">메모 2</button>
               <button id="extMemoBtn2" onclick="openExtendedMemo(2)" class="flex-1 text-[10px] font-bold bg-gray-50 border border-gray-200 text-gray-600 py-1.5 rounded-lg hover:bg-gray-100 truncate px-1 transition-colors">메모 3</button>
@@ -5229,18 +5231,30 @@ function renderMemoFolders() {
     // 📝 인덱스 메모장 — 탭 + 카드 리스트 + 에디터 완성본
     // ===================================================
 
-    // 저장 키 (freeiaan_ 접두사 통일)
     const RICH_MEMO_KEY    = 'freeiaan_memoTabs';
     const RICH_MEMO_ACTIVE = 'freeiaan_activeMemoTab';
+    const MEMO_TRASH_KEY   = 'freeiaan_memoTrash';
 
-    // 색상 팔레트
     const MEMO_COLOR_MAP = {
-        red:    { bg: '#fee2e2', text: '#b91c1c', editorBg: '#fff5f5' },
-        blue:   { bg: '#dbeafe', text: '#1d4ed8', editorBg: '#f0f7ff' },
-        green:  { bg: '#dcfce7', text: '#15803d', editorBg: '#f0fdf4' },
-        yellow: { bg: '#fef9c3', text: '#92400e', editorBg: '#fefce8' },
-        purple: { bg: '#f3e8ff', text: '#7e22ce', editorBg: '#faf5ff' },
+        red:    { bg: '#fee2e2', text: '#b91c1c' },
+        blue:   { bg: '#dbeafe', text: '#1d4ed8' },
+        green:  { bg: '#dcfce7', text: '#15803d' },
+        yellow: { bg: '#fef9c3', text: '#92400e' },
+        purple: { bg: '#f3e8ff', text: '#7e22ce' },
+        orange: { bg: '#ffedd5', text: '#c2410c' },
+        pink:   { bg: '#fce7f3', text: '#9d174d' },
     };
+
+    const CARD_COLOR_OPTIONS = [
+        { name: 'white',  bg: '#ffffff', border: '#e5e7eb' },
+        { name: 'red',    bg: '#fff5f5', border: '#fecaca' },
+        { name: 'blue',   bg: '#eff6ff', border: '#bfdbfe' },
+        { name: 'green',  bg: '#f0fdf4', border: '#bbf7d0' },
+        { name: 'yellow', bg: '#fefce8', border: '#fef08a' },
+        { name: 'purple', bg: '#faf5ff', border: '#e9d5ff' },
+        { name: 'orange', bg: '#fff7ed', border: '#fed7aa' },
+        { name: 'pink',   bg: '#fdf2f8', border: '#f9a8d4' },
+    ];
 
     function getMemoColorEntry(colorVal) {
         if (MEMO_COLOR_MAP[colorVal]) return MEMO_COLOR_MAP[colorVal];
@@ -5250,38 +5264,36 @@ function renderMemoFolders() {
         return MEMO_COLOR_MAP.blue;
     }
 
-    // 기본 탭 구조 (cards 배열 포함)
     const DEFAULT_RICH_MEMO_TABS = [
         { id: 'tab_1', label: '📝 메모 1', color: 'red',   cards: [] },
         { id: 'tab_2', label: '📝 메모 2', color: 'blue',  cards: [] },
         { id: 'tab_3', label: '📝 메모 3', color: 'green', cards: [] },
     ];
 
-    let richMemoTabs     = [];
-    let richMemoActiveId = '';
+    let richMemoTabs        = [];
+    let richMemoActiveId    = '';
     let richMemoActiveCardId = null;
+    let memoTrash           = [];
 
-    // ── 데이터 로드 ───────────────────────────────────────
+    // ── 데이터 로드 ──────────────────────────────────────
     function loadRichMemoTabs() {
         try {
             const saved = localStorage.getItem(RICH_MEMO_KEY);
             if (saved) {
                 richMemoTabs = JSON.parse(saved);
-                // 구버전(content 방식) → cards 방식 마이그레이션
                 richMemoTabs = richMemoTabs.map(t => {
                     const label = t.label || t.title || '메모';
                     const color = MEMO_COLOR_MAP[t.color] ? t.color : (() => {
                         for (const k in MEMO_COLOR_MAP) { if (MEMO_COLOR_MAP[k].bg === t.color) return k; }
                         return 'blue';
                     })();
-                    // content만 있고 cards가 없는 구버전 탭 → 카드 1개로 변환
                     if (!t.cards) {
                         const cards = t.content && t.content.trim()
-                            ? [{ id: 'card_migrated_' + t.id, title: label, content: t.content, date: new Date().toLocaleDateString('ko-KR') }]
+                            ? [{ id: 'card_migrated_' + t.id, title: label, content: t.content, date: new Date().toLocaleDateString('ko-KR'), color: 'white', pinned: false }]
                             : [];
                         return { id: t.id, label, color, cards };
                     }
-                    return { ...t, label, color };
+                    return { ...t, label, color, cards: t.cards.map(c => ({ color: 'white', pinned: false, ...c })) };
                 });
             } else {
                 richMemoTabs = JSON.parse(JSON.stringify(DEFAULT_RICH_MEMO_TABS));
@@ -5291,7 +5303,8 @@ function renderMemoFolders() {
             richMemoTabs = JSON.parse(JSON.stringify(DEFAULT_RICH_MEMO_TABS));
         }
 
-        // 🔄 ianRichMemoTabs → freeiaan_memoTabs 마이그레이션
+        try { memoTrash = JSON.parse(localStorage.getItem(MEMO_TRASH_KEY) || '[]'); } catch(e) { memoTrash = []; }
+
         var oldRichTabs = localStorage.getItem('ianRichMemoTabs');
         if (oldRichTabs && !localStorage.getItem('ianRichMemoMigrated')) {
             try {
@@ -5302,7 +5315,7 @@ function renderMemoFolders() {
                         for (var k in MEMO_COLOR_MAP) { if (MEMO_COLOR_MAP[k].bg === t.color) { colorName = k; break; } }
                         const label = t.label || t.title || '메모';
                         const cards = t.content && t.content.trim()
-                            ? [{ id: 'card_migrated_' + t.id, title: label, content: t.content, date: new Date().toLocaleDateString('ko-KR') }]
+                            ? [{ id: 'card_migrated_' + t.id, title: label, content: t.content, date: new Date().toLocaleDateString('ko-KR'), color: 'white', pinned: false }]
                             : [];
                         return { id: t.id, label, color: colorName, cards };
                     });
@@ -5312,16 +5325,10 @@ function renderMemoFolders() {
             localStorage.setItem('ianRichMemoMigrated', '1');
         }
 
-        // 🔄 ianMemo → 첫 번째 탭 카드로 마이그레이션
-        const oldMemo  = localStorage.getItem('ianMemo');
-        const migrated = localStorage.getItem('ianMemoMigrated');
-        if (oldMemo && !migrated && richMemoTabs[0]) {
+        const oldMemo = localStorage.getItem('ianMemo');
+        if (oldMemo && !localStorage.getItem('ianMemoMigrated') && richMemoTabs[0]) {
             if (!richMemoTabs[0].cards) richMemoTabs[0].cards = [];
-            richMemoTabs[0].cards.unshift({
-                id: 'card_ianmemo', title: '기존 메모',
-                content: oldMemo.replace(/\n/g, '<br>'),
-                date: new Date().toLocaleDateString('ko-KR')
-            });
+            richMemoTabs[0].cards.unshift({ id: 'card_ianmemo', title: '기존 메모', content: oldMemo.replace(/\n/g, '<br>'), date: new Date().toLocaleDateString('ko-KR'), color: 'white', pinned: false });
             localStorage.setItem(RICH_MEMO_KEY, JSON.stringify(richMemoTabs));
             localStorage.setItem('ianMemoMigrated', '1');
         }
@@ -5333,6 +5340,14 @@ function renderMemoFolders() {
     function saveMemoData() {
         localStorage.setItem(RICH_MEMO_KEY, JSON.stringify(richMemoTabs));
         localStorage.setItem(RICH_MEMO_ACTIVE, richMemoActiveId);
+        localStorage.setItem(MEMO_TRASH_KEY, JSON.stringify(memoTrash));
+    }
+
+    function applyTabHeaderColor(colorKey) {
+        const header = document.getElementById('memoTabHeader');
+        if (!header) return;
+        const c = getMemoColorEntry(colorKey);
+        header.style.backgroundColor = c.bg;
     }
 
     // ── 탭 렌더링 ─────────────────────────────────────────
@@ -5340,46 +5355,114 @@ function renderMemoFolders() {
         const container = document.getElementById('richMemoTabContainer');
         if (!container) return;
         container.innerHTML = '';
-        richMemoTabs.forEach(tab => {
+        richMemoTabs.forEach((tab, idx) => {
             const isActive = tab.id === richMemoActiveId;
             const c = getMemoColorEntry(tab.color);
             const btn = document.createElement('button');
-            btn.className = 'flex-shrink-0 px-3 py-1 text-[11px] font-bold rounded-t-lg transition-all whitespace-nowrap border cursor-pointer '
-                + (isActive ? 'border-b-0 border-gray-200 shadow-sm' : 'border-transparent text-gray-400 hover:text-gray-600');
-            btn.style.backgroundColor = isActive ? c.bg : 'transparent';
-            btn.style.color           = isActive ? c.text : '';
+            btn.dataset.tabId = tab.id;
+            btn.className = 'flex-shrink-0 px-3 py-1 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap border cursor-pointer '
+                + (isActive ? 'border-white/50 shadow-sm opacity-100' : 'border-transparent opacity-60 hover:opacity-90');
+            btn.style.backgroundColor = isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)';
+            btn.style.color = c.text;
             btn.textContent = tab.label;
+            btn.draggable = true;
 
-            btn.addEventListener('click',       ()  => selectRichMemoTab(tab.id));
-            btn.addEventListener('dblclick',    (e) => { e.stopPropagation(); renameRichMemoTab(tab.id); });
-            btn.addEventListener('contextmenu', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                if (richMemoTabs.length > 1 && confirm('"' + tab.label + '" 탭을 삭제할까요?')) {
-                    richMemoTabs = richMemoTabs.filter(t => t.id !== tab.id);
-                    if (richMemoActiveId === tab.id) richMemoActiveId = richMemoTabs[0].id;
-                    saveMemoData(); renderRichMemoTabs(); renderMemoCards();
+            btn.addEventListener('click', () => selectRichMemoTab(tab.id));
+            btn.addEventListener('dblclick', (e) => { e.stopPropagation(); showTabContextMenu(e, tab.id); });
+            btn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showTabContextMenu(e, tab.id); });
+
+            btn.addEventListener('dragstart', (e) => { e.dataTransfer.setData('memoTabDrag', tab.id); e.dataTransfer.effectAllowed = 'move'; });
+            btn.addEventListener('dragover',  (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; btn.style.transform = 'scale(1.05)'; });
+            btn.addEventListener('dragleave', ()  => { btn.style.transform = ''; });
+            btn.addEventListener('drop', (e) => {
+                e.preventDefault(); btn.style.transform = '';
+                const draggedId = e.dataTransfer.getData('memoTabDrag');
+                const cardId    = e.dataTransfer.getData('memoCardDrag');
+                const fromTabId = e.dataTransfer.getData('memoCardFromTab');
+                if (cardId && fromTabId && fromTabId !== tab.id) { moveCardToTab(cardId, fromTabId, tab.id); return; }
+                if (draggedId && draggedId !== tab.id) {
+                    const fromIdx = richMemoTabs.findIndex(t => t.id === draggedId);
+                    const toIdx   = richMemoTabs.findIndex(t => t.id === tab.id);
+                    if (fromIdx >= 0 && toIdx >= 0) { const [m] = richMemoTabs.splice(fromIdx,1); richMemoTabs.splice(toIdx,0,m); saveMemoData(); renderRichMemoTabs(); }
                 }
             });
+
             container.appendChild(btn);
         });
     }
 
+    // ── 탭 컨텍스트 메뉴 ──────────────────────────────────
+    function showTabContextMenu(e, tabId) {
+        closeAllMemoContextMenus();
+        const tab = richMemoTabs.find(t => t.id === tabId);
+        if (!tab) return;
+        const idx = richMemoTabs.findIndex(t => t.id === tabId);
+
+        const menu = document.getElementById('memoTabContextMenu');
+        menu.innerHTML = '';
+
+        const items = [
+            { icon: '◀', label: '왼쪽으로 이동', disabled: idx === 0,
+              action: () => { const [t] = richMemoTabs.splice(idx,1); richMemoTabs.splice(idx-1,0,t); saveMemoData(); renderRichMemoTabs(); } },
+            { icon: '▶', label: '오른쪽으로 이동', disabled: idx === richMemoTabs.length-1,
+              action: () => { const [t] = richMemoTabs.splice(idx,1); richMemoTabs.splice(idx+1,0,t); saveMemoData(); renderRichMemoTabs(); } },
+            { divider: true },
+            { icon: '✏️', label: '이름 변경',
+              action: () => { const n = prompt('탭 이름을 변경하세요:', tab.label); if (n && n.trim()) { tab.label = n.trim(); saveMemoData(); renderRichMemoTabs(); } } },
+            { icon: '🎨', label: '색상 변경', action: () => showTabColorPicker(e, tabId) },
+            { divider: true },
+            { icon: '🗑️', label: '탭 삭제', danger: true,
+              action: () => {
+                if (richMemoTabs.length <= 1) { alert('마지막 탭은 삭제할 수 없어요!'); return; }
+                (tab.cards || []).forEach(card => memoTrash.unshift({ tabLabel: tab.label, card: JSON.parse(JSON.stringify(card)), deletedAt: new Date().toLocaleDateString('ko-KR') }));
+                richMemoTabs = richMemoTabs.filter(t => t.id !== tabId);
+                if (richMemoActiveId === tabId) richMemoActiveId = richMemoTabs[0].id;
+                saveMemoData(); renderRichMemoTabs(); renderMemoCards(); applyTabHeaderColor(richMemoTabs.find(t=>t.id===richMemoActiveId).color);
+              }
+            },
+        ];
+
+        items.forEach(item => {
+            if (item.divider) { const hr = document.createElement('div'); hr.className = 'h-px bg-gray-100 my-1 mx-2'; menu.appendChild(hr); return; }
+            const btn = document.createElement('button');
+            btn.className = 'w-full px-3 py-2 text-left text-[12px] font-bold flex items-center gap-2 rounded-lg transition-colors '
+                + (item.disabled ? 'text-gray-300 cursor-not-allowed' : item.danger ? 'text-red-500 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100');
+            btn.innerHTML = '<span>' + item.icon + '</span><span>' + item.label + '</span>';
+            if (!item.disabled) btn.onclick = () => { closeAllMemoContextMenus(); item.action(); };
+            menu.appendChild(btn);
+        });
+
+        menu.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
+        menu.style.top  = (e.pageY + 4) + 'px';
+        menu.style.display = 'block';
+    }
+
+    function showTabColorPicker(e, tabId) {
+        closeAllMemoContextMenus();
+        const picker = document.getElementById('memoTabColorPicker');
+        picker.innerHTML = '<p class="text-[11px] text-gray-500 font-bold px-3 pt-2 pb-1">색상 선택</p><div class="flex flex-wrap gap-2 px-3 pb-3">'
+            + Object.entries(MEMO_COLOR_MAP).map(([key, c]) =>
+                '<button onclick="changeTabColor('' + tabId + '','' + key + '')" class="w-7 h-7 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform" style="background-color:' + c.bg + '"></button>'
+            ).join('') + '</div>';
+        picker.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
+        picker.style.top  = (e.pageY + 4) + 'px';
+        picker.style.display = 'block';
+    }
+
+    window.changeTabColor = function(tabId, colorKey) {
+        const tab = richMemoTabs.find(t => t.id === tabId);
+        if (tab) { tab.color = colorKey; saveMemoData(); renderRichMemoTabs(); applyTabHeaderColor(tab.color); }
+        closeAllMemoContextMenus();
+    };
+
     function selectRichMemoTab(tabId) {
         saveMemoData();
         richMemoActiveId = tabId;
-        const c = getMemoColorEntry(richMemoTabs.find(t => t.id === tabId).color);
-        const widget = document.getElementById('memoWidgetContainer');
-        if (widget) widget.style.backgroundColor = c.editorBg;
+        const tab = richMemoTabs.find(t => t.id === tabId);
+        applyTabHeaderColor(tab.color);
         closeMemoEditor();
         renderRichMemoTabs();
         renderMemoCards();
-    }
-
-    function renameRichMemoTab(tabId) {
-        const tab = richMemoTabs.find(t => t.id === tabId);
-        if (!tab) return;
-        const newName = prompt('탭 이름을 변경하세요:', tab.label);
-        if (newName && newName.trim()) { tab.label = newName.trim(); saveMemoData(); renderRichMemoTabs(); }
     }
 
     // ── 카드 리스트 ───────────────────────────────────────
@@ -5389,33 +5472,154 @@ function renderMemoFolders() {
         if (!container || !tab) return;
         container.innerHTML = '';
 
-        if (!tab.cards || tab.cards.length === 0) {
-            container.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">저장된 메모가 없어요.</p>';
+        const pinnedCards = (tab.cards || []).filter(c => c.pinned);
+        const normalCards = (tab.cards || []).filter(c => !c.pinned).reverse();
+        const displayCards = [...pinnedCards, ...normalCards];
+
+        if (displayCards.length === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-400 text-center py-4 col-span-2">저장된 메모가 없어요.</p>';
             return;
         }
 
-        [...tab.cards].reverse().forEach(card => {
+        displayCards.forEach(card => {
+            const colorOpt  = CARD_COLOR_OPTIONS.find(c => c.name === (card.color || 'white')) || CARD_COLOR_OPTIONS[0];
             const plainText = card.content.replace(/<[^>]*>?/gm, '').trim() || '내용 없음';
             const div = document.createElement('div');
-            div.className = 'bg-white p-3 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group';
-            div.onclick = () => openMemoEditor(card.id);
+            div.className = 'p-3 rounded-xl border cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative';
+            div.style.backgroundColor = colorOpt.bg;
+            div.style.borderColor = colorOpt.border;
+            div.draggable = true;
+            div.dataset.cardId = card.id;
+
             div.innerHTML =
-                '<h4 class="text-[12px] font-black text-gray-800 mb-1 truncate">' + (card.title || '제목 없음') + '</h4>' +
-                '<p class="text-[11px] text-gray-500 leading-relaxed overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + plainText + '</p>' +
-                '<div class="text-[10px] text-gray-400 mt-1.5 flex justify-between">' +
-                '<span>' + card.date + '</span>' +
-                '<span class="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500">열기 ➔</span>' +
-                '</div>';
+                (card.pinned ? '<div class="absolute top-2 right-2 text-[10px] leading-none">📌</div>' : '') +
+                '<h4 class="text-[12px] font-black text-gray-800 mb-1 truncate ' + (card.pinned ? 'pr-5' : '') + '">' + (card.title || '제목 없음') + '</h4>' +
+                '<p class="text-[11px] text-gray-500 leading-relaxed overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">' + plainText + '</p>' +
+                '<div class="text-[10px] text-gray-400 mt-1.5">' + card.date + '</div>';
+
+            div.onclick = () => openMemoEditor(card.id);
+            div.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showCardContextMenu(e, card.id); });
+
+            div.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('memoCardDrag', card.id);
+                e.dataTransfer.setData('memoCardFromTab', richMemoActiveId);
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => { div.style.opacity = '0.4'; }, 0);
+            });
+            div.addEventListener('dragend', () => { div.style.opacity = '1'; });
+
             container.appendChild(div);
         });
     }
+
+    function moveCardToTab(cardId, fromTabId, toTabId) {
+        const fromTab = richMemoTabs.find(t => t.id === fromTabId);
+        const toTab   = richMemoTabs.find(t => t.id === toTabId);
+        if (!fromTab || !toTab) return;
+        const cardIdx = fromTab.cards.findIndex(c => c.id === cardId);
+        if (cardIdx < 0) return;
+        const [card] = fromTab.cards.splice(cardIdx, 1);
+        toTab.cards.push(card);
+        saveMemoData(); renderMemoCards(); renderRichMemoTabs();
+    }
+
+    // ── 카드 컨텍스트 메뉴 ────────────────────────────────
+    function showCardContextMenu(e, cardId) {
+        closeAllMemoContextMenus();
+        const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
+        const card = tab && tab.cards.find(c => c.id === cardId);
+        if (!card) return;
+
+        const menu = document.getElementById('memoCardContextMenu');
+        menu.innerHTML = '';
+
+        const items = [
+            { icon: card.pinned ? '📌' : '📌', label: card.pinned ? '고정 해제' : '상단 고정',
+              action: () => { card.pinned = !card.pinned; saveMemoData(); renderMemoCards(); } },
+            { divider: true },
+            { icon: '🎨', label: '카드 색상', action: () => showCardColorPicker(e, cardId) },
+            { icon: '➡️', label: '다른 탭으로 이동', action: () => showCardMoveMenu(e, cardId) },
+            { divider: true },
+            { icon: '🗑️', label: '삭제 (휴지통)', danger: true,
+              action: () => {
+                memoTrash.unshift({ tabLabel: tab.label, card: JSON.parse(JSON.stringify(card)), deletedAt: new Date().toLocaleDateString('ko-KR') });
+                tab.cards = tab.cards.filter(c => c.id !== cardId);
+                saveMemoData(); renderMemoCards();
+              }
+            },
+        ];
+
+        items.forEach(item => {
+            if (item.divider) { const hr = document.createElement('div'); hr.className = 'h-px bg-gray-100 my-1 mx-2'; menu.appendChild(hr); return; }
+            const btn = document.createElement('button');
+            btn.className = 'w-full px-3 py-2 text-left text-[12px] font-bold flex items-center gap-2 rounded-lg transition-colors '
+                + (item.danger ? 'text-red-500 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100');
+            btn.innerHTML = '<span>' + item.icon + '</span><span>' + item.label + '</span>';
+            btn.onclick = () => { closeAllMemoContextMenus(); item.action(); };
+            menu.appendChild(btn);
+        });
+
+        menu.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
+        menu.style.top  = Math.min(e.pageY + 4, window.innerHeight - 220) + 'px';
+        menu.style.display = 'block';
+    }
+
+    function showCardColorPicker(e, cardId) {
+        closeAllMemoContextMenus();
+        const picker = document.getElementById('memoCardColorPicker');
+        picker.innerHTML = '<p class="text-[11px] text-gray-500 font-bold px-3 pt-2 pb-1">카드 색상</p><div class="flex flex-wrap gap-2 px-3 pb-3">'
+            + CARD_COLOR_OPTIONS.map(c =>
+                '<button onclick="changeCardColor('' + cardId + '','' + c.name + '')" class="w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform" style="background-color:' + c.bg + ';border-color:' + c.border + '"></button>'
+            ).join('') + '</div>';
+        picker.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
+        picker.style.top  = Math.min(e.pageY + 4, window.innerHeight - 150) + 'px';
+        picker.style.display = 'block';
+    }
+
+    window.changeCardColor = function(cardId, colorName) {
+        const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
+        const card = tab && tab.cards.find(c => c.id === cardId);
+        if (card) { card.color = colorName; saveMemoData(); renderMemoCards(); }
+        closeAllMemoContextMenus();
+    };
+
+    function showCardMoveMenu(e, cardId) {
+        closeAllMemoContextMenus();
+        const menu = document.getElementById('memoCardMoveMenu');
+        menu.innerHTML = '<p class="text-[11px] text-gray-500 font-bold px-3 pt-2 pb-1">탭으로 이동</p>';
+        richMemoTabs.filter(t => t.id !== richMemoActiveId).forEach(tab => {
+            const c = getMemoColorEntry(tab.color);
+            const btn = document.createElement('button');
+            btn.className = 'w-full px-3 py-2 text-left text-[12px] font-bold text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2';
+            btn.innerHTML = '<span class="w-3 h-3 rounded-full flex-shrink-0" style="background:' + c.bg + ';border:1px solid ' + c.text + '40"></span>' + tab.label;
+            btn.onclick = () => { closeAllMemoContextMenus(); moveCardToTab(cardId, richMemoActiveId, tab.id); };
+            menu.appendChild(btn);
+        });
+        menu.style.left = Math.min(e.pageX, window.innerWidth - 180) + 'px';
+        menu.style.top  = Math.min(e.pageY + 4, window.innerHeight - 200) + 'px';
+        menu.style.display = 'block';
+    }
+
+    function closeAllMemoContextMenus() {
+        ['memoTabContextMenu','memoTabColorPicker','memoCardContextMenu','memoCardColorPicker','memoCardMoveMenu'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        const fmenu = document.getElementById('richMemoFormatMenu');
+        if (fmenu && !fmenu.contains(e.target) && e.target.id !== 'richMemoEditor') fmenu.classList.add('hidden');
+        const ctxIds = ['memoTabContextMenu','memoTabColorPicker','memoCardContextMenu','memoCardColorPicker','memoCardMoveMenu'];
+        if (!ctxIds.some(id => { const el = document.getElementById(id); return el && el.contains(e.target); })) closeAllMemoContextMenus();
+    });
 
     // ── 에디터 열기/닫기 ──────────────────────────────────
     window.createNewMemoCard = function() {
         const tab = richMemoTabs.find(t => t.id === richMemoActiveId);
         if (!tab) return;
         if (!tab.cards) tab.cards = [];
-        const newCard = { id: 'card_' + Date.now(), title: '', content: '', date: new Date().toLocaleDateString('ko-KR') };
+        const newCard = { id: 'card_' + Date.now(), title: '', content: '', date: new Date().toLocaleDateString('ko-KR'), color: 'white', pinned: false };
         tab.cards.push(newCard);
         saveMemoData();
         openMemoEditor(newCard.id);
@@ -5424,27 +5628,19 @@ function renderMemoFolders() {
     function openMemoEditor(cardId) {
         richMemoActiveCardId = cardId;
         const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
-        const card = tab.cards.find(c => c.id === cardId);
+        const card = tab && tab.cards.find(c => c.id === cardId);
         if (!card) return;
-
         document.getElementById('memoCardListView').classList.add('hidden');
         const editorView = document.getElementById('memoEditorView');
         editorView.classList.remove('hidden');
         editorView.style.display = 'flex';
-
-        const titleInput = document.getElementById('memoCardTitleInput');
-        const editor     = document.getElementById('richMemoEditor');
-        titleInput.value   = card.title;
-        editor.innerHTML   = card.content;
-
-        const c = getMemoColorEntry(tab.color);
-        editor.style.backgroundColor = c.editorBg;
-
-        // placeholder
+        document.getElementById('memoCardTitleInput').value = card.title;
+        const editor = document.getElementById('richMemoEditor');
+        editor.innerHTML = card.content;
+        editor.style.backgroundColor = '#ffffff';
         if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
         else editor.classList.remove('empty');
-
-        if (!card.title) titleInput.focus();
+        if (!card.title) document.getElementById('memoCardTitleInput').focus();
         else editor.focus();
     }
 
@@ -5457,7 +5653,7 @@ function renderMemoFolders() {
         renderMemoCards();
     };
 
-    // ── 자동 저장 ─────────────────────────────────────────
+    // ── 자동 저장 + 에디터 이벤트 ────────────────────────
     function initMemoEditorEvents() {
         const titleInput = document.getElementById('memoCardTitleInput');
         const editor     = document.getElementById('richMemoEditor');
@@ -5479,32 +5675,18 @@ function renderMemoFolders() {
         });
         editor.addEventListener('blur', saveMemoData);
 
-        // PC 우클릭 → 포맷 메뉴
         editor.addEventListener('contextmenu', (e) => {
             const sel = window.getSelection();
-            if (sel && sel.toString().length > 0) {
-                e.preventDefault();
-                showRichFormatMenu(e.pageX, e.pageY - 52);
-            }
+            if (sel && sel.toString().length > 0) { e.preventDefault(); showRichFormatMenu(e.pageX, e.pageY - 52); }
         });
-
-        // 모바일 + PC: 드래그 선택 후 클릭 → 포맷 메뉴
         editor.addEventListener('click', (e) => {
             const sel = window.getSelection();
-            if (sel && sel.toString().length > 0) {
-                const y = (e.clientY > 80) ? e.pageY - 52 : e.pageY + 10;
-                showRichFormatMenu(e.pageX, y);
-            }
+            if (sel && sel.toString().length > 0) { showRichFormatMenu(e.pageX, (e.clientY > 80) ? e.pageY - 52 : e.pageY + 10); }
         });
-
-        // 드래그 직후 mouseup
         editor.addEventListener('mouseup', (e) => {
             setTimeout(() => {
                 const sel = window.getSelection();
-                if (sel && sel.toString().length > 0) {
-                    const y = (e.clientY > 80) ? e.pageY - 52 : e.pageY + 10;
-                    showRichFormatMenu(e.pageX, y);
-                }
+                if (sel && sel.toString().length > 0) { showRichFormatMenu(e.pageX, (e.clientY > 80) ? e.pageY - 52 : e.pageY + 10); }
             }, 30);
         });
     }
@@ -5521,9 +5703,7 @@ function renderMemoFolders() {
 
     window.openAddRichMemoTabModal = function() {
         richMemoSelectedColor = 'red';
-        document.querySelectorAll('#addMemoTabModal [data-color]').forEach((btn, i) => {
-            btn.style.borderWidth = i === 0 ? '3px' : '2px';
-        });
+        document.querySelectorAll('#addMemoTabModal [data-color]').forEach((btn, i) => { btn.style.borderWidth = i === 0 ? '3px' : '2px'; });
         const inp = document.getElementById('newTabNameInput');
         if (inp) inp.value = '';
         document.getElementById('addMemoTabModal').style.display = 'flex';
@@ -5544,9 +5724,44 @@ function renderMemoFolders() {
         richMemoTabs.push(newTab);
         richMemoActiveId = newTab.id;
         document.getElementById('addMemoTabModal').style.display = 'none';
-        saveMemoData(); renderRichMemoTabs(); renderMemoCards();
-        const widget = document.getElementById('memoWidgetContainer');
-        if (widget) widget.style.backgroundColor = getMemoColorEntry(richMemoSelectedColor).editorBg;
+        saveMemoData(); renderRichMemoTabs(); renderMemoCards(); applyTabHeaderColor(richMemoSelectedColor);
+    };
+
+    // ── 휴지통 ────────────────────────────────────────────
+    window.openMemoTrash = function() {
+        const modal = document.getElementById('memoTrashModal');
+        const list  = document.getElementById('memoTrashList');
+        list.innerHTML = '';
+        if (memoTrash.length === 0) {
+            list.innerHTML = '<p class="text-xs text-gray-400 text-center py-6">휴지통이 비어있어요.</p>';
+        } else {
+            memoTrash.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-start justify-between gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100';
+                div.innerHTML =
+                    '<div class="flex-1 min-w-0">' +
+                    '<p class="text-[11px] text-gray-400 mb-0.5">' + item.tabLabel + ' · ' + item.deletedAt + '</p>' +
+                    '<p class="text-[12px] font-bold text-gray-700 truncate">' + (item.card.title || '제목 없음') + '</p>' +
+                    '</div>' +
+                    '<button onclick="restoreFromTrash(' + idx + ')" class="flex-shrink-0 text-[11px] font-bold text-blue-500 hover:text-blue-700 px-2 py-1 bg-blue-50 rounded-lg transition-colors">복구</button>';
+                list.appendChild(div);
+            });
+        }
+        modal.style.display = 'flex';
+    };
+
+    window.restoreFromTrash = function(idx) {
+        const item = memoTrash[idx];
+        if (!item) return;
+        const targetTab = richMemoTabs.find(t => t.label === item.tabLabel) || richMemoTabs[0];
+        if (!targetTab.cards) targetTab.cards = [];
+        targetTab.cards.push({ ...item.card, id: 'card_restored_' + Date.now() });
+        memoTrash.splice(idx, 1);
+        saveMemoData(); renderMemoCards(); window.openMemoTrash();
+    };
+
+    window.clearMemoTrash = function() {
+        if (confirm('휴지통을 완전히 비울까요? 복구할 수 없어요.')) { memoTrash = []; saveMemoData(); window.openMemoTrash(); }
     };
 
     // ── 포맷 메뉴 ─────────────────────────────────────────
@@ -5563,7 +5778,6 @@ function renderMemoFolders() {
         document.execCommand(command, false, value || null);
         if (editor) {
             editor.focus();
-            // 서식 변경 후 저장
             if (richMemoActiveCardId) {
                 const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
                 const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
@@ -5574,26 +5788,14 @@ function renderMemoFolders() {
         if (menu) menu.classList.add('hidden');
     };
 
-    document.addEventListener('click', (e) => {
-        const menu = document.getElementById('richMemoFormatMenu');
-        if (menu && !menu.contains(e.target) && e.target.id !== 'richMemoEditor') {
-            menu.classList.add('hidden');
-        }
-    });
-
     // ── 앱 시작 ───────────────────────────────────────────
     (function() {
         loadRichMemoTabs();
         renderRichMemoTabs();
         renderMemoCards();
         initMemoEditorEvents();
-        // 탭 배경색 초기 적용
         const tab = richMemoTabs.find(t => t.id === richMemoActiveId);
-        if (tab) {
-            const c = getMemoColorEntry(tab.color);
-            const widget = document.getElementById('memoWidgetContainer');
-            if (widget) widget.style.backgroundColor = c.editorBg;
-        }
+        if (tab) applyTabHeaderColor(tab.color);
     })();
 
   </script>
@@ -5611,22 +5813,53 @@ function renderMemoFolders() {
     <button onclick="applyRichFormat('removeFormat')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-xl text-gray-400 transition-colors text-[10px] font-bold" title="서식 제거">✕</button>
   </div>
 
+  <!-- 탭 우클릭 컨텍스트 메뉴 -->
+  <div id="memoTabContextMenu" style="display:none" class="fixed z-[9500] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
+
+  <!-- 탭 색상 피커 -->
+  <div id="memoTabColorPicker" style="display:none" class="fixed z-[9600] bg-white rounded-2xl shadow-2xl border border-gray-100 min-w-[160px]"></div>
+
+  <!-- 카드 우클릭 컨텍스트 메뉴 -->
+  <div id="memoCardContextMenu" style="display:none" class="fixed z-[9500] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
+
+  <!-- 카드 색상 피커 -->
+  <div id="memoCardColorPicker" style="display:none" class="fixed z-[9600] bg-white rounded-2xl shadow-2xl border border-gray-100 min-w-[160px]"></div>
+
+  <!-- 카드 이동 메뉴 -->
+  <div id="memoCardMoveMenu" style="display:none" class="fixed z-[9600] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
+
   <!-- 새 탭 추가 팝업 -->
   <div id="addMemoTabModal" style="display:none" class="fixed inset-0 z-[9000] items-center justify-center bg-black/40 backdrop-blur-sm px-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl">
       <h3 class="text-base font-black text-gray-800 mb-4">새 메모 탭 추가</h3>
       <input type="text" id="newTabNameInput" placeholder="탭 이름 (예: 아이디어)" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 mb-4 outline-none focus:border-blue-400 text-sm font-medium">
-      <div class="flex justify-between mb-6" id="newTabColorPicker">
+      <div class="flex flex-wrap gap-2 mb-6 justify-center" id="newTabColorPicker">
         <button onclick="selectMemoColor(this,'red')"    data-color="red"    style="border-width:3px" class="w-8 h-8 rounded-full bg-red-100    border-red-400    focus:outline-none transition-all"></button>
         <button onclick="selectMemoColor(this,'blue')"   data-color="blue"   style="border-width:2px" class="w-8 h-8 rounded-full bg-blue-100   border-blue-400   focus:outline-none transition-all"></button>
         <button onclick="selectMemoColor(this,'green')"  data-color="green"  style="border-width:2px" class="w-8 h-8 rounded-full bg-green-100  border-green-400  focus:outline-none transition-all"></button>
         <button onclick="selectMemoColor(this,'yellow')" data-color="yellow" style="border-width:2px" class="w-8 h-8 rounded-full bg-yellow-100 border-yellow-400 focus:outline-none transition-all"></button>
         <button onclick="selectMemoColor(this,'purple')" data-color="purple" style="border-width:2px" class="w-8 h-8 rounded-full bg-purple-100 border-purple-400 focus:outline-none transition-all"></button>
+        <button onclick="selectMemoColor(this,'orange')" data-color="orange" style="border-width:2px" class="w-8 h-8 rounded-full bg-orange-100 border-orange-400 focus:outline-none transition-all"></button>
+        <button onclick="selectMemoColor(this,'pink')"   data-color="pink"   style="border-width:2px" class="w-8 h-8 rounded-full bg-pink-100   border-pink-400   focus:outline-none transition-all"></button>
       </div>
       <div class="flex gap-2">
         <button onclick="document.getElementById('addMemoTabModal').style.display='none'" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold active:scale-95 transition-transform">취소</button>
         <button onclick="createNewMemoTab()" class="flex-1 py-2.5 bg-[#22741C] text-white rounded-xl text-sm font-bold active:scale-95 transition-transform">추가하기</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 휴지통 모달 -->
+  <div id="memoTrashModal" style="display:none" class="fixed inset-0 z-[9000] items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+    <div class="bg-white rounded-2xl w-full max-w-xs shadow-2xl flex flex-col" style="max-height:70vh">
+      <div class="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
+        <h3 class="text-sm font-black text-gray-800">🗑️ 휴지통</h3>
+        <div class="flex gap-2">
+          <button onclick="clearMemoTrash()" class="text-[11px] font-bold text-red-400 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">모두 삭제</button>
+          <button onclick="document.getElementById('memoTrashModal').style.display='none'" class="text-[11px] font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">닫기</button>
+        </div>
+      </div>
+      <div id="memoTrashList" class="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scrollbar"></div>
     </div>
   </div>
 
@@ -5641,6 +5874,7 @@ function renderMemoFolders() {
       top: 0; left: 0;
     }
     #richMemoEditor { position: relative; }
+    #memoTabHeader { border-radius: 0.75rem 0.75rem 0 0; }
   </style>
 
 </body>
