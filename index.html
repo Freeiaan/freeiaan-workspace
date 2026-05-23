@@ -3459,7 +3459,18 @@ function renderTimeGrid(dateKey) {
           allTasks[editData.dateKey].push({ text: txt, description: desc, categoryId: selectedCategoryId, isChecked: false });
       }
   }
-      else if (currentMode === 'editSingle') { allTasks[editData.dateKey][editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked }; } 
+      else if (currentMode === 'editSingle') {
+          if (editData._repeatId) {
+              // 반복일정 수정 → 이 날만 별도 저장 (_deleted 플래그 제거 후 수정된 버전으로 교체)
+              if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
+              const existIdx = allTasks[editData.dateKey].findIndex(t => t._repeatId === editData._repeatId);
+              const updated = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked || false, _repeatId: editData._repeatId };
+              if (existIdx !== -1) { allTasks[editData.dateKey][existIdx] = updated; }
+              else { allTasks[editData.dateKey].push(updated); }
+          } else {
+              allTasks[editData.dateKey][editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked };
+          }
+      }
       else if (currentMode === 'createMulti') { multiTasks.push({ id: Date.now(), start: pendingStart, end: pendingEnd, text: txt, description: desc, categoryId: selectedCategoryId }); } 
       else if (currentMode === 'editMulti') { const t = multiTasks.find(x => x.id === editData.id); t.text = txt; t.description = desc; t.categoryId = selectedCategoryId; } 
       else if (currentMode === 'editInbox') { inboxTasks[editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked }; setLocal('ianInboxTasks', inboxTasks); renderInbox(); }
@@ -3468,16 +3479,46 @@ function renderTimeGrid(dateKey) {
     };
     
     $('modalDeleteBtn').onclick = () => {
-      if (currentMode.includes('Multi')) multiTasks = multiTasks.filter(x => x.id !== editData.id);
-      else if (currentMode === 'editInbox') { inboxTasks.splice(editData.index, 1); setLocal('ianInboxTasks', inboxTasks); renderInbox(); } 
-      else if (allTasks[editData.dateKey]?.[editData.index]?._repeatId) {
-          // 반복 일정 이 날만 삭제
-          const repeatId = allTasks[editData.dateKey][editData.index]._repeatId;
-          if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
-          allTasks[editData.dateKey] = allTasks[editData.dateKey].filter(t => t._repeatId !== repeatId);
+      if (currentMode.includes('Multi')) {
+          multiTasks = multiTasks.filter(x => x.id !== editData.id);
+          saveAndRefresh(); closeModal();
+      } else if (currentMode === 'editInbox') {
+          inboxTasks.splice(editData.index, 1); setLocal('ianInboxTasks', inboxTasks); renderInbox(); closeModal();
+      } else if (editData._repeatId) {
+          // 반복일정 → 애플 감성 선택 모달 표시
+          closeModal();
+          const modal = document.getElementById('repeatDeleteModal');
+          modal.classList.remove('hidden');
+          setTimeout(() => {
+              modal.classList.remove('opacity-0');
+              modal.children[0].classList.remove('scale-95');
+              modal.children[0].classList.add('scale-100');
+          }, 10);
+          // 이 날만 삭제
+          document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
+              closeRepeatDeleteModal();
+              if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
+              const alreadyExcluded = allTasks[editData.dateKey].some(t => t._repeatId === editData._repeatId);
+              if (!alreadyExcluded) allTasks[editData.dateKey].push({ _repeatId: editData._repeatId, _deleted: true });
+              syncToCloud(); initAppRenders();
+          };
+          // 전체 삭제
+          document.getElementById('repeatDeleteAllBtn').onclick = () => {
+              closeRepeatDeleteModal();
+              repeatTasks = repeatTasks.filter(r => r.id !== editData._repeatId);
+              // 이 반복일정과 관련된 allTasks 항목도 정리
+              for (const key in allTasks) {
+                  allTasks[key] = allTasks[key].filter(t => t._repeatId !== editData._repeatId);
+              }
+              setLocal('ianRepeatTasks', repeatTasks);
+              syncToCloud(); initAppRenders();
+          };
+          document.getElementById('repeatDeleteCancelBtn').onclick = () => closeRepeatDeleteModal();
+      } else {
+          allTasks[editData.dateKey].splice(editData.index, 1);
+          saveAndRefresh(); closeModal();
+          if(currentPlannerDateKey) { activeBrushColor = null; renderPlannerTasks(currentPlannerDateKey); }
       }
-      else allTasks[editData.dateKey].splice(editData.index, 1);
-      if (currentMode !== 'editInbox') saveAndRefresh(); closeModal(); if(currentPlannerDateKey) { activeBrushColor = null; renderPlannerTasks(currentPlannerDateKey); }
     };
 
     function startMultiDrag(e, id) { e.stopPropagation(); draggedTaskInfo = { type: 'multi', id: id }; e.dataTransfer.setData('text/plain', ''); }
@@ -3769,8 +3810,9 @@ function renderCalendar() {
               const bgColor = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
               const fontColor = getContrastColor(cat.color);
               
-              // 🔥 달력 위 일반 일정 메모 아이콘 표시!              
-              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0" style="${t.description && t.description.trim() !== '' ? 'box-shadow:0 0 0 2px #000000;' : ''}"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="position:relative;background-color: ${bgColor}; color: ${fontColor};">${t.text}</span>`;
+              // 🔥 달력 위 일반 일정 메모 아이콘 표시!
+              const calDescIcon = (t.description && t.description.trim() !== '') ? '<span style="font-size:8px;opacity:0.7;margin-left:2px">📝</span>' : '';
+              item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0" style="${t.description && t.description.trim() !== '' ? 'box-shadow:0 0 0 2px #000000;' : ''}"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="position:relative;background-color: ${bgColor}; color: ${fontColor};">${t.text}${calDescIcon}</span>`;
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
               // ✅ 체크박스: 모바일 터치 즉시 반영
