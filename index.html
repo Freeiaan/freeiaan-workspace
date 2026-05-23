@@ -1484,12 +1484,13 @@ function handleContextDelete() {
         // 이 날만 삭제
         document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
             closeRepeatDeleteModal();
-            // allTasks에 _repeatId가 붙은 "이 날만 제외" 항목 추가
             if (!allTasks[dateKey]) allTasks[dateKey] = [];
-            // 이미 없는 경우에만 추가 (중복 방지)
-            const alreadyExcluded = allTasks[dateKey].some(t => t._repeatId === targetTask._repeatId);
-            if (!alreadyExcluded) {
-                allTasks[dateKey].push({ ...targetTask, _deleted: true });
+            // 이미 _repeatId로 저장된 항목(세부내용 등)이 있으면 _deleted로 교체, 없으면 새로 추가
+            const existIdx = allTasks[dateKey].findIndex(t => t._repeatId === targetTask._repeatId);
+            if (existIdx !== -1) {
+                allTasks[dateKey][existIdx] = { _repeatId: targetTask._repeatId, _deleted: true };
+            } else {
+                allTasks[dateKey].push({ _repeatId: targetTask._repeatId, _deleted: true });
             }
             syncToCloud();
             initAppRenders();
@@ -1499,6 +1500,10 @@ function handleContextDelete() {
         document.getElementById('repeatDeleteAllBtn').onclick = () => {
             closeRepeatDeleteModal();
             repeatTasks = repeatTasks.filter(r => r.id !== targetTask._repeatId);
+            // allTasks에 저장된 관련 항목(세부내용, 이 날만 삭제 등)도 전부 정리
+            for (const key in allTasks) {
+                allTasks[key] = allTasks[key].filter(t => t._repeatId !== targetTask._repeatId);
+            }
             setLocal('ianRepeatTasks', repeatTasks);
             syncToCloud();
             initAppRenders();
@@ -3498,15 +3503,20 @@ function renderTimeGrid(dateKey) {
           document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
               closeRepeatDeleteModal();
               if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
-              const alreadyExcluded = allTasks[editData.dateKey].some(t => t._repeatId === editData._repeatId);
-              if (!alreadyExcluded) allTasks[editData.dateKey].push({ _repeatId: editData._repeatId, _deleted: true });
+              // 세부내용 등으로 이미 저장된 항목이 있으면 _deleted로 교체, 없으면 새로 추가
+              const existIdx = allTasks[editData.dateKey].findIndex(t => t._repeatId === editData._repeatId);
+              if (existIdx !== -1) {
+                  allTasks[editData.dateKey][existIdx] = { _repeatId: editData._repeatId, _deleted: true };
+              } else {
+                  allTasks[editData.dateKey].push({ _repeatId: editData._repeatId, _deleted: true });
+              }
               syncToCloud(); initAppRenders();
           };
           // 전체 삭제
           document.getElementById('repeatDeleteAllBtn').onclick = () => {
               closeRepeatDeleteModal();
               repeatTasks = repeatTasks.filter(r => r.id !== editData._repeatId);
-              // 이 반복일정과 관련된 allTasks 항목도 정리
+              // allTasks에 저장된 관련 항목(세부내용, 이 날만 삭제 등)도 전부 정리
               for (const key in allTasks) {
                   allTasks[key] = allTasks[key].filter(t => t._repeatId !== editData._repeatId);
               }
