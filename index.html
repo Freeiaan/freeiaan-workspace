@@ -1967,7 +1967,17 @@ function loadFromCloud() {
         if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
     }
 
-    function toggleDrawer() { const drawer = $('dashboardDrawer'); drawer.classList.toggle('translate-x-full'); }
+    function toggleDrawer() {
+        const drawer = $('dashboardDrawer');
+        if (window.innerWidth < 768) {
+            // 모바일: switchMobileTab으로
+            const isMemoTab = document.body.getAttribute('data-mobile-tab') === 'home';
+            switchMobileTab(isMemoTab ? 'timer' : 'home');
+        } else {
+            // PC/태블릿: 슬라이드 토글
+            drawer.classList.toggle('translate-x-full');
+        }
+    }
     function toggleDashList(type) {
         const list = $(type + 'TasksList');
         const icon = $(type + 'ToggleIcon');
@@ -2383,8 +2393,7 @@ function loadFromCloud() {
     function startTimer() { 
         if (isR) return; if (timerMode === 'idle') timerMode = timeLeft === 0 ? 'stopwatch' : 'timer'; 
         isR = true; $('startBtn').textContent = '진행중'; $('startBtn').classList.replace('bg-[#22741C]', 'bg-[#1b5e16]'); timerLastTick = Date.now();
-        // 뽀모도로 ON이면 타이머 시작 시 설정 접기
-        if (pomodoroActive) { const sa = $('pomodoroSettingsArea'); if (sa) { sa.classList.add('hidden'); sa.style.display = 'none'; } }
+        // 뽀모도로 설정은 시작해도 그대로 유지
         tInt = setInterval(() => {
             const now = Date.now(); const deltaSec = Math.floor((now - timerLastTick) / 1000); 
             if (deltaSec > 0) {
@@ -2398,6 +2407,7 @@ function loadFromCloud() {
                             // 🍅 뽀모도로 자동 전환
                             const { longEvery } = getPomodoroSettings();
                             if (pomodoroPhase === 'focus') {
+                                pomodoroTotalElapsed += sessionElapsed; // 집중 시간 누적
                                 pomodoroSessionCount++;
                                 updatePomodoroUI();
                                 if (pomodoroSessionCount >= longEvery) {
@@ -2645,6 +2655,7 @@ function loadFromCloud() {
     function resetPomodoro() {
         pomodoroPhase = 'focus';
         pomodoroSessionCount = 0;
+        pomodoroTotalElapsed = 0;
         resetTimer();
         const { focus } = getPomodoroSettings();
         timeLeft = focus * 60;
@@ -2694,16 +2705,20 @@ function loadFromCloud() {
         }
     }
 
+    let pomodoroTotalElapsed = 0; // 뽀모도로 전체 누적 집중 시간
+
     function startPomodoroPhase(phase) {
         const { focus, shortBreak, longEvery } = getPomodoroSettings();
         pomodoroPhase = phase;
         if (phase === 'focus') timeLeft = focus * 60;
         else timeLeft = shortBreak * 60;
         timerMode = 'timer';
-        sessionElapsed = 0;
         tLaps = 0;
         isR = false;
         clearInterval(tInt);
+        // sessionElapsed는 각 세션마다 초기화 (타이머 내부에서 누적됨)
+        // 단, 집중 세션이 끝날 때마다 pomodoroTotalElapsed에 누적
+        sessionElapsed = 0;
         updateTUI();
         updatePomodoroUI();
 
@@ -2711,6 +2726,9 @@ function loadFromCloud() {
         if (phase === 'done' || pomodoroSessionCount >= longEvery) {
             pomodoroSessionCount = longEvery;
             updatePomodoroUI();
+            // 누적 시간을 sessionElapsed에 반영해서 recordTimer가 기록할 수 있게
+            sessionElapsed = pomodoroTotalElapsed;
+            pomodoroTotalElapsed = 0;
             const alertModal = $('appleTimerAlert');
             alertModal.classList.remove('hidden');
             setTimeout(() => {
@@ -5350,6 +5368,19 @@ function renderMemoFolders() {
         localStorage.setItem(RICH_MEMO_KEY, JSON.stringify(richMemoTabs));
         localStorage.setItem(RICH_MEMO_ACTIVE, richMemoActiveId);
         localStorage.setItem(MEMO_TRASH_KEY, JSON.stringify(memoTrash));
+        // 저장 중 알림
+        if (typeof showSyncUI === 'function') showSyncUI(true);
+        // Firebase 저장 (setLocal이 있으면 사용)
+        if (typeof setLocal === 'function') {
+            clearTimeout(saveMemoData._fbTimer);
+            saveMemoData._fbTimer = setTimeout(() => {
+                setLocal(RICH_MEMO_KEY, richMemoTabs);
+                setLocal(MEMO_TRASH_KEY, memoTrash);
+                if (typeof showSyncUI === 'function') showSyncUI(false);
+            }, 1000);
+        } else {
+            if (typeof showSyncUI === 'function') setTimeout(() => showSyncUI(false), 1000);
+        }
     }
 
     function applyTabHeaderColor(colorKey) {
@@ -5369,7 +5400,7 @@ function renderMemoFolders() {
             const c = getMemoColorEntry(tab.color);
             const btn = document.createElement('button');
             btn.dataset.tabId = tab.id;
-            btn.className = 'flex-shrink-0 px-3 py-1 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap border cursor-pointer '
+            btn.className = 'flex-shrink-0 px-3 py-1 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap border cursor-pointer select-none '
                 + (isActive ? 'border-white/50 shadow-sm opacity-100' : 'border-transparent opacity-60 hover:opacity-90');
             btn.style.backgroundColor = isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)';
             btn.style.color = c.text;
@@ -5379,6 +5410,17 @@ function renderMemoFolders() {
             btn.addEventListener('click', () => selectRichMemoTab(tab.id));
             btn.addEventListener('dblclick', (e) => { e.stopPropagation(); showTabContextMenu(e, tab.id); });
             btn.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showTabContextMenu(e, tab.id); });
+
+            // 모바일 longpress → 탭 contextmenu
+            let _tabLongTimer = null;
+            btn.addEventListener('touchstart', (e) => {
+                _tabLongTimer = setTimeout(() => {
+                    if (window.getSelection) window.getSelection().removeAllRanges();
+                    showTabContextMenu(e.touches[0], tab.id);
+                }, 500);
+            }, { passive: true });
+            btn.addEventListener('touchend',  () => clearTimeout(_tabLongTimer));
+            btn.addEventListener('touchmove', () => clearTimeout(_tabLongTimer));
 
             btn.addEventListener('dragstart', (e) => { e.dataTransfer.setData('memoTabDrag', tab.id); e.dataTransfer.effectAllowed = 'move'; });
             btn.addEventListener('dragover',  (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; btn.style.transform = 'scale(1.05)'; });
@@ -5494,7 +5536,7 @@ function renderMemoFolders() {
             const colorOpt  = CARD_COLOR_OPTIONS.find(c => c.name === (card.color || 'white')) || CARD_COLOR_OPTIONS[0];
             const plainText = card.content.replace(/<[^>]*>?/gm, '').trim() || '내용 없음';
             const div = document.createElement('div');
-            div.className = 'p-3 rounded-xl border cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative';
+            div.className = 'p-3 rounded-xl border cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative select-none';
             div.style.backgroundColor = colorOpt.bg;
             div.style.borderColor = colorOpt.border;
             div.draggable = true;
@@ -5506,8 +5548,26 @@ function renderMemoFolders() {
                 '<p class="text-[11px] text-gray-500 leading-relaxed overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">' + plainText + '</p>' +
                 '<div class="text-[10px] text-gray-400 mt-1.5">' + card.date + '</div>';
 
-            div.onclick = () => openMemoEditor(card.id);
+            div.onclick = (e) => {
+                // longpress 중이면 열지 않음
+                if (div._longPressTriggered) { div._longPressTriggered = false; return; }
+                openMemoEditor(card.id);
+            };
             div.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showCardContextMenu(e, card.id); });
+
+            // 모바일 longpress → contextmenu
+            let _cardLongTimer = null;
+            div.addEventListener('touchstart', (e) => {
+                div._longPressTriggered = false;
+                _cardLongTimer = setTimeout(() => {
+                    div._longPressTriggered = true;
+                    // 텍스트 선택 해제
+                    if (window.getSelection) window.getSelection().removeAllRanges();
+                    showCardContextMenu(e.touches[0], card.id);
+                }, 500);
+            }, { passive: true });
+            div.addEventListener('touchend',   () => { clearTimeout(_cardLongTimer); });
+            div.addEventListener('touchmove',  () => { clearTimeout(_cardLongTimer); });
 
             div.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('memoCardDrag', card.id);
@@ -6039,19 +6099,19 @@ function renderMemoFolders() {
   </div>
 
   <!-- 탭 우클릭 컨텍스트 메뉴 -->
-  <div id="memoTabContextMenu" style="display:none" class="fixed z-[9500] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
+  <div id="memoTabContextMenu" style="display:none" class="fixed z-[99999] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
 
   <!-- 탭 색상 피커 -->
-  <div id="memoTabColorPicker" style="display:none" class="fixed z-[9600] bg-white rounded-2xl shadow-2xl border border-gray-100 min-w-[160px]"></div>
+  <div id="memoTabColorPicker" style="display:none" class="fixed z-[99999] bg-white rounded-2xl shadow-2xl border border-gray-100 min-w-[160px]"></div>
 
   <!-- 카드 우클릭 컨텍스트 메뉴 -->
-  <div id="memoCardContextMenu" style="display:none" class="fixed z-[9500] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
+  <div id="memoCardContextMenu" style="display:none" class="fixed z-[99999] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
 
   <!-- 카드 색상 피커 -->
-  <div id="memoCardColorPicker" style="display:none" class="fixed z-[9600] bg-white rounded-2xl shadow-2xl border border-gray-100 min-w-[160px]"></div>
+  <div id="memoCardColorPicker" style="display:none" class="fixed z-[99999] bg-white rounded-2xl shadow-2xl border border-gray-100 min-w-[160px]"></div>
 
   <!-- 카드 이동 메뉴 -->
-  <div id="memoCardMoveMenu" style="display:none" class="fixed z-[9600] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
+  <div id="memoCardMoveMenu" style="display:none" class="fixed z-[99999] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
 
   <!-- 새 탭 추가 팝업 -->
   <div id="addMemoTabModal" style="display:none" class="fixed inset-0 z-[9000] items-center justify-center bg-black/40 backdrop-blur-sm px-4">
