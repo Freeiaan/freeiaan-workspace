@@ -5416,7 +5416,8 @@ function renderMemoFolders() {
             btn.addEventListener('touchstart', (e) => {
                 _tabLongTimer = setTimeout(() => {
                     if (window.getSelection) window.getSelection().removeAllRanges();
-                    showTabContextMenu(e.touches[0], tab.id);
+                    const tt = e.touches[0];
+                    showTabContextMenu({ clientX: tt.clientX, clientY: tt.clientY }, tab.id);
                 }, 500);
             }, { passive: true });
             btn.addEventListener('touchend',  () => clearTimeout(_tabLongTimer));
@@ -5477,7 +5478,7 @@ function renderMemoFolders() {
             if (item.divider) { const hr = document.createElement('div'); hr.className = 'h-px bg-gray-100 my-1 mx-2'; menu.appendChild(hr); return; }
             const btn = document.createElement('button');
             btn.className = 'w-full px-3 py-2 text-left text-[12px] font-bold flex items-center gap-2 rounded-lg transition-colors '
-                + (item.disabled ? 'text-gray-300 cursor-not-allowed' : item.danger ? 'text-red-500 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100');
+                + (item.disabled ? 'text-gray-300 cursor-not-allowed' : item.danger ? 'text-red-500 active:bg-red-50' : 'text-gray-700 active:bg-gray-100');
             btn.innerHTML = '<span>' + item.icon + '</span><span>' + item.label + '</span>';
             if (!item.disabled) btn.onclick = () => { closeAllMemoContextMenus(); item.action(); };
             menu.appendChild(btn);
@@ -5563,7 +5564,9 @@ function renderMemoFolders() {
                     div._longPressTriggered = true;
                     // 텍스트 선택 해제
                     if (window.getSelection) window.getSelection().removeAllRanges();
-                    showCardContextMenu(e.touches[0], card.id);
+                    const t = e.touches[0];
+                    const fakeE = { clientX: t.clientX, clientY: t.clientY };
+                    showCardContextMenu(fakeE, card.id);
                 }, 500);
             }, { passive: true });
             div.addEventListener('touchend',   () => { clearTimeout(_cardLongTimer); });
@@ -5622,7 +5625,7 @@ function renderMemoFolders() {
             if (item.divider) { const hr = document.createElement('div'); hr.className = 'h-px bg-gray-100 my-1 mx-2'; menu.appendChild(hr); return; }
             const btn = document.createElement('button');
             btn.className = 'w-full px-3 py-2 text-left text-[12px] font-bold flex items-center gap-2 rounded-lg transition-colors '
-                + (item.danger ? 'text-red-500 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100');
+                + (item.danger ? 'text-red-500 active:bg-red-50' : 'text-gray-700 active:bg-gray-100');
             btn.innerHTML = '<span>' + item.icon + '</span><span>' + item.label + '</span>';
             btn.onclick = () => { closeAllMemoContextMenus(); item.action(); };
             menu.appendChild(btn);
@@ -5659,7 +5662,7 @@ function renderMemoFolders() {
         richMemoTabs.filter(t => t.id !== richMemoActiveId).forEach(tab => {
             const c = getMemoColorEntry(tab.color);
             const btn = document.createElement('button');
-            btn.className = 'w-full px-3 py-2 text-left text-[12px] font-bold text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2';
+            btn.className = 'w-full px-3 py-2 text-left text-[12px] font-bold text-gray-700 active:bg-gray-100 rounded-lg flex items-center gap-2';
             btn.innerHTML = '<span class="w-3 h-3 rounded-full flex-shrink-0" style="background:' + c.bg + ';border:1px solid ' + c.text + '40"></span>' + tab.label;
             btn.onclick = () => { closeAllMemoContextMenus(); moveCardToTab(cardId, richMemoActiveId, tab.id); };
             menu.appendChild(btn);
