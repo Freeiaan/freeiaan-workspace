@@ -6031,6 +6031,18 @@ function renderMemoFolders() {
                 if (sel && sel.toString().length > 0) { showRichFormatMenu(e.clientX, (e.clientY > 80) ? e.clientY - 52 : e.clientY + 10); }
             }, 30);
         });
+
+        // 모바일: touchend 후 선택된 텍스트 있으면 포맷 메뉴
+        editor.addEventListener('touchend', (e) => {
+            setTimeout(() => {
+                const sel = window.getSelection();
+                if (sel && sel.toString().length > 0) {
+                    const touch = e.changedTouches[0];
+                    const y = touch.clientY > 80 ? touch.clientY - 52 : touch.clientY + 10;
+                    showRichFormatMenu(touch.clientX, y);
+                }
+            }, 100);
+        });
         }); // pairs.forEach 끝
     }
 
@@ -6194,7 +6206,7 @@ function renderMemoFolders() {
         <div class="w-10"></div>
       </div>
       <!-- 에디터 스크롤 영역 -->
-      <div class="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar" style="overscroll-behavior:contain;">
+      <div class="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar" style="overscroll-behavior:none;">
         <div id="richMemoEditor"
           contenteditable="true"
           spellcheck="false"
@@ -6245,6 +6257,12 @@ function renderMemoFolders() {
     #richMemoEditor,
     #richMemoEditorPC {
       position: relative;
+    }
+    #memoEditorModal {
+      overscroll-behavior: none;
+    }
+    #memoEditorModal .memo-modal-inner {
+      overscroll-behavior: none;
     }
     .memo-placeholder {
       position: absolute;
