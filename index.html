@@ -2150,13 +2150,19 @@ function loadFromCloud() {
             if (cheerBox) cheerBox.style.display = 'flex';
         }
 
-        // 카테고리별 시간 집계 (grid 1칸 = 10분 = 600초)
+        // grid 1칸 = 10분 = 600초, 카테고리별 집계
         function getCatSecsForDate(dateKey) {
             const data = dailyRecords[dateKey];
             if (!data || !data.grid) return {};
             const r = {};
             data.grid.forEach(color => { if (color) r[color] = (r[color] || 0) + 600; });
             return r;
+        }
+        // grid 총 시간 (초)
+        function getGridTotalForDate(dateKey) {
+            const data = dailyRecords[dateKey];
+            if (!data || !data.grid) return 0;
+            return data.grid.filter(c => c).length * 600;
         }
         function mergeCatSecs(a, b) {
             const r = {...a};
@@ -2175,7 +2181,11 @@ function loadFromCloud() {
                     const d = new Date(w.start); d.setDate(d.getDate()+i);
                     const k = getDateKey(d);
                     const rec = dailyRecords[k]?.recorded || {stopwatch:0,timer:0};
-                    weekTotal += rec.stopwatch + rec.timer;
+                    const gridSec = getGridTotalForDate(k);
+                    const recSec = rec.stopwatch + rec.timer;
+                    // grid(색칠) + recorded(타이머) 합산
+                    const daySec = gridSec + recSec;
+                    weekTotal += daySec;
                     weekCatSecs = mergeCatSecs(weekCatSecs, getCatSecsForDate(k));
                 }
                 totalSec += weekTotal;
@@ -2196,9 +2206,12 @@ function loadFromCloud() {
                 const d = new Date(selectedWeek.start); d.setDate(d.getDate()+i);
                 const k = getDateKey(d);
                 const rec = dailyRecords[k]?.recorded || {stopwatch:0,timer:0};
-                const dayTotal = rec.stopwatch + rec.timer;
-                totalSec += dayTotal;
-                chartData.push({label:dayNames[i], sec:dayTotal, catSecs:getCatSecsForDate(k)});
+                const gridSec = getGridTotalForDate(k);
+                const recSec = rec.stopwatch + rec.timer;
+                // grid(색칠) + recorded(타이머) 합산
+                const daySec = gridSec + recSec;
+                totalSec += daySec;
+                chartData.push({label:dayNames[i], sec:daySec, catSecs:getCatSecsForDate(k)});
             }
             const wHabits = weeklyHabits[selectedWeek.key] || [];
             wHabits.forEach(h => {
