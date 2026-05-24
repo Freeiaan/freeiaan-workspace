@@ -457,7 +457,7 @@
                 spellcheck="false"
                 class="flex-1 text-[13px] leading-relaxed text-gray-700 outline-none custom-scrollbar overflow-y-auto"
                 style="min-height: 120px; background: white;"
-                data-placeholder="탭에 마우스를 대고 Shift 마우스 스크롤하면 더 많은 탭이 보여요.&#10;텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
+                data-placeholder="텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
               </div>
             </div>
 
@@ -5729,11 +5729,13 @@ function renderMemoFolders() {
             modal.style.display = 'flex';
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
-                modal.querySelector('.memo-modal-inner').classList.remove('scale-95');
-                modal.querySelector('.memo-modal-inner').classList.add('scale-100');
+                const inner = modal.querySelector('.memo-modal-inner');
+                inner.classList.remove('scale-95');
+                inner.classList.add('scale-100');
+                inner.style.transform = 'translateY(0)';
             }, 10);
-            if (!card.title) titleInput.focus();
-            else editor.focus();
+            // 키패드 자동 안 뜨게 - 직접 터치할 때만
+            // titleInput.focus(); editor.focus() 제거
         } else {
             // PC/태블릿: 기존 인라인 방식
             // PC용 별도 input/editor 동기화
@@ -5760,9 +5762,11 @@ function renderMemoFolders() {
         const modal = document.getElementById('memoEditorModal');
         if (modal && modal.style.display !== 'none') {
             modal.classList.add('opacity-0');
-            modal.querySelector('.memo-modal-inner').classList.remove('scale-100');
-            modal.querySelector('.memo-modal-inner').classList.add('scale-95');
-            setTimeout(() => { modal.style.display = 'none'; }, 250);
+            const mInner = modal.querySelector('.memo-modal-inner');
+            mInner.classList.remove('scale-100');
+            mInner.classList.add('scale-95');
+            mInner.style.transform = 'translateY(100%)';
+            setTimeout(() => { modal.style.display = 'none'; mInner.style.transform = ''; }, 250);
         }
         // PC 인라인 에디터 닫기
         const editorView = document.getElementById('memoEditorView');
@@ -6178,22 +6182,27 @@ function renderMemoFolders() {
   <div id="memoCardMoveMenu" style="display:none" class="fixed z-[99999] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
 
   <!-- 📝 모바일 메모 에디터 팝업 -->
-  <div id="memoEditorModal" style="display:none" class="fixed inset-0 z-[9100] items-center justify-center bg-black/50 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-250">
-    <div class="memo-modal-inner bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col scale-95 transition-transform duration-250" style="max-height:85vh">
-      <!-- 헤더 -->
-      <div class="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0 border-b border-gray-100">
-        <input type="text" id="memoCardTitleInput" placeholder="제목을 입력하세요"
-          class="flex-1 text-sm font-black text-gray-800 bg-transparent border-none outline-none placeholder-gray-300 mr-2">
-        <button onclick="closeMemoEditor()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors text-lg font-light">×</button>
+  <div id="memoEditorModal" style="display:none" class="fixed inset-0 z-[9100] bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-250">
+    <div class="memo-modal-inner absolute left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col scale-95 transition-transform duration-250" style="max-height:90vh;min-height:50vh;">
+      <!-- 핸들 -->
+      <div class="flex justify-center pt-3 pb-1 flex-shrink-0">
+        <div class="w-10 h-1 bg-gray-200 rounded-full"></div>
       </div>
-      <!-- 에디터 -->
-      <div class="flex-1 px-4 py-3 overflow-y-auto custom-scrollbar">
+      <!-- 헤더 -->
+      <div class="flex items-center justify-between px-4 pt-2 pb-2 flex-shrink-0 border-b border-gray-100">
+        <input type="text" id="memoCardTitleInput" placeholder="제목을 입력하세요"
+          class="flex-1 text-sm font-black text-gray-800 bg-transparent border-none outline-none placeholder-gray-300 mr-2"
+          autocomplete="off" autocorrect="off" autocapitalize="off">
+        <button onclick="closeMemoEditor()" class="w-8 h-8 flex items-center justify-center text-gray-400 active:text-gray-700 rounded-full active:bg-gray-100 transition-colors text-xl leading-none">×</button>
+      </div>
+      <!-- 에디터 스크롤 영역 -->
+      <div class="flex-1 px-4 py-3 overflow-y-auto custom-scrollbar" style="overscroll-behavior:contain;">
         <div id="richMemoEditor"
           contenteditable="true"
           spellcheck="false"
-          class="w-full text-[13px] leading-relaxed text-gray-700 outline-none"
-          style="min-height:200px;background:white;"
-          data-placeholder="탭에 마우스를 대고 Shift 마우스 스크롤하면 더 많은 탭이 보여요.&#10;텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
+          class="w-full text-[14px] leading-relaxed text-gray-800 outline-none relative"
+          style="min-height:300px;background:white;"
+          data-placeholder="텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
         </div>
       </div>
     </div>
@@ -6235,7 +6244,8 @@ function renderMemoFolders() {
   </div>
 
   <style>
-    #richMemoEditor.empty::before {
+    #richMemoEditor.empty::before,
+    #richMemoEditorPC.empty::before {
       content: attr(data-placeholder);
       color: #d1d5db;
       font-weight: 400;
@@ -6245,6 +6255,8 @@ function renderMemoFolders() {
       top: 0; left: 0;
     }
     #richMemoEditor { position: relative; }
+    #richMemoEditorPC { position: relative; }
+    #memoTabHeader { border-radius: 0.75rem 0.75rem 0 0; }
     #memoTabHeader { border-radius: 0.75rem 0.75rem 0 0; }
   </style>
 
