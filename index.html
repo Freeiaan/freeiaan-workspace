@@ -449,10 +449,10 @@
               <div class="flex items-center justify-between mb-2">
                 <button onclick="closeMemoEditor()" class="text-xs font-bold text-gray-400 flex items-center gap-1 hover:text-gray-700 transition-colors">◀ 목록으로</button>
               </div>
-              <input type="text" id="memoCardTitleInput" placeholder="제목을 입력하세요"
+              <input type="text" id="memoCardTitleInputPC" placeholder="제목을 입력하세요"
                 class="text-sm font-black text-gray-800 bg-transparent border-none outline-none mb-2 w-full placeholder-gray-300">
               <div class="w-full h-px bg-gray-100 mb-2"></div>
-              <div id="richMemoEditor"
+              <div id="richMemoEditorPC"
                 contenteditable="true"
                 spellcheck="false"
                 class="flex-1 text-[13px] leading-relaxed text-gray-700 outline-none custom-scrollbar overflow-y-auto"
@@ -3892,16 +3892,28 @@ function renderCalendar() {
               item.querySelector('input').addEventListener('click', (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); });
               
               let itemPressTimer = null;
+              // 모바일: 꾸욱 600ms → 드래그 활성화, 짧은 탭 → 열기
+              item.draggable = false; // 기본은 드래그 비활성
+              let _taskDragReady = false;
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
                   e.stopPropagation();
                   if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                      // 모바일: 꾹 눌러도 아무것도 안 나옴 (플로팅카드에서만 컨텍스트)
-                      itemPressTimer = setTimeout(() => { itemPressTimer = null; }, 500);
+                      _taskDragReady = false;
+                      itemPressTimer = setTimeout(() => {
+                          _taskDragReady = true;
+                          item.draggable = true;
+                          itemPressTimer = null;
+                      }, 600);
                   }
               });
-              item.addEventListener('pointerup', (e) => { if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; } });
-              item.addEventListener('pointermove', (e) => { if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; } });
+              item.addEventListener('pointerup', (e) => {
+                  if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; }
+                  setTimeout(() => { item.draggable = false; _taskDragReady = false; }, 300);
+              });
+              item.addEventListener('pointermove', (e) => {
+                  if (itemPressTimer && !_taskDragReady) { clearTimeout(itemPressTimer); itemPressTimer = null; }
+              });
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
@@ -4768,7 +4780,7 @@ function renderMemoFolders() {
         container.innerHTML = ''; 
         
         const kptWrapper = document.createElement('div');
-        kptWrapper.className = "p-4 md:p-8 w-full min-h-full bg-white flex flex-col gap-6 select-text";
+        kptWrapper.className = "p-4 md:p-8 w-full min-h-full bg-white flex flex-col gap-6 select-text overflow-x-auto";
         
         if(viewMode === 'option1') {
             let daysHtml = '';
@@ -5418,7 +5430,7 @@ function renderMemoFolders() {
                     if (window.getSelection) window.getSelection().removeAllRanges();
                     const tt = e.touches[0];
                     showTabContextMenu({ clientX: tt.clientX, clientY: tt.clientY }, tab.id);
-                }, 500);
+                }, 600);
             }, { passive: true });
             btn.addEventListener('touchend',  () => clearTimeout(_tabLongTimer));
             btn.addEventListener('touchmove', () => clearTimeout(_tabLongTimer));
@@ -5567,7 +5579,7 @@ function renderMemoFolders() {
                     const t = e.touches[0];
                     const fakeE = { clientX: t.clientX, clientY: t.clientY };
                     showCardContextMenu(fakeE, card.id);
-                }, 500);
+                }, 600);
             }, { passive: true });
             div.addEventListener('touchend',   () => { clearTimeout(_cardLongTimer); });
             div.addEventListener('touchmove',  () => { clearTimeout(_cardLongTimer); });
@@ -5702,21 +5714,57 @@ function renderMemoFolders() {
         const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
         const card = tab && tab.cards.find(c => c.id === cardId);
         if (!card) return;
-        document.getElementById('memoCardListView').classList.add('hidden');
-        const editorView = document.getElementById('memoEditorView');
-        editorView.classList.remove('hidden');
-        editorView.style.display = 'flex';
-        document.getElementById('memoCardTitleInput').value = card.title;
-        const editor = document.getElementById('richMemoEditor');
-        editor.innerHTML = card.content;
+
+        const titleInput = document.getElementById('memoCardTitleInput');
+        const editor     = document.getElementById('richMemoEditor');
+        titleInput.value   = card.title;
+        editor.innerHTML   = card.content;
         editor.style.backgroundColor = '#ffffff';
         if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
         else editor.classList.remove('empty');
-        if (!card.title) document.getElementById('memoCardTitleInput').focus();
-        else editor.focus();
+
+        if (window.innerWidth < 768) {
+            // 모바일: 중앙 팝업 모달
+            const modal = document.getElementById('memoEditorModal');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.memo-modal-inner').classList.remove('scale-95');
+                modal.querySelector('.memo-modal-inner').classList.add('scale-100');
+            }, 10);
+            if (!card.title) titleInput.focus();
+            else editor.focus();
+        } else {
+            // PC/태블릿: 기존 인라인 방식
+            // PC용 별도 input/editor 동기화
+            const pcTitle = document.getElementById('memoCardTitleInputPC');
+            const pcEditor = document.getElementById('richMemoEditorPC');
+            if (pcTitle) pcTitle.value = card.title;
+            if (pcEditor) {
+                pcEditor.innerHTML = card.content;
+                pcEditor.style.backgroundColor = '#ffffff';
+                if (!pcEditor.innerHTML.trim() || pcEditor.innerHTML === '<br>') pcEditor.classList.add('empty');
+                else pcEditor.classList.remove('empty');
+            }
+            document.getElementById('memoCardListView').classList.add('hidden');
+            const editorView = document.getElementById('memoEditorView');
+            editorView.classList.remove('hidden');
+            editorView.style.display = 'flex';
+            if (!card.title) { if(pcTitle) pcTitle.focus(); }
+            else { if(pcEditor) pcEditor.focus(); }
+        }
     }
 
     window.closeMemoEditor = function() {
+        // 모바일 팝업 닫기
+        const modal = document.getElementById('memoEditorModal');
+        if (modal && modal.style.display !== 'none') {
+            modal.classList.add('opacity-0');
+            modal.querySelector('.memo-modal-inner').classList.remove('scale-100');
+            modal.querySelector('.memo-modal-inner').classList.add('scale-95');
+            setTimeout(() => { modal.style.display = 'none'; }, 250);
+        }
+        // PC 인라인 에디터 닫기
         const editorView = document.getElementById('memoEditorView');
         editorView.classList.add('hidden');
         editorView.style.display = 'none';
@@ -5727,8 +5775,17 @@ function renderMemoFolders() {
 
     // ── 자동 저장 + 에디터 이벤트 ────────────────────────
     function initMemoEditorEvents() {
-        const titleInput = document.getElementById('memoCardTitleInput');
-        const editor     = document.getElementById('richMemoEditor');
+        // 모바일: memoCardTitleInput + richMemoEditor (팝업)
+        // PC: memoCardTitleInputPC + richMemoEditorPC (인라인)
+        // 두 쌍 모두 이벤트 등록
+        const pairs = [
+            { titleId: 'memoCardTitleInput', editorId: 'richMemoEditor' },
+            { titleId: 'memoCardTitleInputPC', editorId: 'richMemoEditorPC' },
+        ];
+
+        pairs.forEach(({ titleId, editorId }) => {
+        const titleInput = document.getElementById(titleId);
+        const editor     = document.getElementById(editorId);
         if (!titleInput || !editor) return;
 
         titleInput.addEventListener('input', function() {
@@ -5965,25 +6022,29 @@ function renderMemoFolders() {
 
         editor.addEventListener('contextmenu', (e) => {
             const sel = window.getSelection();
-            if (sel && sel.toString().length > 0) { e.preventDefault(); showRichFormatMenu(e.pageX, e.pageY - 52); }
+            if (sel && sel.toString().length > 0) { e.preventDefault(); showRichFormatMenu(e.clientX, e.clientY - 52); }
         });
         editor.addEventListener('click', (e) => {
             const sel = window.getSelection();
-            if (sel && sel.toString().length > 0) { showRichFormatMenu(e.pageX, (e.clientY > 80) ? e.pageY - 52 : e.pageY + 10); }
+            if (sel && sel.toString().length > 0) { showRichFormatMenu(e.clientX, (e.clientY > 80) ? e.clientY - 52 : e.clientY + 10); }
         });
         editor.addEventListener('mouseup', (e) => {
             setTimeout(() => {
                 const sel = window.getSelection();
-                if (sel && sel.toString().length > 0) { showRichFormatMenu(e.pageX, (e.clientY > 80) ? e.pageY - 52 : e.pageY + 10); }
+                if (sel && sel.toString().length > 0) { showRichFormatMenu(e.clientX, (e.clientY > 80) ? e.clientY - 52 : e.clientY + 10); }
             }, 30);
         });
+        }); // pairs.forEach 끝
     }
 
     function updateMemoPlaceholder() {
-        const editor = document.getElementById('richMemoEditor');
-        if (!editor) return;
-        if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
-        else editor.classList.remove('empty');
+        // 모바일과 PC 둘 다 업데이트
+        ['richMemoEditor', 'richMemoEditorPC'].forEach(id => {
+            const editor = document.getElementById(id);
+            if (!editor) return;
+            if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
+            else editor.classList.remove('empty');
+        });
     }
 
     // ── 탭 추가 팝업 ──────────────────────────────────────
@@ -6115,6 +6176,28 @@ function renderMemoFolders() {
 
   <!-- 카드 이동 메뉴 -->
   <div id="memoCardMoveMenu" style="display:none" class="fixed z-[99999] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 min-w-[160px]"></div>
+
+  <!-- 📝 모바일 메모 에디터 팝업 -->
+  <div id="memoEditorModal" style="display:none" class="fixed inset-0 z-[9100] items-center justify-center bg-black/50 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-250">
+    <div class="memo-modal-inner bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col scale-95 transition-transform duration-250" style="max-height:85vh">
+      <!-- 헤더 -->
+      <div class="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0 border-b border-gray-100">
+        <input type="text" id="memoCardTitleInput" placeholder="제목을 입력하세요"
+          class="flex-1 text-sm font-black text-gray-800 bg-transparent border-none outline-none placeholder-gray-300 mr-2">
+        <button onclick="closeMemoEditor()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors text-lg font-light">×</button>
+      </div>
+      <!-- 에디터 -->
+      <div class="flex-1 px-4 py-3 overflow-y-auto custom-scrollbar">
+        <div id="richMemoEditor"
+          contenteditable="true"
+          spellcheck="false"
+          class="w-full text-[13px] leading-relaxed text-gray-700 outline-none"
+          style="min-height:200px;background:white;"
+          data-placeholder="탭에 마우스를 대고 Shift 마우스 스크롤하면 더 많은 탭이 보여요.&#10;텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 새 탭 추가 팝업 -->
   <div id="addMemoTabModal" style="display:none" class="fixed inset-0 z-[9000] items-center justify-center bg-black/40 backdrop-blur-sm px-4">
