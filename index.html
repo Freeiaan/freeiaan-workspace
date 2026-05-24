@@ -544,6 +544,8 @@
                   <span id="totalFocusTime" class="text-sm font-extrabold text-[#22741C]"></span>
               </div>
               <div id="focusChart" class="flex items-end gap-3 h-48 w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"></div>
+              <div id="focusChartLegend" class="flex flex-wrap gap-3 mt-3 px-1"></div>
+              <div id="focusHeatmap" class="mt-4 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm" style="display:none"></div>
           </section>
           <section>
               <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2 mb-6"><span class="w-1.5 h-5 bg-blue-500 rounded-sm"></span> 해빗 달성률 스코어</h3>
@@ -675,9 +677,9 @@
            <button onclick="closeWeeklyPlanner()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
          </div>
          <div class="flex items-center gap-2">
-           <p id="weeklySubtitle" class="text-xs font-bold text-gray-500 uppercase tracking-widest flex-1"></p>
-           <button onclick="moveWeeklyPlanner(-1)" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition active:scale-95 flex items-center justify-center">◀</button>
-           <button onclick="moveWeeklyPlanner(1)" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition active:scale-95 flex items-center justify-center">▶</button>
+           <p id="weeklySubtitle" class="text-xs font-bold text-gray-500 uppercase tracking-widest"></p>
+           <button onclick="moveWeeklyPlanner(-1)" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition active:scale-95 flex items-center justify-center">◀</button>
+           <button onclick="moveWeeklyPlanner(1)" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition active:scale-95 flex items-center justify-center">▶</button>
          </div>
       </header>
 
@@ -2132,61 +2134,197 @@ function loadFromCloud() {
     }
 
     // 🎨 콘텐츠 렌더링 (이안님의 완벽 격리 요청 반영!)
+    // 🎨 콘텐츠 렌더링
     function renderAnalyticsContent(allWeeks, selectedWeek = null) {
-        const focusChart = $('focusChart'); const habitGrid = $('habitStatsGrid'); 
-        focusChart.innerHTML = ''; habitGrid.innerHTML = '';
-        
-        // 💡 [완벽 격리] 부모 요소를 타고 올라가 진짜 section 구조를 제어합니다!
+        const focusChart = $('focusChart');
+        const habitGrid  = $('habitStatsGrid');
+        focusChart.innerHTML = '';
+        habitGrid.innerHTML  = '';
+
         const focusSection = focusChart?.closest('section');
         const habitSection = habitGrid?.closest('section');
-        const cheerBox = document.querySelector('#analyticsModal .bg-\\[\\#e4f8c4\\]'); 
-        
+        const cheerBox = document.querySelector('#analyticsModal .bg-\[\#e4f8c4\]');
+
         if (analyticsMainTab === 'focus') {
-            if(focusSection) focusSection.style.display = 'block';
-            if(habitSection) habitSection.style.display = 'none';
-            if(cheerBox) cheerBox.style.display = 'none'; // 집중시간 탭에선 응원 상자 완전히 끄기
+            if (focusSection) focusSection.style.display = 'block';
+            if (habitSection) habitSection.style.display = 'none';
+            if (cheerBox) cheerBox.style.display = 'none';
         } else {
-            if(focusSection) focusSection.style.display = 'none';
-            if(habitSection) habitSection.style.display = 'block';
-            if(cheerBox) cheerBox.style.display = 'flex';  // 해빗 탭에선 응원 상자 켜기
+            if (focusSection) focusSection.style.display = 'none';
+            if (habitSection) habitSection.style.display = 'block';
+            if (cheerBox) cheerBox.style.display = 'flex';
         }
 
-        // 데이터 계산 및 그리기 (기존 로직 유지)
-        let totalSec = 0, chartData = [], totalHabitBoxes = 0, successHabitCount = 0, habitsToDisplay = [];
+        // 카테고리별 시간 집계 (grid 1칸 = 10분 = 600초)
+        function getCatSecsForDate(dateKey) {
+            const data = dailyRecords[dateKey];
+            if (!data || !data.grid) return {};
+            const catSecs = {};
+            data.grid.forEach(color => {
+                if (!color) return;
+                catSecs[color] = (catSecs[color] || 0) + 600;
+            });
+            return catSecs;
+        }
+        function mergeCatSecs(a, b) {
+            const r = { ...a };
+            Object.entries(b).forEach(([c, s]) => { r[c] = (r[c] || 0) + s; });
+            return r;
+        }
+
+        let totalSec = 0, chartData = [];
+        let totalHabitBoxes = 0, successHabitCount = 0, habitsToDisplay = [];
+
         if (analyticsMode === 'month') {
             $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 월간 집중 시간 분석`;
             allWeeks.forEach(w => {
-                let weekTotal = 0;
-                for(let i=0; i<7; i++) { const d = new Date(w.start); d.setDate(d.getDate() + i); const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 }; weekTotal += (rec.stopwatch + rec.timer); }
-                totalSec += weekTotal; chartData.push({ label: `${w.weekNum}주차`, sec: weekTotal });
+                let weekCatSecs = {}, weekTotal = 0;
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(w.start); d.setDate(d.getDate() + i);
+                    const k = getDateKey(d);
+                    const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 };
+                    weekTotal += rec.stopwatch + rec.timer;
+                    weekCatSecs = mergeCatSecs(weekCatSecs, getCatSecsForDate(k));
+                }
+                totalSec += weekTotal;
+                chartData.push({ label: `${w.weekNum}주차`, sec: weekTotal, catSecs: weekCatSecs });
                 const wHabits = weeklyHabits[w.key] || [];
-                wHabits.forEach(h => { if(!h.text.trim()) return; const count = h.tracker.filter(v => v === 1).length; successHabitCount += count; totalHabitBoxes += 7; let existing = habitsToDisplay.find(x => x.text === h.text); if(existing) { existing.count += count; existing.total += 7; } else { habitsToDisplay.push({ text: h.text, count: count, total: 7 }); } });
+                wHabits.forEach(h => {
+                    if (!h.text.trim()) return;
+                    const count = h.tracker.filter(v => v === 1).length;
+                    successHabitCount += count; totalHabitBoxes += 7;
+                    let ex = habitsToDisplay.find(x => x.text === h.text);
+                    if (ex) { ex.count += count; ex.total += 7; }
+                    else habitsToDisplay.push({ text: h.text, count, total: 7 });
+                });
             });
         } else if (analyticsMode === 'week' && selectedWeek) {
             $('chartTitle').innerHTML = `<span class="w-1.5 h-5 bg-[#22741C] rounded-sm"></span> 주간 집중 시간 분석`;
             const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-            for(let i=0; i<7; i++) { const d = new Date(selectedWeek.start); d.setDate(d.getDate() + i); const k = getDateKey(d); const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 }; const dayTotal = rec.stopwatch + rec.timer; totalSec += dayTotal; chartData.push({ label: dayNames[i], sec: dayTotal }); }
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(selectedWeek.start); d.setDate(d.getDate() + i);
+                const k = getDateKey(d);
+                const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 };
+                const dayTotal = rec.stopwatch + rec.timer;
+                totalSec += dayTotal;
+                chartData.push({ label: dayNames[i], sec: dayTotal, catSecs: getCatSecsForDate(k) });
+            }
             const wHabits = weeklyHabits[selectedWeek.key] || [];
-            wHabits.forEach(h => { if(!h.text.trim()) return; const count = h.tracker.filter(v => v === 1).length; successHabitCount += count; totalHabitBoxes += 7; habitsToDisplay.push({ text: h.text, count: count, total: 7 }); });
+            wHabits.forEach(h => {
+                if (!h.text.trim()) return;
+                const count = h.tracker.filter(v => v === 1).length;
+                successHabitCount += count; totalHabitBoxes += 7;
+                habitsToDisplay.push({ text: h.text, count, total: 7 });
+            });
         }
-        
+
         $('totalFocusTime').textContent = `총 집중: ${Math.floor(totalSec/3600)}h ${Math.floor((totalSec%3600)/60)}m`;
-        const maxSec = Math.max(...chartData.map(d => d.sec), 3600); 
+        const maxSec = Math.max(...chartData.map(d => d.sec), 3600);
+
+        // 카테고리 누적 막대 그래프
         chartData.forEach(d => {
-            const barWrap = document.createElement('div'); barWrap.className = 'flex-1 flex flex-col items-center gap-2'; const hPercent = (d.sec / maxSec) * 100;
-            let timeStr = `${Math.floor(d.sec/3600)}h`; if(d.sec === 0) timeStr = '0'; else if (d.sec < 3600 || analyticsMode === 'week') timeStr = `${Math.floor(d.sec/60)}m`;
-            barWrap.innerHTML = `<div class="text-[12px] font-black text-[#1b4332] mb-1">${timeStr}</div><div class="w-full max-w-[40px] bg-[#e4f8c4] rounded-t-lg transition-all duration-500 relative group" style="height: ${hPercent}%"><div class="absolute inset-0 bg-[#22741C] opacity-0 group-hover:opacity-100 rounded-t-lg transition-opacity cursor-pointer" title="${Math.floor(d.sec/3600)}시간 ${Math.floor((d.sec%3600)/60)}분"></div></div><div class="text-[14px] font-extrabold text-gray-800 mt-2 whitespace-nowrap">${d.label}</div>`; focusChart.appendChild(barWrap);
+            const barWrap = document.createElement('div');
+            barWrap.className = 'flex-1 flex flex-col items-center gap-1 group relative';
+            const hPercent = (d.sec / maxSec) * 100;
+            const timeStr = d.sec === 0 ? '0' : (d.sec < 3600 || analyticsMode === 'week')
+                ? `${Math.floor(d.sec/60)}m` : `${Math.floor(d.sec/3600)}h`;
+
+            const catEntries = Object.entries(d.catSecs || {});
+            const gridTotal  = catEntries.reduce((s, [,v]) => s + v, 0);
+
+            let barInner = '', tooltipRows = '';
+            if (gridTotal > 0) {
+                catEntries.forEach(([color, sec]) => {
+                    const cat = categories.find(c => c.color === color);
+                    const catName = cat ? cat.name : '기타';
+                    const segPct = (sec / gridTotal) * 100;
+                    barInner += `<div style="height:${segPct}%;background:${color};min-height:2px" title="${catName}: ${Math.floor(sec/60)}m" class="w-full"></div>`;
+                    tooltipRows += `<div class="flex justify-between items-center gap-3"><span class="flex items-center gap-1 text-[11px] font-bold" style="color:${color}"><span class="w-2 h-2 rounded-full" style="background:${color}"></span>${catName}</span><span class="text-[11px] font-bold text-gray-600">${Math.floor(sec/3600)}h ${Math.floor((sec%3600)/60)}m</span></div>`;
+                });
+            } else {
+                barInner = `<div style="height:100%;background:#e4f8c4" class="w-full"></div>`;
+                tooltipRows = `<div class="text-[11px] text-gray-400">타임 트래커 기록 없음</div>`;
+            }
+
+            const tooltip = catEntries.length > 0 ? `<div class="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-[160px] bg-white/95 backdrop-blur-md border border-gray-100 shadow-xl rounded-2xl p-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50"><h4 class="text-[11px] font-black text-gray-700 mb-2 border-b pb-1 border-gray-100">${d.label} 상세</h4><div class="flex flex-col gap-1.5">${tooltipRows}</div></div>` : '';
+
+            barWrap.innerHTML = `<div class="text-[11px] font-black text-[#1b4332] mb-1">${timeStr}</div><div class="w-full max-w-[36px] rounded-t-lg overflow-hidden flex flex-col-reverse shadow-sm cursor-pointer" style="height:${Math.max(hPercent, d.sec > 0 ? 4 : 0)}%">${barInner}</div><div class="text-[12px] font-extrabold text-gray-800 mt-2 whitespace-nowrap">${d.label}</div>${tooltip}`;
+            focusChart.appendChild(barWrap);
         });
-        
-        if(habitsToDisplay.length === 0) { habitGrid.innerHTML = '<div class="col-span-2 text-center text-gray-400 text-[12px] font-bold py-6">기록된 해빗 목표가 없습니다.</div>'; } else { habitsToDisplay.forEach(h => { const percent = Math.round((h.count / h.total) * 100); const div = document.createElement('div'); div.className = 'bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center'; div.innerHTML = `<div class="flex flex-col overflow-hidden pr-2"><span class="text-[13px] font-bold text-gray-800 truncate">${h.text}</span><span class="text-[10px] text-gray-400 mt-1">${analyticsMode==='month'?'월간':'주간'} ${h.total}일 중 ${h.count}일 성공</span></div><div class="text-xl font-black text-blue-500 flex-shrink-0">${percent}%</div>`; habitGrid.appendChild(div); }); }
-        
-        const totalPercent = totalHabitBoxes > 0 ? Math.round((successHabitCount / totalHabitBoxes) * 100) : 0; const cheerMsg = $('cheerMessage');
-        if(cheerMsg) {
-            if (totalPercent >= 80) cheerMsg.textContent = `달성률 ${totalPercent}%! 완벽한 기간이었네요! 스스로에게 선물을 줘보세요 🎁`; else if (totalPercent >= 50) cheerMsg.textContent = `달성률 ${totalPercent}%! 충분히 잘하고 있어요. 조금만 더 힘내봐요! 👍`; else cheerMsg.textContent = `기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
+
+        // 카테고리 범례
+        const legendEl = $('focusChartLegend');
+        if (legendEl) {
+            const usedColors = new Set(chartData.flatMap(d => Object.keys(d.catSecs || {})));
+            legendEl.innerHTML = '';
+            categories.filter(c => usedColors.has(c.color)).forEach(cat => {
+                const span = document.createElement('span');
+                span.className = 'flex items-center gap-1 text-[11px] font-bold text-gray-600';
+                span.innerHTML = `<span class="w-3 h-3 rounded-sm flex-shrink-0" style="background:${cat.color}"></span>${cat.name}`;
+                legendEl.appendChild(span);
+            });
+        }
+
+        // 해빗 카드
+        if (habitsToDisplay.length === 0) {
+            habitGrid.innerHTML = '<div class="col-span-2 text-center text-gray-400 text-[12px] font-bold py-6">기록된 해빗 목표가 없습니다.</div>';
+        } else {
+            habitsToDisplay.forEach(h => {
+                const percent   = Math.round((h.count / h.total) * 100);
+                const barColor  = percent >= 80 ? '#22741C' : percent >= 50 ? '#3b82f6' : '#f59e0b';
+                const bgColor   = percent >= 80 ? '#f0fdf4' : percent >= 50 ? '#eff6ff' : '#fffbeb';
+                const bdrColor  = percent >= 80 ? '#bbf7d0' : percent >= 50 ? '#bfdbfe' : '#fde68a';
+                const msg       = percent >= 80 ? '🔥 이번 기간 최고예요!' : percent >= 50 ? '👍 잘 하고 있어요!' : '💪 조금 더 힘내봐요!';
+                const div = document.createElement('div');
+                div.className = 'p-4 rounded-2xl border flex flex-col gap-2 hover:shadow-md transition-all';
+                div.style.cssText = `background:${bgColor};border-color:${bdrColor}`;
+                div.innerHTML = `<div class="flex justify-between items-start"><div><h4 class="text-[13px] font-black text-gray-800 mb-0.5">${h.text}</h4><span class="text-[10px] font-bold text-gray-400">${analyticsMode==='month'?'월간':'주간'} ${h.total}일 중 ${h.count}일 성공</span></div><span class="text-xl font-black" style="color:${barColor}">${percent}%</span></div><div class="w-full rounded-full h-1.5" style="background:${bdrColor}"><div class="h-1.5 rounded-full transition-all duration-500" style="width:${percent}%;background:${barColor}"></div></div><p class="text-[11px] font-bold text-gray-500">${msg}</p>`;
+                habitGrid.appendChild(div);
+            });
+        }
+
+        // 응원 메시지
+        const totalPercent = totalHabitBoxes > 0 ? Math.round((successHabitCount / totalHabitBoxes) * 100) : 0;
+        const cheerMsg = $('cheerMessage');
+        if (cheerMsg) {
+            if (totalPercent >= 80) cheerMsg.textContent = `달성률 ${totalPercent}%! 완벽한 기간이었네요! 스스로에게 선물을 줘보세요 🎁`;
+            else if (totalPercent >= 50) cheerMsg.textContent = `달성률 ${totalPercent}%! 충분히 잘하고 있어요. 조금만 더 힘내봐요! 👍`;
+            else cheerMsg.textContent = `기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
+        }
+
+        // 월간 잔디 히트맵
+        const heatmapEl = $('focusHeatmap');
+        if (heatmapEl) {
+            if (analyticsMode === 'month' && analyticsMainTab === 'focus') {
+                const year = analyticsDate.getFullYear(), month = analyticsDate.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstDay = new Date(year, month, 1).getDay();
+                let html = '<div class="grid gap-1" style="grid-template-columns:repeat(7,1fr)">';
+                ['S','M','T','W','T','F','S'].forEach(d => { html += `<div class="text-center text-[9px] font-black text-gray-400">${d}</div>`; });
+                for (let i = 0; i < firstDay; i++) html += '<div></div>';
+                const todayKey = getDateKey(new Date());
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const k = getDateKey(new Date(year, month, i));
+                    const rec = dailyRecords[k]?.recorded || { stopwatch: 0, timer: 0 };
+                    const sec = rec.stopwatch + rec.timer;
+                    let bg = 'background:#f3f4f6';
+                    if (sec >= 14400) bg = 'background:#15803d';
+                    else if (sec >= 7200) bg = 'background:#22741C';
+                    else if (sec >= 3600) bg = 'background:#4ade80';
+                    else if (sec > 0) bg = 'background:#bbf7d0';
+                    const ring = k === todayKey ? 'outline:2px solid #22741C;outline-offset:1px;' : '';
+                    html += `<div style="width:100%;aspect-ratio:1;border-radius:3px;${bg};${ring}" title="${i}일: ${Math.floor(sec/3600)}h ${Math.floor((sec%3600)/60)}m"></div>`;
+                }
+                html += '</div><div class="flex items-center justify-between mt-3 pt-2 border-t border-gray-100"><div class="flex items-center gap-1 text-[9px] font-bold text-gray-400">Less <div class="flex gap-0.5 mx-1"><div style="width:12px;height:12px;background:#f3f4f6;border-radius:2px"></div><div style="width:12px;height:12px;background:#bbf7d0;border-radius:2px"></div><div style="width:12px;height:12px;background:#4ade80;border-radius:2px"></div><div style="width:12px;height:12px;background:#15803d;border-radius:2px"></div></div> More</div>';
+                const activeDays = Object.keys(dailyRecords).filter(k => { try { const d = new Date(k); const r = dailyRecords[k]?.recorded||{stopwatch:0,timer:0}; return d.getFullYear()===year && d.getMonth()===month && (r.stopwatch+r.timer)>=3600; } catch(e){ return false; } }).length;
+                html += `<p class="text-[10px] font-bold text-gray-500">1h+ <span class="text-green-600">${activeDays}일</span> 활동</p></div>`;
+                heatmapEl.innerHTML = html;
+                heatmapEl.style.display = 'block';
+            } else {
+                heatmapEl.style.display = 'none';
+            }
         }
     }
-
-    // 🗓️ 좌측 미니 달력 그리기 (선택된 주차에 형광펜 칠하기!)
     function renderMiniCalendar(year, month, weeks) {
         const container = $('miniCalendarContainer');
         if(!container) return;
