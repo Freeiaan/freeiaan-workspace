@@ -6042,12 +6042,20 @@ function renderMemoFolders() {
     }
 
     function updateMemoPlaceholder() {
-        // 모바일과 PC 둘 다 업데이트
         ['richMemoEditor', 'richMemoEditorPC'].forEach(id => {
             const editor = document.getElementById(id);
             if (!editor) return;
-            if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
-            else editor.classList.remove('empty');
+            const isEmpty = !editor.innerHTML.trim() || editor.innerHTML === '<br>';
+            // overlay div 방식으로 placeholder 표시
+            let ph = editor.parentElement.querySelector('.memo-placeholder');
+            if (!ph) {
+                ph = document.createElement('div');
+                ph.className = 'memo-placeholder';
+                ph.textContent = editor.getAttribute('data-placeholder') || '텍스트를 드래그하고 탭하면 꾸밀 수 있어요.';
+                editor.parentElement.style.position = 'relative';
+                editor.parentElement.insertBefore(ph, editor);
+            }
+            ph.style.display = isEmpty ? 'block' : 'none';
         });
     }
 
@@ -6244,18 +6252,21 @@ function renderMemoFolders() {
   </div>
 
   <style>
-    #richMemoEditor.empty::before,
-    #richMemoEditorPC.empty::before {
-      content: attr(data-placeholder);
+    #richMemoEditor,
+    #richMemoEditorPC {
+      position: relative;
+    }
+    .memo-placeholder {
+      position: absolute;
+      top: 0; left: 0;
       color: #d1d5db;
       font-weight: 400;
       pointer-events: none;
       white-space: pre-line;
-      position: absolute;
-      top: 0; left: 0;
+      font-size: 13px;
+      line-height: 1.625;
+      z-index: 0;
     }
-    #richMemoEditor { position: relative; }
-    #richMemoEditorPC { position: relative; }
     #memoTabHeader { border-radius: 0.75rem 0.75rem 0 0; }
     #memoTabHeader { border-radius: 0.75rem 0.75rem 0 0; }
   </style>
