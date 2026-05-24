@@ -2216,9 +2216,16 @@ function loadFromCloud() {
         // 그래프 + 범례 HTML 생성
         function buildChartHTML(gap) {
             const usedColors = new Set(chartData.flatMap(d=>Object.keys(d.catSecs||{})));
-            let chartHTML = `<div class="flex items-end w-full" style="gap:${gap};height:${BAR_MAX_PX+40}px;align-items:flex-end;">`;
+            const BAR_AREA_PX = 180; // 막대 영역 높이
+            // 파스텔 변환: hex에 투명도 CC(80%) 추가
+            function toPassel(hex) {
+                const h = hex.replace('#','');
+                if (h.length === 6) return hex + 'CC';
+                return hex;
+            }
+            let chartHTML = `<div class="flex w-full" style="gap:${gap};height:${BAR_AREA_PX}px;align-items:flex-end;">`;
             chartData.forEach(d => {
-                const barPx = d.sec > 0 ? Math.max(Math.round((d.sec/maxSec)*BAR_MAX_PX), 6) : 2;
+                const barPx = d.sec > 0 ? Math.max(Math.round((d.sec/maxSec)*BAR_AREA_PX*0.9), 6) : 2;
                 const timeStr = d.sec===0 ? '0' : (d.sec<3600||analyticsMode==='week') ? `${Math.floor(d.sec/60)}m` : `${Math.floor(d.sec/3600)}h`;
                 const catEntries = Object.entries(d.catSecs||{});
                 const gridTotal = catEntries.reduce((s,[,v])=>s+v,0);
@@ -2228,25 +2235,25 @@ function loadFromCloud() {
                         const cat = categories.find(c=>c.color===color);
                         const catName = cat ? cat.name : '기타';
                         const segPct = (sec/gridTotal)*100;
-                        barInner += `<div style="height:${segPct}%;background:${color};min-height:2px" title="${catName}: ${Math.floor(sec/60)}m"></div>`;
+                        barInner += `<div style="height:${segPct}%;background:${toPassel(color)};min-height:2px;border-top:1px solid rgba(255,255,255,0.4)" title="${catName}: ${Math.floor(sec/60)}m"></div>`;
                         tooltipRows += `<div class="flex justify-between items-center gap-2"><span class="flex items-center gap-1 text-[11px] font-bold" style="color:${color}"><span class="w-2 h-2 rounded-full inline-block" style="background:${color}"></span>${catName}</span><span class="text-[11px] font-bold text-gray-600">${Math.floor(sec/3600)}h ${Math.floor((sec%3600)/60)}m</span></div>`;
                     });
                 } else {
                     barInner = `<div style="height:100%;background:#e4f8c4"></div>`;
                 }
-                const tooltip = catEntries.length>0 ? `<div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[150px] bg-white/95 backdrop-blur-md border border-gray-100 shadow-xl rounded-2xl p-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50" style="min-width:140px"><p class="text-[11px] font-black text-gray-700 mb-2 border-b pb-1 border-gray-100">${d.label}</p><div class="flex flex-col gap-1">${tooltipRows}</div></div>` : '';
-                chartHTML += `<div class="flex flex-col items-center group relative flex-1 cursor-pointer" style="min-width:24px;justify-content:flex-end">
+                const tooltip = catEntries.length>0 ? `<div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border border-gray-100 shadow-xl rounded-2xl p-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50" style="min-width:140px"><p class="text-[11px] font-black text-gray-700 mb-2 border-b pb-1 border-gray-100">${d.label}</p><div class="flex flex-col gap-1">${tooltipRows}</div></div>` : '';
+                chartHTML += `<div class="flex flex-col items-center group relative flex-1 cursor-pointer" style="min-width:24px;justify-content:flex-end;height:100%">
                     <div class="text-[10px] font-black text-[#1b4332] mb-1 whitespace-nowrap">${timeStr}</div>
-                    <div class="w-full max-w-[32px] rounded-t-md overflow-hidden flex flex-col shadow-sm" style="height:${barPx}px">${barInner}</div>
+                    <div class="w-full max-w-[36px] rounded-t-lg overflow-hidden flex flex-col shadow-sm" style="height:${barPx}px">${barInner}</div>
                     <div class="text-[10px] font-bold text-gray-700 mt-2 whitespace-nowrap">${d.label}</div>
                     ${tooltip}
                 </div>`;
             });
             chartHTML += '</div>';
-            // 범례
-            chartHTML += '<div class="flex flex-wrap gap-2 mt-2">';
+            // 범례 - 하단 고정
+            chartHTML += '<div class="flex flex-wrap gap-3 mt-4 pt-3 border-t border-gray-100">';
             categories.filter(c=>usedColors.has(c.color)).forEach(cat => {
-                chartHTML += `<span class="flex items-center gap-1 text-[11px] font-bold text-gray-600"><span class="w-3 h-3 rounded-sm inline-block" style="background:${cat.color}"></span>${cat.name}</span>`;
+                chartHTML += `<span class="flex items-center gap-1.5 text-[11px] font-bold text-gray-600"><span class="w-3 h-3 rounded-sm inline-block shadow-sm" style="background:${toPassel(cat.color)}"></span>${cat.name}</span>`;
             });
             chartHTML += '</div>';
             return chartHTML;
@@ -2259,7 +2266,7 @@ function loadFromCloud() {
             const firstDay = new Date(year,month,1).getDay();
             const todayKey = getDateKey(new Date());
             let html = '<h4 class="text-[12px] font-black text-gray-700 mb-3">📅 월간 활동 히트맵</h4>';
-            html += '<div class="grid gap-1 mb-2" style="grid-template-columns:repeat(7,1fr)">';
+            html += '<div class="grid gap-0.5 mb-2" style="grid-template-columns:repeat(7,1fr)">';
             ['S','M','T','W','T','F','S'].forEach(d => { html+=`<div class="text-center text-[9px] font-black text-gray-400">${d}</div>`; });
             for (let i=0;i<firstDay;i++) html+='<div></div>';
             for (let i=1;i<=daysInMonth;i++) {
@@ -2289,9 +2296,9 @@ function loadFromCloud() {
         const area = $('focusChartArea');
         if (area && analyticsMainTab === 'focus') {
             if (analyticsMode === 'month') {
-                area.innerHTML = `<div class="flex gap-4 w-full">
+                area.innerHTML = `<div class="flex gap-4 w-full items-stretch">
                     <div class="flex-1 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm min-w-0">${buildHeatmapHTML()}</div>
-                    <div class="flex-1 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm min-w-0">${buildChartHTML('4px')}</div>
+                    <div class="flex-1 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm min-w-0 flex flex-col justify-between">${buildChartHTML('4px')}</div>
                 </div>`;
             } else {
                 area.innerHTML = `<div class="w-full bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">${buildChartHTML('8px')}</div>`;
@@ -2327,7 +2334,6 @@ function loadFromCloud() {
             else cheerMsg.textContent=`기록은 변화의 시작입니다. 다음엔 조금 더 채워볼까요? 🔥`;
         }
     }
-  
     function renderMiniCalendar(year, month, weeks) {
         const container = $('miniCalendarContainer');
         if(!container) return;
