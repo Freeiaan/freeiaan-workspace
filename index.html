@@ -3781,7 +3781,17 @@ function renderTimeGrid(dateKey) {
     }
 
     function saveWeeklySpecifics() { setLocal('ianWeeklyMemos', weeklyMemos); setLocal('ianWeeklyHabits', weeklyHabits); }
-    window.toggleTaskFromWeekly = function(dateKey, index, event) { allTasks[dateKey][index].isChecked = event.target.checked; saveAndRefresh(); const span = event.target.nextElementSibling; if (event.target.checked) span.classList.add('line-through', 'opacity-50'); else span.classList.remove('line-through', 'opacity-50'); };
+    window.toggleTaskFromWeekly = function(dateKey, index, event) {
+        if (allTasks[dateKey] && allTasks[dateKey][index] !== undefined) {
+            allTasks[dateKey][index].isChecked = event.target.checked;
+            saveAndRefresh();
+            const span = event.target.nextElementSibling;
+            if (span) {
+                if (event.target.checked) span.classList.add('line-through', 'opacity-50');
+                else span.classList.remove('line-through', 'opacity-50');
+            }
+        }
+    };
     window.addHabit = function() { if (!weeklyHabits[window.currentWeekKey]) weeklyHabits[window.currentWeekKey] = []; weeklyHabits[window.currentWeekKey].push({ text: '', tracker: [0,0,0,0,0,0,0] }); saveWeeklySpecifics(); renderHabits(); };
     window.updateHabitText = function(index, value) { if(weeklyHabits[window.currentWeekKey]) { weeklyHabits[window.currentWeekKey][index].text = value; saveWeeklySpecifics(); } };
     window.toggleHabit = function(hIndex, dIndex) { if(weeklyHabits[window.currentWeekKey]) { let val = weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex]; val = (val + 1) % 3; weeklyHabits[window.currentWeekKey][hIndex].tracker[dIndex] = val; saveWeeklySpecifics(); renderHabits(); } };
@@ -3805,12 +3815,60 @@ function renderTimeGrid(dateKey) {
          header.innerHTML = `<span>${dayNames[i]} <span class="text-[9px] ${isToday ? 'opacity-90' : 'text-gray-400'}">${currentDay.getDate()}</span></span>${totalStr}`; col.appendChild(header);
 
          const checklist = document.createElement('div'); checklist.className = 'h-[120px] flex-shrink-0 overflow-y-auto custom-scrollbar p-1.5 border-b border-[#e6e2d8] flex flex-col bg-[#faf8f5]';
-         if(Array.isArray(allTasks[dateKey]) && allTasks[dateKey].length > 0) {
-             allTasks[dateKey].forEach((t, tIdx) => {
-                 const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const isCheckedClass = t.isChecked ? 'line-through opacity-50' : ''; const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
-                 checklist.innerHTML += `<div class="flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full"><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer" onclick="toggleTaskFromWeekly('${dateKey}', ${tIdx}, event)"><span class="${isCheckedClass} break-words whitespace-normal flex-1" style="color: ${colorStyle}">${t.text}</span></div>`;
+
+         // 반복일정 포함해서 tasks 구성 (달력과 동일한 방식)
+         const _year = currentDay.getFullYear();
+         const _month = currentDay.getMonth();
+         const _repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _year, _month).includes(dateKey));
+         const _repeatItems = _repeatForDay
+             .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
+             .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id, _isRepeat: true }));
+         const _regularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted);
+         const _allDayTasks = [..._repeatItems, ..._regularTasks];
+
+         if (_allDayTasks.length > 0) {
+             _allDayTasks.forEach((t, tIdx) => {
+                 const cat = categories.find(c => c.id === t.categoryId) || categories[0];
+                 const isCheckedClass = t.isChecked ? 'line-through opacity-50' : '';
+                 const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+                 const row = document.createElement('div');
+                 row.className = 'flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full';
+                 const cb = document.createElement('input');
+                 cb.type = 'checkbox';
+                 cb.checked = !!t.isChecked;
+                 cb.className = 'w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer';
+                 cb.addEventListener('click', (e) => { e.stopPropagation(); });
+                 cb.addEventListener('change', (e) => {
+                     e.stopPropagation();
+                     if (t._isRepeat) {
+                         // 반복일정 체크 → allTasks에 저장
+                         if (!allTasks[dateKey]) allTasks[dateKey] = [];
+                         const existing = allTasks[dateKey].find(x => x._repeatId === t._repeatId);
+                         if (existing) { existing.isChecked = e.target.checked; }
+                         else { allTasks[dateKey].push({ ...t, isChecked: e.target.checked, _isRepeat: undefined }); }
+                     } else {
+                         // 일반 일정 체크
+                         const realIdx = _regularTasks.indexOf(t);
+                         const actualIdx = (allTasks[dateKey] || []).findIndex(x => x === t || (x.text === t.text && !x._deleted));
+                         if (actualIdx >= 0) allTasks[dateKey][actualIdx].isChecked = e.target.checked;
+                     }
+                     t.isChecked = e.target.checked;
+                     span.style.color = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+                     if (t.isChecked) span.classList.add('line-through', 'opacity-50');
+                     else span.classList.remove('line-through', 'opacity-50');
+                     saveAndRefresh();
+                 });
+                 const span = document.createElement('span');
+                 span.className = isCheckedClass + ' break-words whitespace-normal flex-1';
+                 span.style.color = colorStyle;
+                 span.textContent = t.text;
+                 row.appendChild(cb);
+                 row.appendChild(span);
+                 checklist.appendChild(row);
              });
-         } else { checklist.innerHTML = `<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>`; }
+         } else {
+             checklist.innerHTML = '<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>';
+         }
          col.appendChild(checklist);
          
          const body = document.createElement('div'); body.className = 'w-full flex-shrink-0 box-border flex flex-col bg-white';
@@ -5095,17 +5153,55 @@ function renderMemoFolders() {
                header.innerHTML = `<span>${dayNames[i]} <span class="text-[9px] ${isToday ? 'opacity-90' : 'text-gray-400'}">${currentDay.getDate()}</span></span>${totalStr}`; 
                col.appendChild(header);
 
-               const checklist = document.createElement('div'); 
+               const checklist = document.createElement('div');
                checklist.className = 'h-[120px] flex-shrink-0 overflow-y-auto custom-scrollbar p-1.5 border-b border-[#e6e2d8] flex flex-col bg-[#faf8f5]';
-               if(Array.isArray(allTasks[dateKey]) && allTasks[dateKey].length > 0) {
-                   allTasks[dateKey].forEach((t, tIdx) => {
-                       const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
-                       const isCheckedClass = t.isChecked ? 'line-through opacity-50' : ''; 
+
+               const _mYear = currentDay.getFullYear();
+               const _mMonth = currentDay.getMonth();
+               const _mRepeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _mYear, _mMonth).includes(dateKey));
+               const _mRepeatItems = _mRepeatForDay
+                   .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
+                   .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id, _isRepeat: true }));
+               const _mRegularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted);
+               const _mAllDayTasks = [..._mRepeatItems, ..._mRegularTasks];
+
+               if (_mAllDayTasks.length > 0) {
+                   _mAllDayTasks.forEach((t) => {
+                       const cat = categories.find(c => c.id === t.categoryId) || categories[0];
+                       const isCheckedClass = t.isChecked ? 'line-through opacity-50' : '';
                        const colorStyle = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
-                       checklist.innerHTML += `<div class="flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full"><input type="checkbox" ${t.isChecked ? 'checked' : ''} class="w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer" onclick="toggleTaskFromWeekly('${dateKey}', ${tIdx}, event)"><span class="${isCheckedClass} break-words whitespace-normal flex-1" style="color: ${colorStyle}">${t.text}</span></div>`;
+                       const row = document.createElement('div');
+                       row.className = 'flex items-start gap-1 text-[9px] leading-tight font-bold mb-1.5 w-full';
+                       const cb = document.createElement('input');
+                       cb.type = 'checkbox'; cb.checked = !!t.isChecked;
+                       cb.className = 'w-3 h-3 flex-shrink-0 rounded-[2px] mt-0.5 cursor-pointer';
+                       cb.addEventListener('click', (e) => e.stopPropagation());
+                       cb.addEventListener('change', (e) => {
+                           e.stopPropagation();
+                           if (t._isRepeat) {
+                               if (!allTasks[dateKey]) allTasks[dateKey] = [];
+                               const existing = allTasks[dateKey].find(x => x._repeatId === t._repeatId);
+                               if (existing) existing.isChecked = e.target.checked;
+                               else allTasks[dateKey].push({ ...t, isChecked: e.target.checked, _isRepeat: undefined });
+                           } else {
+                               const actualIdx = (allTasks[dateKey] || []).findIndex(x => x === t);
+                               if (actualIdx >= 0) allTasks[dateKey][actualIdx].isChecked = e.target.checked;
+                           }
+                           t.isChecked = e.target.checked;
+                           span.style.color = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+                           if (t.isChecked) span.classList.add('line-through', 'opacity-50');
+                           else span.classList.remove('line-through', 'opacity-50');
+                           saveAndRefresh();
+                       });
+                       const span = document.createElement('span');
+                       span.className = isCheckedClass + ' break-words whitespace-normal flex-1';
+                       span.style.color = colorStyle;
+                       span.textContent = t.text;
+                       row.appendChild(cb); row.appendChild(span);
+                       checklist.appendChild(row);
                    });
-               } else { 
-                   checklist.innerHTML = `<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>`; 
+               } else {
+                   checklist.innerHTML = '<span class="text-[9px] text-gray-300 text-center mt-3 font-medium">일정 없음</span>';
                }
                col.appendChild(checklist);
                
