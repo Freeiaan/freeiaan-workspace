@@ -6147,6 +6147,30 @@ function renderMemoFolders() {
         if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
         else editor.classList.remove('empty');
 
+        // 체크박스 취소선 + 이벤트 복원
+        editor.querySelectorAll('input.memo-checkbox').forEach(cb => {
+            const ld = cb.closest('div') || cb.parentElement;
+            if (ld && cb.checked) {
+                ld.style.textDecoration = 'line-through';
+                ld.style.color = '#9ca3af';
+                ld.style.opacity = '0.6';
+            }
+            cb.addEventListener('change', function() {
+                const d = this.closest('div') || this.parentElement;
+                if (d) {
+                    d.style.textDecoration = this.checked ? 'line-through' : '';
+                    d.style.color = this.checked ? '#9ca3af' : '';
+                    d.style.opacity = this.checked ? '0.6' : '';
+                }
+                if (this.checked) this.setAttribute('checked', 'checked');
+                else this.removeAttribute('checked');
+                const t = richMemoTabs.find(t => t.id === richMemoActiveId);
+                const cd = t && t.cards.find(c => c.id === richMemoActiveCardId);
+                if (cd) { cd.content = editor.innerHTML; saveMemoData(); }
+            });
+            cb.addEventListener('click', (ev) => ev.stopPropagation());
+        });
+
         if (window.innerWidth < 768) {
             // 모바일: 중앙 팝업 모달
             const modal = document.getElementById('memoEditorModal');
@@ -6171,6 +6195,29 @@ function renderMemoFolders() {
                 pcEditor.style.backgroundColor = '#ffffff';
                 if (!pcEditor.innerHTML.trim() || pcEditor.innerHTML === '<br>') pcEditor.classList.add('empty');
                 else pcEditor.classList.remove('empty');
+                // 체크박스 취소선 + 이벤트 복원
+                pcEditor.querySelectorAll('input.memo-checkbox').forEach(cb => {
+                    const ld = cb.closest('div') || cb.parentElement;
+                    if (ld && cb.checked) {
+                        ld.style.textDecoration = 'line-through';
+                        ld.style.color = '#9ca3af';
+                        ld.style.opacity = '0.6';
+                    }
+                    cb.addEventListener('change', function() {
+                        const d = this.closest('div') || this.parentElement;
+                        if (d) {
+                            d.style.textDecoration = this.checked ? 'line-through' : '';
+                            d.style.color = this.checked ? '#9ca3af' : '';
+                            d.style.opacity = this.checked ? '0.6' : '';
+                        }
+                        if (this.checked) this.setAttribute('checked', 'checked');
+                        else this.removeAttribute('checked');
+                        const t = richMemoTabs.find(t => t.id === richMemoActiveId);
+                        const cd = t && t.cards.find(c => c.id === richMemoActiveCardId);
+                        if (cd) { cd.content = pcEditor.innerHTML; saveMemoData(); }
+                    });
+                    cb.addEventListener('click', (ev) => ev.stopPropagation());
+                });
             }
             document.getElementById('memoCardListView').classList.add('hidden');
             const editorView = document.getElementById('memoEditorView');
@@ -6411,7 +6458,15 @@ function renderMemoFolders() {
             if (!richMemoActiveCardId) return;
             const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
             const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
-            if (card) { card.content = editor.innerHTML; saveMemoData(); }
+            if (card) {
+                // 저장 전 체크박스 checked 상태를 HTML 속성에 반영
+                editor.querySelectorAll('input.memo-checkbox').forEach(cb => {
+                    if (cb.checked) cb.setAttribute('checked', 'checked');
+                    else cb.removeAttribute('checked');
+                });
+                card.content = editor.innerHTML;
+                saveMemoData();
+            }
         }
 
         editor.addEventListener('contextmenu', (e) => {
