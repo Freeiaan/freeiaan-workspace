@@ -4158,12 +4158,30 @@ function renderCalendar() {
                       t.isChecked = !t.isChecked;
                       e.target.checked = t.isChecked;
                       const span = item.querySelector('span');
-                      if (t.isChecked) { span.classList.add('opacity-50', 'line-through'); } 
+                      if (t.isChecked) { span.classList.add('opacity-50', 'line-through'); }
                       else { span.classList.remove('opacity-50', 'line-through'); }
+                      // 반복일정이면 allTasks에 체크 상태 저장
+                      if (t._repeatId) {
+                          if (!allTasks[key]) allTasks[key] = [];
+                          const existing = allTasks[key].find(x => x._repeatId === t._repeatId && !x._deleted);
+                          if (existing) { existing.isChecked = t.isChecked; }
+                          else { allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId }); }
+                      }
                       saveAndRefresh();
                   }
               });
-              item.querySelector('input').addEventListener('click', (e) => { e.stopPropagation(); t.isChecked = e.target.checked; saveAndRefresh(); });
+              item.querySelector('input').addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  t.isChecked = e.target.checked;
+                  // 반복일정이면 allTasks에 체크 상태 저장
+                  if (t._repeatId) {
+                      if (!allTasks[key]) allTasks[key] = [];
+                      const existing = allTasks[key].find(x => x._repeatId === t._repeatId && !x._deleted);
+                      if (existing) { existing.isChecked = t.isChecked; }
+                      else { allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId }); }
+                  }
+                  saveAndRefresh();
+              });
               
               let itemPressTimer = null;
               // 모바일: 터치로는 드래그 완전 비활성 (컨텍스트 메뉴 '다른 탭으로 이동'으로만 이동 가능)
