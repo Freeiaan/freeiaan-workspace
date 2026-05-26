@@ -1269,6 +1269,7 @@ function syncToCloud() {
             memo: document.getElementById('memoArea') ? document.getElementById('memoArea').value : '',
             lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '',
             ledgerData,
+            repeatTasks,
             // 📝 인덱스 메모장 데이터
             richMemoTabs: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTabs') || 'null'); } catch(e) { return null; } })(),
             richMemoTrash: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTrash') || 'null'); } catch(e) { return null; } })(),
@@ -1916,6 +1917,10 @@ function loadFromCloud() {
             
             // 🔥 클라우드에 저장된 가계부 데이터를 가져와서 변수에 담아줍니다!
             if(data.ledgerData) ledgerData = data.ledgerData;
+            if(data.repeatTasks) {
+                repeatTasks = data.repeatTasks;
+                localStorage.setItem('ianRepeatTasks', JSON.stringify(repeatTasks));
+            }
 
             // 📝 인덱스 메모장 데이터 복원
             if (data.richMemoTabs) {
@@ -2972,9 +2977,13 @@ function loadFromCloud() {
         const month = new Date(dateKey).getMonth();
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey));
         const repeatItems = repeatForDay
-            .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id))
-            .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
-        const allTasksForDay = (allTasks[dateKey] || []).filter(t => !t._deleted);
+            .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
+            .map(r => {
+                // allTasks에 저장된 체크 상태 반영
+                const saved = (allTasks[dateKey] || []).find(t => t._repeatId === r.id);
+                return { text: r.text, description: r.description, categoryId: r.categoryId, isChecked: saved ? !!saved.isChecked : false, _repeatId: r.id };
+            });
+        const allTasksForDay = (allTasks[dateKey] || []).filter(t => !t._deleted && !t._repeatId);
         let tasks = [...repeatItems, ...allTasksForDay];
         
         // 💡 [실시간 연동] 남은 할 일(체크 안 된 것) 개수를 세어서 아코디언 바 텍스트에 즉시 반영!
@@ -3001,7 +3010,22 @@ function loadFromCloud() {
                 circle.style.backgroundColor = 'white'; 
                 circle.innerHTML = ''; 
             } 
-            circle.onclick = (e) => { e.stopPropagation(); t.isChecked = !t.isChecked; saveAndRefresh(); if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey); }; 
+            circle.onclick = (e) => {
+                e.stopPropagation();
+                t.isChecked = !t.isChecked;
+                // 반복일정이면 allTasks에 체크 상태 저장
+                if (t._repeatId) {
+                    if (!allTasks[dateKey]) allTasks[dateKey] = [];
+                    const existing = allTasks[dateKey].find(x => x._repeatId === t._repeatId && !x._deleted);
+                    if (existing) {
+                        existing.isChecked = t.isChecked;
+                    } else {
+                        allTasks[dateKey].push({ text: t.text, description: t.description, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId });
+                    }
+                }
+                saveAndRefresh();
+                if(currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
+            }; 
             const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : ''; 
             const textWrapper = document.createElement('div'); 
             textWrapper.className = 'flex-1 overflow-hidden py-0.5 cursor-pointer flex items-center h-full'; 
@@ -3474,7 +3498,7 @@ function renderTimeGrid(dateKey) {
       });
     }
 
-    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos })))); alert("데이터 백업 완료 (클립보드 복사됨)"); }
+    function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos, repeatTasks })))); alert("데이터 백업 완료 (클립보드 복사됨)"); }
     function addNewCategory() { 
         if (categories.length >= 14) {
             alert("카테고리는 최대 14개까지만 만들 수 있습니다! 😅");
@@ -3611,13 +3635,23 @@ function renderTimeGrid(dateKey) {
             `; 
             const cb = div.querySelector('input');
             cb.addEventListener('pointerdown', (e) => e.stopPropagation());
-            cb.onclick = (e) => { 
-                e.stopPropagation(); 
-                t.isChecked = e.target.checked; 
+            cb.onclick = (e) => {
+                e.stopPropagation();
+                t.isChecked = e.target.checked;
+                // 반복일정이면 allTasks에 체크 상태 저장
+                if (t._repeatId) {
+                    if (!allTasks[key]) allTasks[key] = [];
+                    const existing = allTasks[key].find(x => x._repeatId === t._repeatId && !x._deleted);
+                    if (existing) {
+                        existing.isChecked = t.isChecked;
+                    } else {
+                        allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId });
+                    }
+                }
                 const span = div.querySelector('span.flex-1');
-                if (t.isChecked) { span.classList.add('line-through', 'opacity-40'); } 
+                if (t.isChecked) { span.classList.add('line-through', 'opacity-40'); }
                 else { span.classList.remove('line-through', 'opacity-40'); }
-                saveAndRefresh(); 
+                saveAndRefresh();
             };
 
             // 꾹 누르기 → 컨텍스트 팝업
@@ -3822,8 +3856,11 @@ function renderTimeGrid(dateKey) {
          const _repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _year, _month).includes(dateKey));
          const _repeatItems = _repeatForDay
              .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
-             .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id, _isRepeat: true }));
-         const _regularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted);
+             .map(r => {
+                 const saved = (allTasks[dateKey] || []).find(t => t._repeatId === r.id);
+                 return { text: r.text, categoryId: r.categoryId, isChecked: saved ? !!saved.isChecked : false, _repeatId: r.id, _isRepeat: true };
+             });
+         const _regularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted && !t._repeatId);
          const _allDayTasks = [..._repeatItems, ..._regularTasks];
 
          if (_allDayTasks.length > 0) {
@@ -4424,6 +4461,7 @@ function renderCalendar() {
                         if(data.multiTasks) multiTasks = data.multiTasks;
                         if(data.dailyRecords) dailyRecords = data.dailyRecords; 
                         if(data.inboxTasks) inboxTasks = data.inboxTasks;
+                        if(data.repeatTasks) { repeatTasks = data.repeatTasks; localStorage.setItem('ianRepeatTasks', JSON.stringify(repeatTasks)); }
                         if(data.weeklyMemos) weeklyMemos = data.weeklyMemos; 
                         if(data.weeklyHabits) weeklyHabits = data.weeklyHabits;
                         if(data.extendedMemos) extendedMemos = data.extendedMemos; 
@@ -5161,8 +5199,11 @@ function renderMemoFolders() {
                const _mRepeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _mYear, _mMonth).includes(dateKey));
                const _mRepeatItems = _mRepeatForDay
                    .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
-                   .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id, _isRepeat: true }));
-               const _mRegularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted);
+                   .map(r => {
+                       const saved = (allTasks[dateKey] || []).find(t => t._repeatId === r.id);
+                       return { text: r.text, categoryId: r.categoryId, isChecked: saved ? !!saved.isChecked : false, _repeatId: r.id, _isRepeat: true };
+                   });
+               const _mRegularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted && !t._repeatId);
                const _mAllDayTasks = [..._mRepeatItems, ..._mRegularTasks];
 
                if (_mAllDayTasks.length > 0) {
