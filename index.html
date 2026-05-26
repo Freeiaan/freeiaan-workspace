@@ -3801,10 +3801,67 @@ function renderTimeGrid(dateKey) {
     
     function handleDrop(e, targetDate) {
       e.preventDefault(); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); if (!draggedTaskInfo) return;
-      if (draggedTaskInfo.type === 'inbox') { const task = inboxTasks.splice(draggedTaskInfo.index, 1)[0]; if (!allTasks[targetDate]) allTasks[targetDate] = []; allTasks[targetDate].push(task); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox(); } 
-      else if (draggedTaskInfo.type === 'single') { const { dateKey: src, index } = draggedTaskInfo; const task = allTasks[src].splice(index, 1)[0]; if (!allTasks[targetDate]) allTasks[targetDate] = []; allTasks[targetDate].push(task); saveAndRefresh(); } 
-      else if (draggedTaskInfo.type === 'multi') { const task = multiTasks.find(t => String(t.id) === String(draggedTaskInfo.id)); const diff = new Date(targetDate).getTime() - new Date(task.start).getTime(); const newEnd = new Date(new Date(task.end).getTime() + diff); task.start = targetDate; task.end = getDateKey(newEnd); saveAndRefresh(); }
+      if (draggedTaskInfo.type === 'inbox') {
+          const task = inboxTasks.splice(draggedTaskInfo.index, 1)[0];
+          if (!allTasks[targetDate]) allTasks[targetDate] = [];
+          allTasks[targetDate].push(task); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox();
+      } else if (draggedTaskInfo.type === 'single') {
+          const { dateKey: src, index } = draggedTaskInfo;
+          const task = (allTasks[src] || [])[index];
+          if (task && task._repeatId) {
+              // 반복일정 → 이동 팝업 표시
+              showRepeatMoveModal(task, src, targetDate);
+              draggedTaskInfo = null;
+              return;
+          }
+          const moved = allTasks[src].splice(index, 1)[0];
+          if (!allTasks[targetDate]) allTasks[targetDate] = [];
+          allTasks[targetDate].push(moved); saveAndRefresh();
+      } else if (draggedTaskInfo.type === 'multi') {
+          const task = multiTasks.find(t => String(t.id) === String(draggedTaskInfo.id));
+          const diff = new Date(targetDate).getTime() - new Date(task.start).getTime();
+          const newEnd = new Date(new Date(task.end).getTime() + diff);
+          task.start = targetDate; task.end = getDateKey(newEnd); saveAndRefresh();
+      }
       draggedTaskInfo = null;
+    }
+
+    // 반복일정 이동 팝업
+    function showRepeatMoveModal(task, fromDate, toDate) {
+        const dayNames = ['일','월','화','수','목','금','토'];
+        const toDateObj = new Date(toDate);
+        const toStr = `${toDateObj.getMonth()+1}월 ${toDateObj.getDate()}일(${dayNames[toDateObj.getDay()]})`;
+        const modal = document.getElementById('repeatMoveModal');
+        const desc  = document.getElementById('repeatMoveDesc');
+        desc.innerHTML = `<span class="font-black text-gray-900">"${task.text}"</span>을(를) <span class="font-black text-[#22741C]">${toStr}</span>로 이동할까요?<br><span class="text-gray-400 text-[12px] mt-1 block">이 날만 이동하면 기존 반복 설정은 유지되고,<br>${toStr}에만 별도 일정으로 추가됩니다.</span>`;
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.repeat-move-inner').classList.remove('scale-95');
+            modal.querySelector('.repeat-move-inner').classList.add('scale-100');
+        }, 10);
+
+        document.getElementById('repeatMoveConfirmBtn').onclick = () => {
+            closeRepeatMoveModal();
+            // 원래 날짜에서 이 날만 삭제
+            if (!allTasks[fromDate]) allTasks[fromDate] = [];
+            const existIdx = allTasks[fromDate].findIndex(t => t._repeatId === task._repeatId);
+            if (existIdx !== -1) allTasks[fromDate][existIdx] = { _repeatId: task._repeatId, _deleted: true };
+            else allTasks[fromDate].push({ _repeatId: task._repeatId, _deleted: true });
+            // 새 날짜에 일반 일정으로 추가
+            if (!allTasks[toDate]) allTasks[toDate] = [];
+            allTasks[toDate].push({ text: task.text, categoryId: task.categoryId, isChecked: false, description: task.description || '' });
+            saveAndRefresh();
+        };
+        document.getElementById('repeatMoveCancelBtn').onclick = () => { closeRepeatMoveModal(); };
+    }
+
+    function closeRepeatMoveModal() {
+        const modal = document.getElementById('repeatMoveModal');
+        modal.classList.add('opacity-0');
+        modal.querySelector('.repeat-move-inner').classList.remove('scale-100');
+        modal.querySelector('.repeat-move-inner').classList.add('scale-95');
+        setTimeout(() => { modal.style.display = 'none'; }, 250);
     }
     
     function handleInboxDrop(e) {
@@ -6533,6 +6590,23 @@ function renderMemoFolders() {
           style="min-height:60vh;background:white;"
           data-placeholder="텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 반복일정 이동 팝업 -->
+  <div id="repeatMoveModal" style="display:none" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 transition-opacity duration-250 px-6">
+    <div class="repeat-move-inner bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 scale-95 transition-transform duration-250">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center flex-shrink-0">
+          <span class="text-xl">📅</span>
+        </div>
+        <h3 class="text-[15px] font-black text-gray-900">반복 일정 이동</h3>
+      </div>
+      <p id="repeatMoveDesc" class="text-[13px] text-gray-600 leading-relaxed"></p>
+      <div class="flex gap-2 pt-1">
+        <button id="repeatMoveCancelBtn" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-2xl text-[13px] font-bold active:scale-95 transition-transform">취소</button>
+        <button id="repeatMoveConfirmBtn" class="flex-1 py-3 bg-[#22741C] text-white rounded-2xl text-[13px] font-bold active:scale-95 transition-transform">이 날만 이동</button>
       </div>
     </div>
   </div>
