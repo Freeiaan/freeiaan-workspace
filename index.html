@@ -6147,15 +6147,17 @@ function renderMemoFolders() {
         if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
         else editor.classList.remove('empty');
 
-        // 체크박스 취소선 + 이벤트 복원
+        // 체크박스 취소선 + 이벤트 복원 (cloneNode로 기존 이벤트 제거 후 재등록)
         editor.querySelectorAll('input.memo-checkbox').forEach(cb => {
-            const ld = cb.closest('div') || cb.parentElement;
-            if (ld && cb.checked) {
+            const fresh = cb.cloneNode(true);
+            cb.parentNode.replaceChild(fresh, cb);
+            const ld = fresh.closest('div') || fresh.parentElement;
+            if (ld && fresh.checked) {
                 ld.style.textDecoration = 'line-through';
                 ld.style.color = '#9ca3af';
                 ld.style.opacity = '0.6';
             }
-            cb.addEventListener('change', function() {
+            fresh.addEventListener('change', function() {
                 const d = this.closest('div') || this.parentElement;
                 if (d) {
                     d.style.textDecoration = this.checked ? 'line-through' : '';
@@ -6168,7 +6170,7 @@ function renderMemoFolders() {
                 const cd = t && t.cards.find(c => c.id === richMemoActiveCardId);
                 if (cd) { cd.content = editor.innerHTML; saveMemoData(); }
             });
-            cb.addEventListener('click', (ev) => ev.stopPropagation());
+            fresh.addEventListener('click', (ev) => ev.stopPropagation());
         });
 
         if (window.innerWidth < 768) {
@@ -6195,15 +6197,17 @@ function renderMemoFolders() {
                 pcEditor.style.backgroundColor = '#ffffff';
                 if (!pcEditor.innerHTML.trim() || pcEditor.innerHTML === '<br>') pcEditor.classList.add('empty');
                 else pcEditor.classList.remove('empty');
-                // 체크박스 취소선 + 이벤트 복원
+                // 체크박스 취소선 + 이벤트 복원 (cloneNode로 중복 이벤트 방지)
                 pcEditor.querySelectorAll('input.memo-checkbox').forEach(cb => {
-                    const ld = cb.closest('div') || cb.parentElement;
-                    if (ld && cb.checked) {
+                    const fresh = cb.cloneNode(true);
+                    cb.parentNode.replaceChild(fresh, cb);
+                    const ld = fresh.closest('div') || fresh.parentElement;
+                    if (ld && fresh.checked) {
                         ld.style.textDecoration = 'line-through';
                         ld.style.color = '#9ca3af';
                         ld.style.opacity = '0.6';
                     }
-                    cb.addEventListener('change', function() {
+                    fresh.addEventListener('change', function() {
                         const d = this.closest('div') || this.parentElement;
                         if (d) {
                             d.style.textDecoration = this.checked ? 'line-through' : '';
@@ -6216,7 +6220,7 @@ function renderMemoFolders() {
                         const cd = t && t.cards.find(c => c.id === richMemoActiveCardId);
                         if (cd) { cd.content = pcEditor.innerHTML; saveMemoData(); }
                     });
-                    cb.addEventListener('click', (ev) => ev.stopPropagation());
+                    fresh.addEventListener('click', (ev) => ev.stopPropagation());
                 });
             }
             document.getElementById('memoCardListView').classList.add('hidden');
