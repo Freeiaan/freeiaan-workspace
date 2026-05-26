@@ -565,7 +565,7 @@
          <button onclick="closeExtendedMemo()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
       <div class="flex-1 p-6 md:p-8 bg-[#fffbeb] flex flex-col">
-         <textarea id="extMemoContent" oninput="updateExtMemoContent(this.value)" class="flex-1 w-full bg-transparent resize-none outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800" placeholder="자유롭게 긴 메모를 작성하세요..."></textarea>
+         <textarea id="extMemoContent" oninput="updateExtMemoContent(this.value)" spellcheck="false" class="flex-1 w-full bg-transparent resize-none outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800" placeholder="자유롭게 긴 메모를 작성하세요..."></textarea>
       </div>
     </div>
   </div>
@@ -6127,6 +6127,8 @@ function renderMemoFolders() {
     }
 
     window.closeMemoEditor = function() {
+        // 닫기 전 반드시 저장
+        saveMemoData();
         // 모바일 팝업 닫기
         const modal = document.getElementById('memoEditorModal');
         if (modal && modal.style.display !== 'none') {
