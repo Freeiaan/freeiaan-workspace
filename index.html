@@ -142,6 +142,12 @@
         body.hide-weekends .weekend-col { display: none !important; }
         body.hide-weekends #calendarArea { grid-template-columns: 24px repeat(5, minmax(0, 1fr)) !important; }
     }
+    #extMemoContent.ext-memo-empty::before {
+        content: attr(data-placeholder);
+        color: #d1d5db;
+        pointer-events: none;
+        font-weight: 400;
+    }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen relative overflow-x-hidden">
@@ -564,8 +570,26 @@
          <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)" class="text-2xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-orange-300 w-2/3 transition-colors text-black placeholder-gray-300" placeholder="메모 제목을 입력하세요">
          <button onclick="closeExtendedMemo()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
+      <!-- 포맷 툴바 -->
+      <div class="flex items-center gap-1 px-6 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0">
+        <button onclick="applyExtFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="굵게"><b>B</b></button>
+        <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
+        <button onclick="applyExtFormat('color','#EF4444')" class="w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-lg font-black text-red-500 text-sm transition-colors" title="빨강">A</button>
+        <button onclick="applyExtFormat('color','#3B82F6')" class="w-8 h-8 flex items-center justify-center hover:bg-blue-50 rounded-lg font-black text-blue-500 text-sm transition-colors" title="파랑">A</button>
+        <button onclick="applyExtFormat('color','#10B981')" class="w-8 h-8 flex items-center justify-center hover:bg-green-50 rounded-lg font-black text-green-600 text-sm transition-colors" title="초록">A</button>
+        <button onclick="applyExtFormat('color','#F59E0B')" class="w-8 h-8 flex items-center justify-center hover:bg-yellow-50 rounded-lg font-black text-yellow-500 text-sm transition-colors" title="노랑">A</button>
+        <button onclick="applyExtFormat('color','#374151')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="기본">A</button>
+        <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
+        <button onclick="applyExtFormat('clear')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-400 text-[10px] font-bold transition-colors" title="서식 제거">✕</button>
+      </div>
       <div class="flex-1 p-6 md:p-8 bg-[#fffbeb] flex flex-col">
-         <textarea id="extMemoContent" oninput="updateExtMemoContent(this.value)" spellcheck="false" class="flex-1 w-full bg-transparent resize-none outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800" placeholder="자유롭게 긴 메모를 작성하세요..."></textarea>
+         <div id="extMemoContent"
+           contenteditable="true"
+           spellcheck="false"
+           oninput="updateExtMemoContentDiv()"
+           class="flex-1 w-full bg-transparent outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800 overflow-y-auto"
+           style="min-height:0"
+           data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
       </div>
     </div>
   </div>
@@ -1602,6 +1626,19 @@ function handleContextAdd() {
 
             if (user.email === ADMIN_EMAIL) {
                 $('adminBtn').classList.remove('hidden');
+                // 읽지 않은 피드백 있으면 빨간 점 표시
+                db.collection('feedbacks').where('status', '==', 'unread').get().then(snapshot => {
+                    if (snapshot.size > 0) {
+                        let dot = document.getElementById('adminNotifDot');
+                        if (!dot) {
+                            dot = document.createElement('span');
+                            dot.id = 'adminNotifDot';
+                            dot.className = 'absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse';
+                            $('adminBtn').style.position = 'relative';
+                            $('adminBtn').appendChild(dot);
+                        }
+                    }
+                }).catch(() => {});
             }
 
             loadFromCloud(); 
@@ -4059,10 +4096,29 @@ function renderTimeGrid(dateKey) {
     }
 
     function renderExtMemoButtons() { for(let i=0; i<4; i++) { const btn = $('extMemoBtn' + i); if(btn && extendedMemos[i]) { btn.textContent = extendedMemos[i].title || `메모 ${i+1}`; } } }
-    function openExtendedMemo(index) { currentExtMemoIndex = index; $('extMemoTitle').value = extendedMemos[index].title || ''; $('extMemoContent').value = extendedMemos[index].content || ''; $('extendedMemoModal').classList.remove('hidden'); }
-    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; }
+    function openExtendedMemo(index) {
+        currentExtMemoIndex = index;
+        $('extMemoTitle').value = extendedMemos[index].title || '';
+        const el = $('extMemoContent');
+        el.innerHTML = extendedMemos[index].content || '';
+        if (!el.innerHTML.trim()) el.classList.add('ext-memo-empty');
+        else el.classList.remove('ext-memo-empty');
+        $('extendedMemoModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; document.body.style.overflow = ''; }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
+    function updateExtMemoContentDiv() {
+        const el = $('extMemoContent');
+        if (!el) return;
+        if (!el.innerHTML.trim() || el.innerHTML === '<br>') el.classList.add('ext-memo-empty');
+        else el.classList.remove('ext-memo-empty');
+        if (currentExtMemoIndex !== null) {
+            extendedMemos[currentExtMemoIndex].content = el.innerHTML;
+            setLocal('ianExtendedMemos', extendedMemos);
+        }
+    }
 
     function handleQuickAdd() { openModal('createSingle', { dateKey: quickMenuTargetKey }); closeQuickMenu(); }
     function handleQuickRange() { isSelecting = true; selectStartKey = quickMenuTargetKey; selectEndKey = quickMenuTargetKey; highlightSelection(quickMenuTargetKey, quickMenuTargetKey); closeQuickMenu(); }
@@ -4444,8 +4500,7 @@ function renderCalendar() {
             const nextBtn = $('nextBtn'); if(nextBtn) nextBtn.onclick = () => { displayDate.setMonth(displayDate.getMonth() + 1); renderCalendar(); };
             const extMemoTitle = $('extMemoTitle'); 
             if(extMemoTitle) { extMemoTitle.addEventListener('input', (e) => { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = e.target.value; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = e.target.value || `메모 ${currentExtMemoIndex+1}`; } }); }
-            const extMemoContent = $('extMemoContent'); 
-            if(extMemoContent) { extMemoContent.addEventListener('input', (e) => { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = e.target.value; setLocal('ianExtendedMemos', extendedMemos); } }); }
+            // extMemoContent는 이제 contenteditable div라 oninput으로 처리됨
             const inboxInput = $('inboxInput'); 
             if(inboxInput) { inboxInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { const txt = this.value.trim(); if (txt) { inboxTasks.push({ text: txt, categoryId: selectedCategoryId || categories[0].id, isChecked: false }); setLocal('ianInboxTasks', inboxTasks); renderInbox(); this.value = ''; } } }); }
             const plannerNewTaskInput = $('plannerNewTaskInput');
@@ -6239,39 +6294,14 @@ function renderMemoFolders() {
                     newCb.className = 'memo-checkbox';
                     newCb.style.cssText = 'width:13px;height:13px;cursor:pointer;margin-right:5px;vertical-align:-2px;flex-shrink:0;accent-color:#22741C;position:relative;top:1px;';
                     newCb.addEventListener('change', function() {
-                    const textNodes = newWrap.parentNode ? Array.from(newWrap.parentNode.childNodes).filter(n => n !== newWrap) : [];
-                    textNodes.forEach(n => {
-                        if (n.nodeType === Node.TEXT_NODE && n.parentElement) {
-                            n.parentElement.style.textDecoration = this.checked ? 'line-through' : '';
-                            n.parentElement.style.color = this.checked ? '#9ca3af' : '';
+                        const lineDiv = newWrap.closest('div') || newWrap.parentElement;
+                        if (lineDiv) {
+                            lineDiv.style.textDecoration = this.checked ? 'line-through' : '';
+                            lineDiv.style.color = this.checked ? '#9ca3af' : '';
+                            lineDiv.style.opacity = this.checked ? '0.6' : '';
                         }
+                        saveAndUpdate();
                     });
-                    // 줄 전체에 취소선
-                    const lineDiv = newWrap.closest('div') || newWrap.parentElement;
-                    if (lineDiv) {
-                        const allText = lineDiv.querySelectorAll('span:not(.memo-cb-wrap), b, i, font');
-                        allText.forEach(el => {
-                            el.style.textDecoration = this.checked ? 'line-through' : '';
-                            el.style.color = this.checked ? '#9ca3af' : '';
-                        });
-                        // 직접 텍스트 노드는 span으로 감싸서 처리
-                        lineDiv.childNodes.forEach(node => {
-                            if (node.nodeType === Node.TEXT_NODE && node.textContent.replace(/\u200B/g,'').trim()) {
-                                const sp = document.createElement('span');
-                                sp.className = 'cb-text';
-                                sp.style.textDecoration = this.checked ? 'line-through' : '';
-                                sp.style.color = this.checked ? '#9ca3af' : '';
-                                node.parentNode.replaceChild(sp, node);
-                                sp.appendChild(node);
-                            }
-                        });
-                        lineDiv.querySelectorAll('.cb-text').forEach(el => {
-                            el.style.textDecoration = this.checked ? 'line-through' : '';
-                            el.style.color = this.checked ? '#9ca3af' : '';
-                        });
-                    }
-                    saveAndUpdate();
-                });
                     newCb.addEventListener('click', (ev) => ev.stopPropagation());
 
                     const newWrap = document.createElement('span');
@@ -6342,20 +6372,9 @@ function renderMemoFolders() {
                 cb.addEventListener('change', function() {
                     const lineDiv = this.closest('div') || this.parentElement.parentElement;
                     if (lineDiv) {
-                        lineDiv.querySelectorAll('span:not(.memo-cb-wrap), b, i, font, .cb-text').forEach(el => {
-                            el.style.textDecoration = this.checked ? 'line-through' : '';
-                            el.style.color = this.checked ? '#9ca3af' : '';
-                        });
-                        lineDiv.childNodes.forEach(node => {
-                            if (node.nodeType === Node.TEXT_NODE && node.textContent.replace(/\u200B/g,'').trim()) {
-                                const sp = document.createElement('span');
-                                sp.className = 'cb-text';
-                                sp.style.textDecoration = this.checked ? 'line-through' : '';
-                                sp.style.color = this.checked ? '#9ca3af' : '';
-                                node.parentNode.replaceChild(sp, node);
-                                sp.appendChild(node);
-                            }
-                        });
+                        lineDiv.style.textDecoration = this.checked ? 'line-through' : '';
+                        lineDiv.style.color = this.checked ? '#9ca3af' : '';
+                        lineDiv.style.opacity = this.checked ? '0.6' : '';
                     }
                     saveAndUpdate();
                 });
@@ -6530,6 +6549,17 @@ function renderMemoFolders() {
         }
         const menu = document.getElementById('richMemoFormatMenu');
         if (menu) menu.classList.add('hidden');
+    };
+
+    // 확장메모 포맷 적용
+    window.applyExtFormat = function(type, value) {
+        const el = document.getElementById('extMemoContent');
+        if (!el) return;
+        el.focus();
+        if (type === 'bold') document.execCommand('bold', false, null);
+        else if (type === 'color') document.execCommand('foreColor', false, value);
+        else if (type === 'clear') document.execCommand('removeFormat', false, null);
+        updateExtMemoContentDiv();
     };
 
     // ── 앱 시작 ───────────────────────────────────────────
