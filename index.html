@@ -3888,24 +3888,20 @@ function renderTimeGrid(dateKey) {
           if (!allTasks[targetDate]) allTasks[targetDate] = [];
           allTasks[targetDate].push(task); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox();
       } else if (draggedTaskInfo.type === 'single') {
-          const { dateKey: src, index } = draggedTaskInfo;
-          // dayTasks = [...repeatItems, ...allTasksForDay] 구조라서
-          // repeatItems 개수만큼 인덱스 보정 필요
-          const _year = new Date(src).getFullYear();
-          const _month = new Date(src).getMonth();
-          const _repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _year, _month).includes(src));
-          const _repeatCount = _repeatForDay.filter(r => !(allTasks[src] || []).some(t => t && t._repeatId === r.id && !t._deleted)).length;
-          const task = (allTasks[src] || [])[index - _repeatCount] || (allTasks[src] || [])[index];
+          const { dateKey: src, index, task: draggedTask } = draggedTaskInfo;
+          // draggedTask 객체 직접 사용 (반복일정 포함)
+          const task = draggedTask || (allTasks[src] || [])[index];
           if (task && task._repeatId) {
               showRepeatMoveModal(task, src, targetDate);
               draggedTaskInfo = null;
               return;
           }
-          // allTasks에서 실제 인덱스 계산
-          const realIdx = index - _repeatCount;
-          const allTasksSrc = allTasks[src] || [];
-          if (realIdx < 0 || realIdx >= allTasksSrc.length) { draggedTaskInfo = null; return; }
-          const moved = allTasksSrc.splice(realIdx, 1)[0];
+          // 일반 일정: allTasks에서 실제 객체 참조로 찾기
+          const actualIdx = (allTasks[src] || []).findIndex(t => t && t === task);
+          const fallbackIdx = index;
+          const useIdx = actualIdx >= 0 ? actualIdx : fallbackIdx;
+          if (!allTasks[src] || allTasks[src][useIdx] === undefined) { draggedTaskInfo = null; return; }
+          const moved = allTasks[src].splice(useIdx, 1)[0];
           if (!allTasks[targetDate]) allTasks[targetDate] = [];
           allTasks[targetDate].push(moved); saveAndRefresh();
       } else if (draggedTaskInfo.type === 'multi') {
@@ -4318,7 +4314,7 @@ function renderCalendar() {
               const calDescIcon = (t.description && t.description.trim() !== '') ? '<span style="font-size:8px;opacity:0.7;margin-left:2px">📝</span>' : '';
               item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0" style="${t.description && t.description.trim() !== '' ? 'box-shadow:0 0 0 2px #000000;' : ''}"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="position:relative;background-color: ${bgColor}; color: ${fontColor};">${t.text}${calDescIcon}</span>`;
               
-              item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx }; e.dataTransfer.setData('text/plain', ''); }; 
+              item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx, task: t }; e.dataTransfer.setData('text/plain', ''); }; 
               // ✅ 체크박스: 모바일 터치 즉시 반영
               item.querySelector('input').addEventListener('pointerdown', (e) => {
                   e.stopPropagation();
