@@ -3030,6 +3030,7 @@ function loadFromCloud() {
 
     function renderInbox() {
       const list = $('inboxList'); if(!list) return; list.innerHTML = '';
+      inboxTasks = inboxTasks.filter(t => t !== null && t !== undefined);
       inboxTasks.forEach((t, idx) => {
         const cat = categories.find(c => c.id === t.categoryId) || categories[0];
         const item = document.createElement('div'); item.draggable = true; item.className = 'dashboard-item bg-gray-50 rounded-lg border border-gray-100 shadow-sm cursor-move flex-shrink-0';
@@ -4002,7 +4003,7 @@ function renderTimeGrid(dateKey) {
     
     function handleInboxDrop(e) {
       e.preventDefault(); if (!draggedTaskInfo) return;
-      if (draggedTaskInfo.type === 'single') { const { dateKey: src, index } = draggedTaskInfo; const task = allTasks[src].splice(index, 1)[0]; inboxTasks.push(task); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox(); } 
+      if (draggedTaskInfo.type === 'single') { const { dateKey: src, index } = draggedTaskInfo; if (!allTasks[src] || allTasks[src][index] === undefined) { draggedTaskInfo = null; return; } const task = allTasks[src].splice(index, 1)[0]; if (task) { inboxTasks.push(task); } setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox(); } 
       else if (draggedTaskInfo.type === 'multi') { const taskIdx = multiTasks.findIndex(t => String(t.id) === String(draggedTaskInfo.id)); if (taskIdx > -1) { const task = multiTasks.splice(taskIdx, 1)[0]; inboxTasks.push({ text: task.text, categoryId: task.categoryId, isChecked: false }); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox(); } }
       draggedTaskInfo = null;
     }
