@@ -1139,8 +1139,28 @@
                       <button onclick="closeSettingsModal(); window.openRestoreModal();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">데이터 복원 📥</button>
                   </div>
               </div>
+
+              <!-- 🗑️ 초기화 -->
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
+                  <button onclick="openResetConfirmModal()" class="w-full py-3 bg-[#fdfbf7] border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-400 text-red-400 rounded-xl text-[11px] font-black transition-all">🗑️ 초기화하기</button>
+              </div>
           </div>
       </div>
+  </div>
+
+  <!-- 🗑️ 초기화 확인 모달 -->
+  <div id="resetConfirmModal" class="hidden fixed inset-0 z-[6000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#faf8f5] w-full max-w-sm rounded-3xl p-7 shadow-2xl border border-[#e6e2d8]">
+      <div class="flex flex-col items-center text-center gap-3">
+        <div class="text-4xl">🗑️</div>
+        <h2 class="text-[17px] font-black text-gray-800">정말 초기화하시겠어요?</h2>
+        <p class="text-[12px] text-gray-500 font-bold leading-relaxed">일정, 할 일, 메모, 습관, 타이머 기록 등<br><span class="text-red-500 font-black">모든 데이터가 영구 삭제</span>됩니다.<br>이 작업은 되돌릴 수 없습니다.</p>
+      </div>
+      <div class="flex gap-2 mt-6">
+        <button onclick="closeResetConfirmModal()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-gray-100 text-gray-600 rounded-xl text-[11px] font-black transition-all">취소</button>
+        <button onclick="executeReset()" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[11px] font-black transition-all active:scale-95">초기화하기</button>
+      </div>
+    </div>
   </div>
 
   <div id="restoreModal" class="hidden fixed inset-0 z-[6000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -5729,6 +5749,38 @@ function renderMemoFolders() {
     window.openSettingsModal = function() { document.getElementById('settingsModal').classList.remove('hidden'); };
     window.closeSettingsModal = function() { document.getElementById('settingsModal').classList.add('hidden'); };
 
+    // 🗑️ 초기화 모달 열고 닫기
+    window.openResetConfirmModal = function() {
+        closeSettingsModal();
+        document.getElementById('resetConfirmModal').classList.remove('hidden');
+    };
+    window.closeResetConfirmModal = function() {
+        document.getElementById('resetConfirmModal').classList.add('hidden');
+    };
+    window.executeReset = function() {
+        // 1) localStorage 전체 초기화 (공지 버전만 유지)
+        const keysToKeep = ['ianLastNoticeVersion'];
+        const savedValues = {};
+        keysToKeep.forEach(k => { savedValues[k] = localStorage.getItem(k); });
+        localStorage.clear();
+        keysToKeep.forEach(k => { if (savedValues[k]) localStorage.setItem(k, savedValues[k]); });
+
+        // 2) Firestore 유저 데이터 초기화 (빈 객체로 덮어씌우기)
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
+            db.collection('users').doc(currentUser.email).set({
+                allTasks: {}, multiTasks: [], categories: [], trackerColors: {},
+                dailyRecords: {}, inboxTasks: [], repeatTasks: [],
+                weeklyMemos: {}, weeklyHabits: {}, extendedMemos: [],
+                richMemoTabs: [], richMemoTrash: [], richMemoActiveId: '',
+                memo: '', savedAt: Date.now()
+            }).catch(e => console.warn('Firestore reset error:', e));
+        }
+
+        // 3) 모달 닫고 새로고침
+        document.getElementById('resetConfirmModal').classList.add('hidden');
+        window.location.reload();
+    };
+
     // 💡 복원 모달창 열고 닫기
     window.openRestoreModal = function() { document.getElementById('restoreModal').classList.remove('hidden'); };
     window.closeRestoreModal = function() { 
@@ -6242,6 +6294,12 @@ function renderMemoFolders() {
         const card = tab && tab.cards.find(c => c.id === cardId);
         if (!card) return;
 
+        // 열기 전 두 에디터 모두 초기화 (이전 카드 잔재 방지)
+        const _me = document.getElementById('richMemoEditor');
+        const _pe = document.getElementById('richMemoEditorPC');
+        if (_me) _me.innerHTML = '';
+        if (_pe) _pe.innerHTML = '';
+
         const titleInput = document.getElementById('memoCardTitleInput');
         const editor     = document.getElementById('richMemoEditor');
         titleInput.value   = card.title;
@@ -6348,11 +6406,6 @@ function renderMemoFolders() {
             mInner.style.transform = 'translateY(100%)';
             setTimeout(() => { modal.style.display = 'none'; mInner.style.transform = ''; }, 250);
         }
-        // 에디터 innerHTML 초기화 (체크박스·내용 잔재 방지)
-        const mobileEditor = document.getElementById('richMemoEditor');
-        if (mobileEditor) mobileEditor.innerHTML = '';
-        const pcEditor = document.getElementById('richMemoEditorPC');
-        if (pcEditor) pcEditor.innerHTML = '';
         // placeholder 숨기기
         ['richMemoEditor', 'richMemoEditorPC'].forEach(id => {
             const ed = document.getElementById(id);
@@ -6578,12 +6631,17 @@ function renderMemoFolders() {
             const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
             const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
             if (card) {
+                // 현재 실제로 보이는(활성) 에디터를 동적으로 참조 (클로저 고정 방지)
+                const activeEditor = (window.innerWidth < 768)
+                    ? document.getElementById('richMemoEditor')
+                    : document.getElementById('richMemoEditorPC');
+                if (!activeEditor) return;
                 // 저장 전 체크박스 checked 상태를 HTML 속성에 반영
-                editor.querySelectorAll('input.memo-checkbox').forEach(cb => {
+                activeEditor.querySelectorAll('input.memo-checkbox').forEach(cb => {
                     if (cb.checked) cb.setAttribute('checked', 'checked');
                     else cb.removeAttribute('checked');
                 });
-                card.content = editor.innerHTML;
+                card.content = activeEditor.innerHTML;
                 saveMemoData();
             }
         }
