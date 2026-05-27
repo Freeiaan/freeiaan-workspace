@@ -303,7 +303,7 @@
       </div>
 
       <div class="flex w-full mb-5 gap-3 flex-shrink-0">
-          <button onclick="toggleDrawer()" ontouchend="event.preventDefault(); toggleDrawer();" class="flex-1 py-3 bg-gradient-to-br from-[#f4fbf6] to-[#e8f5e9] border border-[#cce8d6] rounded-2xl text-[#22741C] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(34,116,28,0.08)] hover:shadow-[0_6px_16px_rgba(34,116,28,0.12)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
+          <button onclick="toggleDrawer()" class="flex-1 py-3 bg-gradient-to-br from-[#f4fbf6] to-[#e8f5e9] border border-[#cce8d6] rounded-2xl text-[#22741C] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(34,116,28,0.08)] hover:shadow-[0_6px_16px_rgba(34,116,28,0.12)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
               <span class="text-sm">📋</span> 내 보드
           </button>
           <button onclick="openAnalytics()" class="flex-1 py-3 bg-gradient-to-br from-[#fffaf5] to-[#fff3e0] border border-[#ffe0b2] rounded-2xl text-[#ef6c00] font-extrabold text-[12px] shadow-[0_4px_12px_rgba(239,108,0,0.06)] hover:shadow-[0_6px_16px_rgba(239,108,0,0.1)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex justify-center items-center gap-1.5">
@@ -6348,6 +6348,18 @@ function renderMemoFolders() {
             mInner.style.transform = 'translateY(100%)';
             setTimeout(() => { modal.style.display = 'none'; mInner.style.transform = ''; }, 250);
         }
+        // 에디터 innerHTML 초기화 (체크박스·내용 잔재 방지)
+        const mobileEditor = document.getElementById('richMemoEditor');
+        if (mobileEditor) mobileEditor.innerHTML = '';
+        const pcEditor = document.getElementById('richMemoEditorPC');
+        if (pcEditor) pcEditor.innerHTML = '';
+        // placeholder 숨기기
+        ['richMemoEditor', 'richMemoEditorPC'].forEach(id => {
+            const ed = document.getElementById(id);
+            if (!ed) return;
+            const ph = ed.parentElement.querySelector('.memo-placeholder');
+            if (ph) ph.style.display = 'none';
+        });
         // PC 인라인 에디터 닫기
         const editorView = document.getElementById('memoEditorView');
         editorView.classList.add('hidden');
@@ -6619,7 +6631,13 @@ function renderMemoFolders() {
                 editor.parentElement.style.position = 'relative';
                 editor.parentElement.insertBefore(ph, editor);
             }
-            ph.style.display = isEmpty ? 'block' : 'none';
+            // PC/태블릿: memoEditorView가 hidden이면 placeholder도 숨김
+            const editorView = document.getElementById('memoEditorView');
+            const pcEditorHidden = (id === 'richMemoEditorPC') && editorView && editorView.classList.contains('hidden');
+            // 모바일: memoEditorModal이 display:none이면 placeholder 숨김
+            const memoModal = document.getElementById('memoEditorModal');
+            const mobileEditorHidden = (id === 'richMemoEditor') && memoModal && memoModal.style.display === 'none';
+            ph.style.display = (isEmpty && !pcEditorHidden && !mobileEditorHidden) ? 'block' : 'none';
         });
     }
 
