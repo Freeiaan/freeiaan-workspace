@@ -897,6 +897,17 @@
       </div>
     </div>
 
+  <!-- 🗑️ 일반 일정 삭제 확인 모달 (애플 감성) -->
+  <div id="taskDeleteModal" class="hidden fixed inset-0 z-[6000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-white/95 backdrop-blur-xl w-full max-w-[280px] rounded-[24px] shadow-2xl flex flex-col items-center p-6 text-center transform scale-95 transition-transform duration-300 border border-white/50">
+      <div class="text-[42px] leading-none mb-3">🗑️</div>
+      <h3 class="text-[18px] font-black text-gray-900 mb-1.5 tracking-tight">일정 삭제</h3>
+      <p id="taskDeleteDesc" class="text-[13px] font-medium text-gray-500 mb-6 leading-relaxed">이 일정을 삭제할까요?</p>
+      <button id="taskDeleteConfirmBtn" class="w-full bg-red-500 text-white text-[14px] font-black py-3 rounded-[14px] transition-all active:scale-95 shadow-md mb-2">삭제</button>
+      <button id="taskDeleteCancelBtn" class="w-full text-gray-400 text-[13px] font-bold py-2 transition-all active:scale-95">취소</button>
+    </div>
+  </div>
+
   <!-- 🔁 반복일정 삭제 선택 모달 (애플 감성) -->
   <div id="repeatDeleteModal" class="hidden fixed inset-0 z-[6000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-300">
     <div class="bg-white/95 backdrop-blur-xl w-full max-w-[280px] rounded-[24px] shadow-2xl flex flex-col items-center p-6 text-center transform scale-95 transition-transform duration-300 border border-white/50">
@@ -1571,12 +1582,13 @@ function handleContextDelete() {
         };
 
     } else {
-        // 일반 일정
-        if (!confirm('이 일정을 삭제하시겠습니까?')) return;
-        const realIdx = (allTasks[dateKey] || []).indexOf(targetTask);
-        if (realIdx !== -1) allTasks[dateKey].splice(realIdx, 1);
-        syncToCloud();
-        initAppRenders();
+        // 일반 일정 - 애플 감성 팝업
+        showTaskDeleteModal(targetTask.text, () => {
+            const realIdx = (allTasks[dateKey] || []).indexOf(targetTask);
+            if (realIdx !== -1) allTasks[dateKey].splice(realIdx, 1);
+            syncToCloud();
+            initAppRenders();
+        });
     }
 }
 
@@ -3925,6 +3937,31 @@ function renderTimeGrid(dateKey) {
       draggedTaskInfo = null;
     }
 
+    // 일반 일정 삭제 팝업
+    function showTaskDeleteModal(taskText, onConfirm) {
+        const modal = document.getElementById('taskDeleteModal');
+        const desc  = document.getElementById('taskDeleteDesc');
+        desc.innerHTML = `<span class="font-black text-gray-800">"${taskText}"</span><br>일정을 삭제할까요?`;
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+            modal.querySelector('div').classList.add('scale-100');
+        }, 10);
+        document.getElementById('taskDeleteConfirmBtn').onclick = () => {
+            closeTaskDeleteModal();
+            onConfirm();
+        };
+        document.getElementById('taskDeleteCancelBtn').onclick = () => closeTaskDeleteModal();
+    }
+    function closeTaskDeleteModal() {
+        const modal = document.getElementById('taskDeleteModal');
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.remove('scale-100');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    }
+
     // 반복일정 이동 팝업
     function showRepeatMoveModal(task, fromDate, toDate) {
         const dayNames = ['일','월','화','수','목','금','토'];
@@ -4421,9 +4458,11 @@ function renderCalendar() {
 
     // 긴 일정 우클릭 삭제
     function handleMultiDelete(id) {
-        if (!confirm('이 일정을 삭제하시겠습니까?')) return;
-        multiTasks = multiTasks.filter(t => String(t.id) !== String(id));
-        saveAndRefresh();
+        const task = multiTasks.find(t => String(t.id) === String(id));
+        showTaskDeleteModal(task ? task.text : '일정', () => {
+            multiTasks = multiTasks.filter(t => String(t.id) !== String(id));
+            saveAndRefresh();
+        });
     }
 
     // 모바일 검색 팝업 토글
