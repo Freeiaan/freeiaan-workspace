@@ -1620,6 +1620,14 @@ function handleContextAdd() {
       
     auth.onAuthStateChanged(user => {
         if (user) {
+            // 다른 계정으로 로그인 시 로컬 타임스탬프 초기화 (잘못된 데이터 덮어쓰기 방지)
+            const prevUserEmail = localStorage.getItem('ianCurrentUserEmail');
+            if (prevUserEmail && prevUserEmail !== user.email) {
+                localStorage.removeItem('ianLastSavedAt');
+                console.log('다른 계정 감지. 타임스탬프 초기화.');
+            }
+            localStorage.setItem('ianCurrentUserEmail', user.email);
+
             currentUser = user;
             checkNewReplies(); 
             $('userProfileName').textContent = user.displayName ? `${user.displayName}님` : '사용님';
