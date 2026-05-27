@@ -1280,6 +1280,8 @@ function syncToCloud() {
 
     clearTimeout(syncTimeout);
     syncTimeout = setTimeout(() => {
+        const now = Date.now();
+        localStorage.setItem('ianLastSavedAt', String(now));
         const dataToSave = {
             categories,
             trackerColors,
@@ -1294,6 +1296,7 @@ function syncToCloud() {
             lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '',
             ledgerData,
             repeatTasks,
+            savedAt: now,
             // 📝 인덱스 메모장 데이터
             richMemoTabs: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTabs') || 'null'); } catch(e) { return null; } })(),
             richMemoTrash: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTrash') || 'null'); } catch(e) { return null; } })(),
@@ -1937,6 +1940,19 @@ function loadFromCloud() {
     db.collection("users").doc(currentUser.email).get().then((doc) => {
         if (doc.exists) {
             const data = doc.data();
+
+            // 타임스탬프 비교: 로컬이 더 최신이면 Firebase 덮어쓰기 방지
+            const localSavedAt  = parseInt(localStorage.getItem('ianLastSavedAt') || '0');
+            const cloudSavedAt  = data.savedAt || 0;
+
+            if (localSavedAt > cloudSavedAt + 5000) {
+                // 로컬이 5초 이상 더 최신 → 로컬 데이터로 Firebase 업데이트
+                console.log('로컬이 더 최신. Firebase 업데이트 중...');
+                syncToCloud();
+                initAppRenders();
+                return;
+            }
+
             if(data.categories) categories = data.categories;
             if(data.trackerColors) trackerColors = data.trackerColors;
             if(data.allTasks) allTasks = data.allTasks;
@@ -4100,7 +4116,11 @@ function renderTimeGrid(dateKey) {
         currentExtMemoIndex = index;
         $('extMemoTitle').value = extendedMemos[index].title || '';
         const el = $('extMemoContent');
-        el.innerHTML = extendedMemos[index].content || '';
+        // 기존 textarea 방식(
+)으로 저장된 내용을 <br>로 변환
+        const rawContent = extendedMemos[index].content || '';
+        el.innerHTML = rawContent.includes('<') ? rawContent : rawContent.replace(/
+/g, '<br>');
         if (!el.innerHTML.trim()) el.classList.add('ext-memo-empty');
         else el.classList.remove('ext-memo-empty');
         $('extendedMemoModal').classList.remove('hidden');
