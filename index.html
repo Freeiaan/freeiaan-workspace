@@ -1285,24 +1285,25 @@ function syncToCloud() {
     syncTimeout = setTimeout(() => {
         const now = Date.now();
         localStorage.setItem('ianLastSavedAt', String(now));
+        // undefined 값을 기본값으로 대체 (Firebase는 undefined 허용 안 함)
         const dataToSave = {
-            categories,
-            trackerColors,
-            allTasks,
-            multiTasks,
-            dailyRecords,
-            inboxTasks,
-            weeklyMemos,
-            weeklyHabits,
-            extendedMemos,
+            categories: categories || [],
+            trackerColors: trackerColors || {},
+            allTasks: allTasks || {},
+            multiTasks: multiTasks || [],
+            dailyRecords: dailyRecords || {},
+            inboxTasks: inboxTasks || [],
+            weeklyMemos: weeklyMemos || {},
+            weeklyHabits: weeklyHabits || {},
+            extendedMemos: extendedMemos || [{title:'',content:''},{title:'',content:''},{title:'',content:''},{title:'',content:''}],
             memo: document.getElementById('memoArea') ? document.getElementById('memoArea').value : '',
             lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '',
-            ledgerData,
-            repeatTasks,
+            ledgerData: ledgerData || {},
+            repeatTasks: repeatTasks || [],
             savedAt: now,
             // 📝 인덱스 메모장 데이터
-            richMemoTabs: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTabs') || 'null'); } catch(e) { return null; } })(),
-            richMemoTrash: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTrash') || 'null'); } catch(e) { return null; } })(),
+            richMemoTabs: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTabs') || 'null'); } catch(e) { return null; } })() || [],
+            richMemoTrash: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTrash') || 'null'); } catch(e) { return null; } })() || [],
             richMemoActiveId: localStorage.getItem('freeiaan_activeMemoTab') || ''
         };
 
