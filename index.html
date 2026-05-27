@@ -3892,7 +3892,19 @@ function renderTimeGrid(dateKey) {
           // draggedTask 객체 직접 사용 (반복일정 포함)
           const task = draggedTask || (allTasks[src] || [])[index];
           if (task && task._repeatId) {
-              showRepeatMoveModal(task, src, targetDate);
+              // 반복일정 → 바로 일반 일정으로 변환해서 새 날짜에 추가
+              // 원래 날짜에서 이 날만 삭제 처리
+              if (!allTasks[src]) allTasks[src] = [];
+              const existingIdx = allTasks[src].findIndex(t => t && t._repeatId === task._repeatId);
+              if (existingIdx >= 0) {
+                  allTasks[src][existingIdx]._deleted = true;
+              } else {
+                  allTasks[src].push({ _repeatId: task._repeatId, _deleted: true });
+              }
+              // 새 날짜에 일반 일정으로 추가
+              if (!allTasks[targetDate]) allTasks[targetDate] = [];
+              allTasks[targetDate].push({ text: task.text, categoryId: task.categoryId, isChecked: false, description: task.description || '' });
+              saveAndRefresh();
               draggedTaskInfo = null;
               return;
           }
