@@ -3041,13 +3041,13 @@ function loadFromCloud() {
         const month = new Date(dateKey).getMonth();
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey));
         const repeatItems = repeatForDay
-            .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
+            .filter(r => !(allTasks[dateKey] || []).some(t => t && t._repeatId === r.id && !t._deleted))
             .map(r => {
                 // allTasks에 저장된 체크 상태 반영
                 const saved = (allTasks[dateKey] || []).find(t => t._repeatId === r.id);
                 return { text: r.text, description: r.description, categoryId: r.categoryId, isChecked: saved ? !!saved.isChecked : false, _repeatId: r.id };
             });
-        const allTasksForDay = (allTasks[dateKey] || []).filter(t => !t._deleted && !t._repeatId);
+        const allTasksForDay = (allTasks[dateKey] || []).filter(t => t && !t._deleted && !t._repeatId);
         let tasks = [...repeatItems, ...allTasksForDay];
         
         // 💡 [실시간 연동] 남은 할 일(체크 안 된 것) 개수를 세어서 아코디언 바 텍스트에 즉시 반영!
@@ -4269,10 +4269,10 @@ function renderCalendar() {
         // 🔁 반복 일정 합치기 (렌더링용 임시 배열, allTasks 직접 수정 안 함)
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, new Date(key).getFullYear(), new Date(key).getMonth()).includes(key));
         const repeatItems = repeatForDay
-            .filter(r => !(allTasks[key] || []).some(t => t._repeatId === r.id)) // 이 날 삭제됐거나 수정된 것 제외
+            .filter(r => !(allTasks[key] || []).some(t => t && t._repeatId === r.id)) // 이 날 삭제됐거나 수정된 것 제외
             .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
         // _deleted 플래그가 있는 항목(이 날만 삭제)은 렌더링에서 제외
-        const allTasksForDay = (allTasks[key] || []).filter(t => !t._deleted);
+        const allTasksForDay = (allTasks[key] || []).filter(t => t && !t._deleted);
         const dayTasks = [...repeatItems, ...allTasksForDay];
         
         if (dayTasks.length > 0) {
