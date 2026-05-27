@@ -3889,14 +3889,23 @@ function renderTimeGrid(dateKey) {
           allTasks[targetDate].push(task); setLocal('ianInboxTasks', inboxTasks); saveAndRefresh(); renderInbox();
       } else if (draggedTaskInfo.type === 'single') {
           const { dateKey: src, index } = draggedTaskInfo;
-          const task = (allTasks[src] || [])[index];
+          // dayTasks = [...repeatItems, ...allTasksForDay] 구조라서
+          // repeatItems 개수만큼 인덱스 보정 필요
+          const _year = new Date(src).getFullYear();
+          const _month = new Date(src).getMonth();
+          const _repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _year, _month).includes(src));
+          const _repeatCount = _repeatForDay.filter(r => !(allTasks[src] || []).some(t => t && t._repeatId === r.id && !t._deleted)).length;
+          const task = (allTasks[src] || [])[index - _repeatCount] || (allTasks[src] || [])[index];
           if (task && task._repeatId) {
-              // 반복일정 → 이동 팝업 표시
               showRepeatMoveModal(task, src, targetDate);
               draggedTaskInfo = null;
               return;
           }
-          const moved = allTasks[src].splice(index, 1)[0];
+          // allTasks에서 실제 인덱스 계산
+          const realIdx = index - _repeatCount;
+          const allTasksSrc = allTasks[src] || [];
+          if (realIdx < 0 || realIdx >= allTasksSrc.length) { draggedTaskInfo = null; return; }
+          const moved = allTasksSrc.splice(realIdx, 1)[0];
           if (!allTasks[targetDate]) allTasks[targetDate] = [];
           allTasks[targetDate].push(moved); saveAndRefresh();
       } else if (draggedTaskInfo.type === 'multi') {
