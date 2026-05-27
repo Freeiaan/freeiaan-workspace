@@ -25,7 +25,10 @@
   <style>
     body { font-family: 'Pretendard', sans-serif !important; color: #000; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;}
     @media (min-width: 768px) {
-    body { overflow-y: auto; min-height: 100vh; }
+    body { overflow-y: auto; min-height: 100vh; overscroll-behavior: none; }
+    #mobileHomeSection .todo-item,
+    #mobileHomeSection .task-item,
+    #mobileHomeSection [draggable] { touch-action: pan-y !important; user-select: none; }
 }
     .drag-over { background-color: #f0fdf4 !important; }
     .selected-range { background-color: #f3f4f6 !important; border: 1px dashed #9ca3af !important; }
@@ -6571,6 +6574,7 @@ function renderMemoFolders() {
         const modal = document.getElementById('memoTrashModal');
         const list  = document.getElementById('memoTrashList');
         list.innerHTML = '';
+        document.body.style.overflow = 'hidden';
         if (memoTrash.length === 0) {
             list.innerHTML = '<p class="text-xs text-gray-400 text-center py-6">휴지통이 비어있어요.</p>';
         } else {
@@ -6747,7 +6751,7 @@ function renderMemoFolders() {
         <h3 class="text-sm font-black text-gray-800">🗑️ 휴지통</h3>
         <div class="flex gap-2">
           <button onclick="clearMemoTrash()" class="text-[11px] font-bold text-red-400 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">모두 삭제</button>
-          <button onclick="document.getElementById('memoTrashModal').style.display='none'" class="text-[11px] font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">닫기</button>
+          <button onclick="document.getElementById('memoTrashModal').style.display='none';document.body.style.overflow='';" class="text-[11px] font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">닫기</button>
         </div>
       </div>
       <div id="memoTrashList" class="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scrollbar"></div>
