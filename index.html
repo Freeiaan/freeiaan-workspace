@@ -1155,10 +1155,14 @@
         <div class="text-4xl">🗑️</div>
         <h2 class="text-[17px] font-black text-gray-800">정말 초기화하시겠어요?</h2>
         <p class="text-[12px] text-gray-500 font-bold leading-relaxed">일정, 할 일, 메모, 습관, 타이머 기록 등<br><span class="text-red-500 font-black">모든 데이터가 영구 삭제</span>됩니다.<br>이 작업은 되돌릴 수 없습니다.</p>
+        <div class="w-full mt-1">
+          <p class="text-[11px] text-gray-400 font-bold mb-2">계속하려면 아래에 <span class="text-red-500 font-black">초기화</span>를 입력하세요.</p>
+          <input id="resetConfirmInput" type="text" oninput="onResetInputChange()" placeholder="초기화" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[13px] font-bold text-gray-700 outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition-all text-center" autocomplete="off">
+        </div>
       </div>
-      <div class="flex gap-2 mt-6">
+      <div class="flex gap-2 mt-5">
         <button onclick="closeResetConfirmModal()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-gray-100 text-gray-600 rounded-xl text-[11px] font-black transition-all">취소</button>
-        <button onclick="executeReset()" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[11px] font-black transition-all active:scale-95">초기화하기</button>
+        <button id="resetConfirmBtn" onclick="executeReset()" disabled class="flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl text-[11px] font-black transition-all cursor-not-allowed" style="pointer-events:none;">초기화하기</button>
       </div>
     </div>
   </div>
@@ -5752,10 +5756,32 @@ function renderMemoFolders() {
     // 🗑️ 초기화 모달 열고 닫기
     window.openResetConfirmModal = function() {
         closeSettingsModal();
+        const input = document.getElementById('resetConfirmInput');
+        if (input) input.value = '';
+        const btn = document.getElementById('resetConfirmBtn');
+        if (btn) { btn.disabled = true; btn.className = 'flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl text-[11px] font-black transition-all cursor-not-allowed'; btn.style.pointerEvents = 'none'; }
         document.getElementById('resetConfirmModal').classList.remove('hidden');
     };
     window.closeResetConfirmModal = function() {
         document.getElementById('resetConfirmModal').classList.add('hidden');
+        const input = document.getElementById('resetConfirmInput');
+        if (input) input.value = '';
+        const btn = document.getElementById('resetConfirmBtn');
+        if (btn) { btn.disabled = true; btn.className = 'flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl text-[11px] font-black transition-all cursor-not-allowed'; btn.style.pointerEvents = 'none'; }
+    };
+    window.onResetInputChange = function() {
+        const input = document.getElementById('resetConfirmInput');
+        const btn = document.getElementById('resetConfirmBtn');
+        if (!input || !btn) return;
+        const isMatch = input.value.trim() === '초기화';
+        btn.disabled = !isMatch;
+        if (isMatch) {
+            btn.className = 'flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[11px] font-black transition-all active:scale-95';
+            btn.style.pointerEvents = 'auto';
+        } else {
+            btn.className = 'flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl text-[11px] font-black transition-all cursor-not-allowed';
+            btn.style.pointerEvents = 'none';
+        }
     };
     window.executeReset = function() {
         // 1) localStorage 전체 초기화 (공지 버전만 유지)
@@ -6928,17 +6954,7 @@ function renderMemoFolders() {
     #memoEditorModal .memo-modal-inner {
       overscroll-behavior: none;
     }
-    .memo-placeholder {
-      position: absolute;
-      top: 0; left: 0;
-      color: #d1d5db;
-      font-weight: 400;
-      pointer-events: none;
-      white-space: pre-line;
-      font-size: 13px;
-      line-height: 1.625;
-      z-index: 0;
-    }
+    .memo-placeholder { display: none !important; }
     #memoTabHeader { border-radius: 0.75rem 0.75rem 0 0; }
     #memoTabHeader { border-radius: 0.75rem 0.75rem 0 0; }
   </style>
