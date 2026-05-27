@@ -4116,11 +4116,8 @@ function renderTimeGrid(dateKey) {
         currentExtMemoIndex = index;
         $('extMemoTitle').value = extendedMemos[index].title || '';
         const el = $('extMemoContent');
-        // 기존 textarea 방식(
-)으로 저장된 내용을 <br>로 변환
         const rawContent = extendedMemos[index].content || '';
-        el.innerHTML = rawContent.includes('<') ? rawContent : rawContent.replace(/
-/g, '<br>');
+        el.innerHTML = rawContent.includes('<') ? rawContent : rawContent.split('\n').join('<br>');
         if (!el.innerHTML.trim()) el.classList.add('ext-memo-empty');
         else el.classList.remove('ext-memo-empty');
         $('extendedMemoModal').classList.remove('hidden');
