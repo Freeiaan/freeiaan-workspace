@@ -1616,10 +1616,29 @@ function handleContextAdd() {
         });
     }
     
-    function logout() { if(confirm("로그아웃 하시겠습니까?")) { auth.signOut(); resetTimer(); } }
+    function logout() {
+        if(confirm("로그아웃 하시겠습니까?")) {
+            auth.signOut();
+            resetTimer();
+            // localStorage 초기화 (다음 사용자 데이터 보호)
+            const keysToKeep = ['ianLastNoticeVersion']; // 유지할 키
+            const savedValues = {};
+            keysToKeep.forEach(k => { savedValues[k] = localStorage.getItem(k); });
+            localStorage.clear();
+            keysToKeep.forEach(k => { if(savedValues[k]) localStorage.setItem(k, savedValues[k]); });
+        }
+    }
       
     auth.onAuthStateChanged(user => {
         if (user) {
+            // 다른 계정으로 로그인 시 로컬 타임스탬프 초기화 (잘못된 데이터 덮어쓰기 방지)
+            const prevUserEmail = localStorage.getItem('ianCurrentUserEmail');
+            if (prevUserEmail && prevUserEmail !== user.email) {
+                localStorage.removeItem('ianLastSavedAt');
+                console.log('다른 계정 감지. 타임스탬프 초기화.');
+            }
+            localStorage.setItem('ianCurrentUserEmail', user.email);
+
             currentUser = user;
             checkNewReplies(); 
             $('userProfileName').textContent = user.displayName ? `${user.displayName}님` : '사용님';
@@ -2032,6 +2051,12 @@ function loadFromCloud() {
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
     function initAppRenders() {
+        // allTasks에서 null/undefined 항목 제거
+        Object.keys(allTasks).forEach(k => {
+            if (Array.isArray(allTasks[k])) {
+                allTasks[k] = allTasks[k].filter(t => t !== null && t !== undefined);
+            }
+        });
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
         updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
@@ -3033,13 +3058,13 @@ function loadFromCloud() {
         const month = new Date(dateKey).getMonth();
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey));
         const repeatItems = repeatForDay
-            .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
+            .filter(r => !(allTasks[dateKey] || []).some(t => t && t._repeatId === r.id && !t._deleted))
             .map(r => {
                 // allTasks에 저장된 체크 상태 반영
                 const saved = (allTasks[dateKey] || []).find(t => t._repeatId === r.id);
                 return { text: r.text, description: r.description, categoryId: r.categoryId, isChecked: saved ? !!saved.isChecked : false, _repeatId: r.id };
             });
-        const allTasksForDay = (allTasks[dateKey] || []).filter(t => !t._deleted && !t._repeatId);
+        const allTasksForDay = (allTasks[dateKey] || []).filter(t => t && !t._deleted && !t._repeatId);
         let tasks = [...repeatItems, ...allTasksForDay];
         
         // 💡 [실시간 연동] 남은 할 일(체크 안 된 것) 개수를 세어서 아코디언 바 텍스트에 즉시 반영!
@@ -3475,7 +3500,7 @@ function renderTimeGrid(dateKey) {
           else if (todayTasksCount === todayDoneCount) greetingEl.innerHTML = `${userName}, <br><span class="text-[#22741C]">모든 목표 달성!</span> 최고예요! 🎉`;
           else greetingEl.innerHTML = `${userName}, <br>벌써 <span class="text-[#22741C]">${todayDoneCount}개</span>를 해내셨네요! 🔥`;
       }
-      for (let i = 1; i <= daysToSaturday; i++) { let d = new Date(now); d.setDate(now.getDate() + i); let k = getDateKey(d); if (Array.isArray(allTasks[k])) { allTasks[k].forEach((t, idx) => { if (!t.isChecked && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) wL.appendChild(createDashItem(t, k, idx, true)); }); } }
+      for (let i = 1; i <= daysToSaturday; i++) { let d = new Date(now); d.setDate(now.getDate() + i); let k = getDateKey(d); if (Array.isArray(allTasks[k])) { allTasks[k].forEach((t, idx) => { if (t && !t.isChecked && !t._deleted && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) wL.appendChild(createDashItem(t, k, idx, true)); }); } }
     }
 
     function createDashItem(t, key, idx, showDate = false) {
@@ -4261,10 +4286,10 @@ function renderCalendar() {
         // 🔁 반복 일정 합치기 (렌더링용 임시 배열, allTasks 직접 수정 안 함)
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, new Date(key).getFullYear(), new Date(key).getMonth()).includes(key));
         const repeatItems = repeatForDay
-            .filter(r => !(allTasks[key] || []).some(t => t._repeatId === r.id)) // 이 날 삭제됐거나 수정된 것 제외
+            .filter(r => !(allTasks[key] || []).some(t => t && t._repeatId === r.id)) // 이 날 삭제됐거나 수정된 것 제외
             .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
         // _deleted 플래그가 있는 항목(이 날만 삭제)은 렌더링에서 제외
-        const allTasksForDay = (allTasks[key] || []).filter(t => !t._deleted);
+        const allTasksForDay = (allTasks[key] || []).filter(t => t && !t._deleted);
         const dayTasks = [...repeatItems, ...allTasksForDay];
         
         if (dayTasks.length > 0) {
