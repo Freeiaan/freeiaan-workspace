@@ -6334,15 +6334,7 @@ function renderMemoFolders() {
         if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
         else editor.classList.remove('empty');
 
-        // 체크박스 취소선 스타일 복원 (이벤트 재등록 없이 스타일만)
-        editor.querySelectorAll('input.memo-checkbox').forEach(cb => {
-            const ld = cb.closest('div') || cb.parentElement;
-            if (ld && cb.checked) {
-                ld.style.textDecoration = 'line-through';
-                ld.style.color = '#9ca3af';
-                ld.style.opacity = '0.6';
-            }
-        });
+
 
         if (window.innerWidth < 768) {
             // 모바일: 중앙 팝업 모달
@@ -6368,15 +6360,7 @@ function renderMemoFolders() {
                 pcEditor.style.backgroundColor = '#ffffff';
                 if (!pcEditor.innerHTML.trim() || pcEditor.innerHTML === '<br>') pcEditor.classList.add('empty');
                 else pcEditor.classList.remove('empty');
-                // 체크박스 취소선 스타일 복원 (이벤트 재등록 없이 스타일만)
-                pcEditor.querySelectorAll('input.memo-checkbox').forEach(cb => {
-                    const ld = cb.closest('div') || cb.parentElement;
-                    if (ld && cb.checked) {
-                        ld.style.textDecoration = 'line-through';
-                        ld.style.color = '#9ca3af';
-                        ld.style.opacity = '0.6';
-                    }
-                });
+
             }
             document.getElementById('memoCardListView').classList.add('hidden');
             const editorView = document.getElementById('memoEditorView');
@@ -6430,10 +6414,6 @@ function renderMemoFolders() {
                     ? document.getElementById('richMemoEditor')
                     : document.getElementById('richMemoEditorPC');
                 if (!activeEditor) return;
-                activeEditor.querySelectorAll('input.memo-checkbox').forEach(cb => {
-                    if (cb.checked) cb.setAttribute('checked', 'checked');
-                    else cb.removeAttribute('checked');
-                });
                 card.content = activeEditor.innerHTML;
                 saveMemoData();
             }
@@ -6452,7 +6432,7 @@ function renderMemoFolders() {
                 if (card) { card.title = this.value; saveMemoData(); }
             });
 
-            // 본문 input: 자동저장 + [] → 체크박스 변환 (단일 리스너)
+            // 본문 input: 자동저장
             editor.addEventListener('input', function() {
                 updateMemoPlaceholder();
                 if (richMemoActiveCardId) {
@@ -6460,53 +6440,12 @@ function renderMemoFolders() {
                     const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
                     if (card) { card.content = this.innerHTML; saveMemoData(); }
                 }
-                const sel = window.getSelection();
-                if (!sel || !sel.rangeCount) return;
-                const range = sel.getRangeAt(0);
-                const node  = range.startContainer;
-                if (node.nodeType !== Node.TEXT_NODE) return;
-                const text   = node.textContent;
-                const offset = range.startOffset;
-                if (offset >= 2 && text.slice(offset - 2, offset) === '[]') {
-                    const before = text.slice(0, offset - 2);
-                    const after  = text.slice(offset);
-                    const cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.className = 'memo-checkbox';
-                    cb.style.cssText = 'width:13px;height:13px;cursor:pointer;margin-right:5px;vertical-align:-2px;flex-shrink:0;accent-color:#22741C;position:relative;top:1px;';
-                    cb.addEventListener('change', function() {
-                        const lineDiv = this.closest('div') || this.parentElement.parentElement;
-                        if (lineDiv) {
-                            lineDiv.style.textDecoration = this.checked ? 'line-through' : '';
-                            lineDiv.style.color = this.checked ? '#9ca3af' : '';
-                            lineDiv.style.opacity = this.checked ? '0.6' : '';
-                        }
-                        saveAndUpdate();
-                    });
-                    cb.addEventListener('click', (ev) => ev.stopPropagation());
-                    const wrapper = document.createElement('span');
-                    wrapper.className = 'memo-cb-wrap';
-                    wrapper.style.cssText = 'display:inline;';
-                    wrapper.appendChild(cb);
-                    wrapper.appendChild(document.createTextNode(' '));
-                    const frag = document.createDocumentFragment();
-                    if (before) frag.appendChild(document.createTextNode(before));
-                    frag.appendChild(wrapper);
-                    const afterNode = document.createTextNode(after || '\u200b');
-                    frag.appendChild(afterNode);
-                    node.parentNode.replaceChild(frag, node);
-                    const newRange = document.createRange();
-                    newRange.setStart(afterNode, 0);
-                    newRange.collapse(true);
-                    sel.removeAllRanges();
-                    sel.addRange(newRange);
-                    saveAndUpdate();
-                }
+
+
             });
 
             editor.addEventListener('blur', saveMemoData);
 
-            let _lastEnterHadCheckbox = false;
             editor.addEventListener('keydown', function(e) {
                 if (e.key === 'Tab') {
                     e.preventDefault();
@@ -6521,58 +6460,7 @@ function renderMemoFolders() {
                     const node = range.startContainer;
                     const parentEl = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
                     const lineEl = parentEl ? (parentEl.closest('div') || parentEl.closest('p') || parentEl) : null;
-                    const hasCbInLine = lineEl && lineEl.querySelector && lineEl.querySelector('.memo-cb-wrap');
-                    if (hasCbInLine) {
-                        const lineText = lineEl.textContent.replace(/\u200b/g, '').trim();
-                        if (lineText === '' && _lastEnterHadCheckbox) {
-                            e.preventDefault();
-                            _lastEnterHadCheckbox = false;
-                            const br = document.createElement('br');
-                            lineEl.parentNode.insertBefore(br, lineEl.nextSibling);
-                            const newRange = document.createRange();
-                            newRange.setStartAfter(br);
-                            newRange.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(newRange);
-                            if (lineEl.textContent.replace(/\u200b/g,'').trim() === '') lineEl.remove();
-                            saveAndUpdate();
-                            return;
-                        }
-                        e.preventDefault();
-                        _lastEnterHadCheckbox = true;
-                        const newCb = document.createElement('input');
-                        newCb.type = 'checkbox';
-                        newCb.className = 'memo-checkbox';
-                        newCb.style.cssText = 'width:13px;height:13px;cursor:pointer;margin-right:5px;vertical-align:-2px;flex-shrink:0;accent-color:#22741C;position:relative;top:1px;';
-                        const newWrap = document.createElement('span');
-                        newWrap.className = 'memo-cb-wrap';
-                        newWrap.style.cssText = 'display:inline;';
-                        newWrap.appendChild(newCb);
-                        newCb.addEventListener('change', function() {
-                            const lineDiv = newWrap.closest('div') || newWrap.parentElement;
-                            if (lineDiv) {
-                                lineDiv.style.textDecoration = this.checked ? 'line-through' : '';
-                                lineDiv.style.color = this.checked ? '#9ca3af' : '';
-                                lineDiv.style.opacity = this.checked ? '0.6' : '';
-                            }
-                            saveAndUpdate();
-                        });
-                        newCb.addEventListener('click', (ev) => ev.stopPropagation());
-                        const newLine = document.createElement('div');
-                        newLine.appendChild(newWrap);
-                        const textNode = document.createTextNode('\u200b');
-                        newLine.appendChild(textNode);
-                        const insertAfter = lineEl.nextSibling;
-                        if (insertAfter) lineEl.parentNode.insertBefore(newLine, insertAfter);
-                        else lineEl.parentNode.appendChild(newLine);
-                        const newRange = document.createRange();
-                        newRange.setStart(textNode, 1);
-                        newRange.collapse(true);
-                        sel.removeAllRanges();
-                        sel.addRange(newRange);
-                        saveAndUpdate();
-                        return;
-                    }
+
                     const block = range.startContainer.parentElement && range.startContainer.parentElement.closest('blockquote, ul, ol, li');
                     if (block) {
                         const lineText = (range.startContainer.textContent || '').trim();
@@ -6583,7 +6471,6 @@ function renderMemoFolders() {
                             return;
                         }
                     }
-                    _lastEnterHadCheckbox = false;
                 }
             });
 
