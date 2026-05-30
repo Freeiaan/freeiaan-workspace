@@ -3910,7 +3910,16 @@ function renderTimeGrid(dateKey) {
         // 바깥 블러 배경 터치 → 닫기
         m.onclick = (e) => { if (e.target === m) closeDetailModal(); };
 
-        (allTasks[key] || []).forEach((t, i) => { 
+        // 🔁 반복 일정 합치기 (캘린더 렌더와 동일한 방식)
+        const _y = date.getFullYear(), _mo = date.getMonth();
+        const _repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _y, _mo).includes(key));
+        const _repeatItems = _repeatForDay
+            .filter(r => !(allTasks[key] || []).some(t => t && t._repeatId === r.id))
+            .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+        const _allTasksForDay = (allTasks[key] || []).filter(t => t && !t._deleted);
+        const _combinedTasks = [..._repeatItems, ..._allTasksForDay];
+
+        _combinedTasks.forEach((t, i) => { 
             const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
             const div = document.createElement('div'); 
             div.className = "flex items-center gap-3 py-2.5 px-2 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group"; 
