@@ -1522,8 +1522,14 @@ function handleContextPaste() {
         allTasks[targetPasteDateKey] = [];
     }
     
-    // 똑같은 내용에 고유 ID만 새롭게 부여해서 붙여넣기!
-    const newTask = { ...clipboardTask, id: Date.now() };
+    // 붙여넣기 시 반복 일정 메타데이터는 제거 (붙여넣은 건 독립된 일반 일정)
+    const newTask = {
+        text: clipboardTask.text,
+        categoryId: clipboardTask.categoryId,
+        isChecked: false,
+        description: clipboardTask.description || '',
+        id: Date.now()
+    };
     allTasks[targetPasteDateKey].push(newTask);
     
     syncToCloud();
@@ -1536,7 +1542,15 @@ function handleContextDuplicate() {
     const tasks = allTasks[selectedTaskDateKey];
     
     if (tasks && tasks[selectedTaskIndex]) {
-        const newTask = { ...tasks[selectedTaskIndex], id: Date.now() }; 
+        // 복제 시 반복 일정 메타데이터는 제거 (복제본은 독립된 일반 일정)
+        const src = tasks[selectedTaskIndex];
+        const newTask = {
+            text: src.text,
+            categoryId: src.categoryId,
+            isChecked: false,
+            description: src.description || '',
+            id: Date.now()
+        };
         tasks.push(newTask);
         syncToCloud(); 
         initAppRenders();
@@ -2093,6 +2107,21 @@ function loadFromCloud() {
             if (Array.isArray(allTasks[k])) {
                 allTasks[k] = allTasks[k].filter(t => t !== null && t !== undefined);
             }
+        });
+        // 🩹 데이터 무결성: _repeatId가 있는데 실제 repeatTasks에 없는 잔재 정리
+        // (이전 버전의 복제 버그로 생긴 고아 _repeatId 일반 일정 → 일반 일정으로 정상화)
+        const validRepeatIds = new Set(repeatTasks.map(r => r.id));
+        Object.keys(allTasks).forEach(k => {
+            if (!Array.isArray(allTasks[k])) return;
+            allTasks[k] = allTasks[k].filter(t => {
+                if (!t || !t._repeatId) return true;
+                if (validRepeatIds.has(t._repeatId)) return true;
+                // 고아 _repeatId: _deleted 묘비석은 그냥 버림, 실제 데이터는 살리되 메타 제거
+                if (t._deleted) return false;
+                delete t._repeatId;
+                delete t._deleted;
+                return true;
+            });
         });
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
