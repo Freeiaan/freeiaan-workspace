@@ -2113,8 +2113,21 @@ function loadFromCloud() {
             const isMemoTab = document.body.getAttribute('data-mobile-tab') === 'home';
             switchMobileTab(isMemoTab ? 'timer' : 'home');
         } else {
-            // PC/태블릿: 슬라이드 토글
-            drawer.classList.toggle('translate-x-full');
+            // PC/태블릿: 명시적 열기/닫기
+            if (!drawer) return;
+            // 🔥 핵심: resize/switchMobileTab에서 박힌 인라인 display 스타일을 항상 제거
+            // (이 스타일이 남아있으면 클래스 토글해도 drawer가 안 보임)
+            drawer.style.display = '';
+            // mobile-tab 속성이 남아있으면 PC CSS 충돌 → 제거
+            if (document.body.getAttribute('data-mobile-tab')) {
+                document.body.removeAttribute('data-mobile-tab');
+            }
+            const isClosed = drawer.classList.contains('translate-x-full');
+            if (isClosed) {
+                drawer.classList.remove('translate-x-full');
+            } else {
+                drawer.classList.add('translate-x-full');
+            }
         }
     }
     function toggleDashList(type) {
@@ -3529,8 +3542,22 @@ function renderTimeGrid(dateKey) {
       const daysToSaturday = 6 - now.getDay(); const saturday = new Date(now); saturday.setDate(now.getDate() + daysToSaturday); $('weekDateStr').textContent = `~ ${saturday.getMonth() + 1}월 ${saturday.getDate()}일 토요일까지`;
       const tL = $('todayTasksList'), wL = $('weekTasksList'); tL.innerHTML = ''; wL.innerHTML = '';
       let todayTasksCount = 0, todayDoneCount = 0;
-      if (Array.isArray(allTasks[tK])) { allTasks[tK].forEach((t, i) => { if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) { tL.appendChild(createDashItem(t, tK, i, false)); todayTasksCount++; if(t.isChecked) todayDoneCount++; } }); }
-      
+
+      // 오늘 할 일: 반복 일정 + 일반 일정 합치기
+      const _ty = now.getFullYear(), _tm = now.getMonth();
+      const _todayRepeatItems = repeatTasks
+          .filter(r => getRepeatDatesInMonth(r, _ty, _tm).includes(tK))
+          .filter(r => !(allTasks[tK] || []).some(t => t._repeatId === r.id))
+          .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+      const _todayCombined = [..._todayRepeatItems, ...(Array.isArray(allTasks[tK]) ? allTasks[tK] : [])];
+      _todayCombined.forEach((t, i) => {
+          if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
+              tL.appendChild(createDashItem(t, tK, i, false));
+              todayTasksCount++;
+              if (t.isChecked) todayDoneCount++;
+          }
+      });
+
       const greetingEl = $('mobileGreeting');
       if (greetingEl) {
           const userName = (currentUser && currentUser.displayName) ? `${currentUser.displayName}님` : '이안님';
@@ -3538,7 +3565,23 @@ function renderTimeGrid(dateKey) {
           else if (todayTasksCount === todayDoneCount) greetingEl.innerHTML = `${userName}, <br><span class="text-[#22741C]">모든 목표 달성!</span> 최고예요! 🎉`;
           else greetingEl.innerHTML = `${userName}, <br>벌써 <span class="text-[#22741C]">${todayDoneCount}개</span>를 해내셨네요! 🔥`;
       }
-      for (let i = 1; i <= daysToSaturday; i++) { let d = new Date(now); d.setDate(now.getDate() + i); let k = getDateKey(d); if (Array.isArray(allTasks[k])) { allTasks[k].forEach((t, idx) => { if (t && !t.isChecked && !t._deleted && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) wL.appendChild(createDashItem(t, k, idx, true)); }); } }
+
+      // 이번주 남은 할 일: 반복 일정 + 일반 일정 합치기
+      for (let i = 1; i <= daysToSaturday; i++) {
+          let d = new Date(now); d.setDate(now.getDate() + i);
+          let k = getDateKey(d);
+          const _dy = d.getFullYear(), _dm = d.getMonth();
+          const _dayRepeatItems = repeatTasks
+              .filter(r => getRepeatDatesInMonth(r, _dy, _dm).includes(k))
+              .filter(r => !(allTasks[k] || []).some(t => t._repeatId === r.id))
+              .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+          const _dayCombined = [..._dayRepeatItems, ...(Array.isArray(allTasks[k]) ? allTasks[k] : [])];
+          _dayCombined.forEach((t, idx) => {
+              if (t && !t.isChecked && !t._deleted && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) {
+                  wL.appendChild(createDashItem(t, k, idx, true));
+              }
+          });
+      }
     }
 
     function createDashItem(t, key, idx, showDate = false) {
