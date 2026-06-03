@@ -3690,8 +3690,8 @@ function renderTimeGrid(dateKey) {
                 }
 
                 innerHTML += `
-                    <div class="absolute bg-[#faf8f5] px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" 
-                         style="color: ${seg.color}; border-color: ${seg.color}; ${alignStyle}">
+                    <div class="absolute px-2 py-0.5 rounded shadow-sm text-[11px] font-extrabold z-10 border max-w-[95%] truncate" 
+                         style="background:${document.body.classList.contains('dark') ? 'rgba(44,44,46,0.95)' : '#faf8f5'}; color: ${seg.color}; border-color: ${seg.color}; ${alignStyle}">
                         ${segText}
                     </div>`;
             }
@@ -4651,7 +4651,10 @@ function renderTimeGrid(dateKey) {
                  if(segText) {
                      const overlay = document.createElement('div'); overlay.className = 'absolute top-0 bottom-0 flex items-center justify-center pointer-events-none z-20 w-full';
                      const leftPercent = (seg.start / 6) * 100; const widthPercent = ((seg.end - seg.start + 1) / 6) * 100; overlay.style.left = `${leftPercent}%`; overlay.style.width = `${widthPercent}%`;
-                     overlay.innerHTML = `<div class="absolute w-full h-[1.5px] z-0 opacity-70" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[8px] font-black z-0 px-0.5 opacity-70" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-white/90 px-1.5 py-[2px] rounded-[3px] shadow-sm text-[9px] font-extrabold text-black z-10 border-[1.5px] border-black max-w-[90%] truncate leading-none" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
+                     const _isDark = document.body.classList.contains('dark');
+                    const _labelBg = _isDark ? 'rgba(44,44,46,0.95)' : 'rgba(255,255,255,0.92)';
+                    const _labelText = seg.color;
+                    overlay.innerHTML = `<div class="absolute w-full h-[1.5px] z-0 opacity-70" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[8px] font-black z-0 px-0.5 opacity-70" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative px-1.5 py-[2px] rounded-[3px] shadow-sm text-[9px] font-extrabold z-10 border-[1.5px] max-w-[90%] truncate leading-none" style="background:${_labelBg}; color: ${_labelText}; border-color: ${_labelText}">${segText}</div>`;
                      row.appendChild(overlay);
                  }
              });
@@ -6056,7 +6059,10 @@ function renderMemoFolders() {
                            const widthPercent = ((seg.end - seg.start + 1) / 6) * 100; 
                            overlay.style.left = `${leftPercent}%`; 
                            overlay.style.width = `${widthPercent}%`;
-                           overlay.innerHTML = `<div class="absolute w-full h-[1.5px] z-0 opacity-70" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[8px] font-black z-0 px-0.5 opacity-70" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative bg-white/90 px-1.5 py-[2px] rounded-[3px] shadow-sm text-[9px] font-extrabold text-black z-10 border-[1.5px] border-black max-w-[90%] truncate leading-none" style="color: ${seg.color}; border-color: ${seg.color}">${segText}</div>`;
+                           const _isDark = document.body.classList.contains('dark');
+                    const _labelBg = _isDark ? 'rgba(44,44,46,0.95)' : 'rgba(255,255,255,0.92)';
+                    const _labelText = seg.color;
+                    overlay.innerHTML = `<div class="absolute w-full h-[1.5px] z-0 opacity-70" style="background-color: ${hexToRgba(seg.color, 0.8)}"></div><div class="absolute w-full flex justify-between items-center text-[8px] font-black z-0 px-0.5 opacity-70" style="color: ${seg.color}"><span>◀</span><span>▶</span></div><div class="relative px-1.5 py-[2px] rounded-[3px] shadow-sm text-[9px] font-extrabold z-10 border-[1.5px] max-w-[90%] truncate leading-none" style="background:${_labelBg}; color: ${_labelText}; border-color: ${_labelText}">${segText}</div>`;
                            row.appendChild(overlay);
                        }
                    });
