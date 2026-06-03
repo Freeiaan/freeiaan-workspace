@@ -296,8 +296,34 @@
     body.dark .divide-gray-100 > * + *    { border-color: #374151 !important; }
     body.dark hr                          { border-color: #374151 !important; }
 
-    /* 설정 모달 토글 버튼 영역 */
-    body.dark #darkModeToggleWrap         { background-color: #374151 !important; border-color: #4b5563 !important; }
+    /* ── 다크모드 추가 수정 ── */
+    /* 캘린더 날짜 셀 (JS로 bg-white 인라인 생성) */
+    body.dark .group-cell                { background-color: #1f2937 !important; border-color: #374151 !important; }
+    body.dark .group-cell.bg-white       { background-color: #1f2937 !important; }
+
+    /* 요일 헤더 (일~토) */
+    body.dark .day-header                { background-color: #111827 !important; border-color: #374151 !important; color: #9ca3af !important; }
+    body.dark .day-header-sun,
+    body.dark .day-header-sat            { color: #f87171 !important; }
+
+    /* WEEK 사이드 버튼 */
+    body.dark .week-side-btn             { background-color: #1f2937 !important; border-color: #374151 !important; }
+    body.dark .week-side-btn div         { color: #6b7280 !important; }
+
+    /* 긴 일정 텍스트 컨테이너 - 배경을 어둡게, 텍스트는 원래 색 유지 */
+    body.dark .multi-task-text-container { background-color: #1f2937 !important; border-color: rgba(255,255,255,0.1) !important; }
+    body.dark .multi-task-text-container span { color: #f3f4f6 !important; }
+
+    /* 내 보드 / 성취리포트 버튼 */
+    body.dark button[onclick="toggleDrawer()"]  { background: #14291f !important; border-color: #22741C !important; }
+    body.dark button[onclick="openAnalytics()"] { background: #292018 !important; border-color: #92400e !important; color: #fbbf24 !important; }
+
+    /* 타이머 다이얼 배경 */
+    body.dark #timerClickArea            { background-color: #374151 !important; }
+
+    /* today 강조 셀 */
+    body.dark .group-cell .today-highlight  { background-color: #1b4332 !important; color: #fff !important; }
+    body.dark .group-cell .other-day-highlight { background-color: rgba(34,116,28,0.2) !important; }
 
   </style>
 </head>
