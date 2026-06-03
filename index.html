@@ -325,6 +325,33 @@
     body.dark .group-cell .today-highlight  { background-color: #1b4332 !important; color: #fff !important; }
     body.dark .group-cell .other-day-highlight { background-color: rgba(34,116,28,0.2) !important; }
 
+    /* 🆕 내 보드 메모 카드 - 인라인 배경색 덮기 */
+    body.dark #memoCardContainer > div    { background-color: #374151 !important; border-color: #4b5563 !important; }
+    body.dark #memoCardContainer > div h4 { color: #f3f4f6 !important; }
+    body.dark #memoCardContainer > div p  { color: #9ca3af !important; }
+    body.dark #memoCardContainer > div .text-gray-400 { color: #6b7280 !important; }
+    body.dark #memoCardListView           { background-color: #1f2937 !important; }
+    body.dark #memoEditorView             { background-color: #1f2937 !important; }
+
+    /* 🆕 인덱스 메모 탭 버튼 (rgba 인라인 스타일 덮기) */
+    body.dark #richMemoTabContainer button {
+        background-color: rgba(255,255,255,0.1) !important;
+        color: #d1d5db !important;
+    }
+    body.dark #richMemoTabContainer button.opacity-100,
+    body.dark #richMemoTabContainer button.shadow-sm {
+        background-color: rgba(255,255,255,0.22) !important;
+        color: #ffffff !important;
+    }
+
+    /* 🆕 뽀모도로 패널 (세션 내용은 밝게 유지, 외부 패널만 어둡게) */
+    body.dark #pomodoroPanel              { background-color: #2d1b1b !important; border-color: #7f1d1d !important; }
+    body.dark #pomodoroPanel input[type="number"] { background-color: #374151 !important; border-color: #6b7280 !important; color: #f3f4f6 !important; }
+    body.dark #pomodoroToggleBtn          { background-color: #1f2937 !important; border-color: #4b5563 !important; color: #9ca3af !important; }
+
+    /* 🆕 설정 모달 토글 버튼 영역 */
+    body.dark #darkModeToggleWrap         { background-color: #374151 !important; border-color: #4b5563 !important; }
+
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen relative overflow-x-hidden">
@@ -5887,7 +5914,10 @@ function renderMemoFolders() {
                        });
                        const span = document.createElement('span');
                        span.className = isCheckedClass + ' break-words whitespace-normal flex-1';
-                       span.style.color = colorStyle;
+                       span.style.color = t.isChecked ? '#888' : getContrastColor(cat.color);
+                       span.style.backgroundColor = hexToRgba(cat.color, t.isChecked ? 0.4 : 1);
+                       span.style.borderRadius = '4px';
+                       span.style.padding = '0px 4px';
                        span.textContent = t.text;
                        row.appendChild(cb); row.appendChild(span);
                        checklist.appendChild(row);
