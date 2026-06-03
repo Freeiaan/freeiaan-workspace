@@ -6553,6 +6553,30 @@ function renderMemoFolders() {
                 inner.classList.add('scale-100');
                 inner.style.transform = 'none';
             }, 10);
+            // 🛡️ iOS Safari: contenteditable이 모달 안에서 input 이벤트 미발동 버그 대응
+            // → 2초마다 변경사항 체크해서 자동저장 (polling 방식)
+            if (window._memoAutoSaveTimer) clearInterval(window._memoAutoSaveTimer);
+            let _lastSavedContent = card.content || '';
+            let _lastSavedTitle   = card.title   || '';
+            window._memoAutoSaveTimer = setInterval(() => {
+                if (!richMemoActiveCardId) { clearInterval(window._memoAutoSaveTimer); return; }
+                const mEditor = document.getElementById('richMemoEditor');
+                const mTitle  = document.getElementById('memoCardTitleInput');
+                if (!mEditor || !mTitle) return;
+                const curContent = mEditor.innerHTML;
+                const curTitle   = mTitle.value;
+                if (curContent !== _lastSavedContent || curTitle !== _lastSavedTitle) {
+                    const t = richMemoTabs.find(t => t.id === richMemoActiveId);
+                    const c = t && t.cards.find(c => c.id === richMemoActiveCardId);
+                    if (c) {
+                        c.content = curContent;
+                        c.title   = curTitle;
+                        saveMemoData();
+                        _lastSavedContent = curContent;
+                        _lastSavedTitle   = curTitle;
+                    }
+                }
+            }, 2000);
             // 키패드 자동 안 뜨게 - 직접 터치할 때만
             // titleInput.focus(); editor.focus() 제거
         } else {
@@ -6578,7 +6602,22 @@ function renderMemoFolders() {
     }
 
     window.closeMemoEditor = function() {
-        // 닫기 전 반드시 저장
+        // 🛡️ 모바일 폴링 타이머 중단
+        if (window._memoAutoSaveTimer) {
+            clearInterval(window._memoAutoSaveTimer);
+            window._memoAutoSaveTimer = null;
+        }
+        // 닫기 전 마지막 저장 (모바일 에디터 내용 직접 반영)
+        if (richMemoActiveCardId) {
+            const mEditor = document.getElementById('richMemoEditor');
+            const mTitle  = document.getElementById('memoCardTitleInput');
+            const tab = richMemoTabs.find(t => t.id === richMemoActiveId);
+            const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
+            if (card && mEditor && mTitle) {
+                card.content = mEditor.innerHTML;
+                card.title   = mTitle.value;
+            }
+        }
         saveMemoData();
         // 모바일 팝업 닫기
         const modal = document.getElementById('memoEditorModal');
