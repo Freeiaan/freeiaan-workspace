@@ -1699,6 +1699,7 @@ function handleContextMoveUp(e) {
         [tasks[idx - 1], tasks[idx]] = [tasks[idx], tasks[idx - 1]];
         selectedTaskIndex = idx - 1; 
         saveAndRefresh();
+        if (currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
     }
 }
 
@@ -1711,6 +1712,7 @@ function handleContextMoveDown(e) {
         [tasks[idx], tasks[idx + 1]] = [tasks[idx + 1], tasks[idx]];
         selectedTaskIndex = idx + 1; 
         saveAndRefresh();
+        if (currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
     }
 }
 
@@ -1723,12 +1725,12 @@ document.addEventListener('click', () => {
     const btnPaste   = document.getElementById('btnCtxPaste');
     const btnDup     = document.getElementById('btnCtxDuplicate');
     const ctxDivTop  = document.getElementById('ctxDividerTop');
-    if (btnAdd)   btnAdd.style.display   = '';
-    if (btnCopy)  btnCopy.style.display  = '';
-    if (btnPaste) btnPaste.style.display = '';
-    if (btnDup)   btnDup.style.display   = '';
-    if (ctxDivTop) ctxDivTop.style.display = '';
     const ctxMoveBox = document.getElementById('ctxMoveContainer');
+    if (btnAdd)    btnAdd.style.display    = '';
+    if (btnCopy)   btnCopy.style.display   = '';
+    if (btnPaste)  btnPaste.style.display  = '';
+    if (btnDup)    btnDup.style.display    = '';
+    if (ctxDivTop) ctxDivTop.style.display = '';
     if (ctxMoveBox) ctxMoveBox.style.display = '';
 });
 
@@ -3447,7 +3449,7 @@ function loadFromCloud() {
                 selectedTaskDateKey = dateKey;
                 selectedTaskIndex = _realIdx >= 0 ? _realIdx : idx;
 
-                // 버튼 표시/숨김 설정
+                // 버튼 표시/숨김 설정 (복사/붙여넣기/일정추가만 숨김, ▲▼는 표시)
                 const btnAdd      = document.getElementById('btnCtxAdd');
                 const btnCopy     = document.getElementById('btnCtxCopy');
                 const btnPaste    = document.getElementById('btnCtxPaste');
@@ -3458,7 +3460,7 @@ function loadFromCloud() {
                 if (btnCopy)   btnCopy.style.display   = 'none';
                 if (btnPaste)  btnPaste.style.display  = 'none';
                 if (ctxDivTop) ctxDivTop.style.display = 'none';
-                if (ctxMoveBox) ctxMoveBox.style.display = 'none'; // ▲▼ 항상 숨김
+                if (ctxMoveBox) ctxMoveBox.style.display = 'flex'; // ▲▼ 표시
                 // 반복일정은 복제도 숨기기
                 if (btnDup) btnDup.style.display = t._repeatId ? 'none' : '';
 
