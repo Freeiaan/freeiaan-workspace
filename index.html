@@ -360,6 +360,13 @@
     /* 🆕 설정 모달 토글 버튼 영역 */
     body.dark #darkModeToggleWrap         { background-color: #3a3a3c !important; border-color: #000000 !important; }
 
+    /* 🆕 위클리 플래너 왼쪽 컬럼 + 그리드 다크모드 */
+    body.dark #weeklyLeftCol              { background-color: #2c2c2e !important; border-color: #000 !important; }
+    body.dark #weeklyChecklistSpacer      { background-color: #2c2c2e !important; border-color: #000 !important; }
+    body.dark #weeklyChecklistSpacer span { color: #636366 !important; }
+    body.dark #weeklyTimeLabels > div     { border-color: #000 !important; color: #636366 !important; }
+    body.dark #weeklyGridContainer        { background-color: #1c1c1e !important; }
+
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen relative overflow-x-hidden">
@@ -931,11 +938,17 @@
                  <span class="text-[8px] md:text-[9px] text-gray-400 leading-tight break-keep">* 체크리스트 클릭 시 자동 동기화되며, 일간 트래커 데이터가 요일별로 요약 표시됩니다.</span>
              </div>
              <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
-               <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
-                 <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border" style="height: 160px; background-color: #f8fafc;"></div>
+               <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col" id="weeklyLeftCol">
+                 <!-- 헤더 높이 맞춤 (40px) -->
+                 <div class="flex-shrink-0 border-b border-[#e6e2d8] box-border h-10 bg-[#f8fafc]"></div>
+                 <!-- 체크리스트 레이블 (120px) -->
+                 <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border flex flex-col items-center justify-center gap-1" style="height: 120px; background-color: #f8fafc;">
+                   <span class="text-[13px]">✅</span>
+                   <span class="text-[8px] font-black text-gray-400 tracking-widest leading-none writing-mode-vertical" style="writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); letter-spacing:0.15em;">할 일</span>
+                 </div>
                  <div id="weeklyTimeLabels" class="relative flex flex-col w-full pb-4"></div>
                </div>
-               <div id="weeklyGridContainer" class="flex flex-1 bg-white w-full"></div>
+               <div id="weeklyGridContainer" class="flex flex-1 w-full"></div>
              </div>
          </div>
          <div class="w-full md:w-64 flex flex-col gap-4 flex-shrink-0">
@@ -5836,10 +5849,13 @@ function renderMemoFolders() {
                  </div>
                  <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
                    <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
-                     <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border" style="height: 160px; background-color: #f8fafc;"></div>
+                     <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border flex flex-col items-center justify-center gap-1" style="height: 120px; background-color: #f8fafc;">
+                       <span class="text-[13px]">✅</span>
+                       <span class="text-[8px] font-black text-gray-400 tracking-widest leading-none" style="writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); letter-spacing:0.15em;">할 일</span>
+                     </div>
                      <div id="weeklyTimeLabels" class="relative flex flex-col w-full pb-4"></div>
                    </div>
-                   <div id="weeklyGridContainer" class="flex flex-1 bg-white w-full"></div>
+                   <div id="weeklyGridContainer" class="flex flex-1 w-full"></div>
                  </div>
             </div>
             <div class="w-full md:w-64 flex flex-col gap-4 flex-shrink-0">
