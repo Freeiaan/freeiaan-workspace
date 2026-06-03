@@ -944,7 +944,7 @@
                  <!-- 체크리스트 레이블 (120px) -->
                  <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border flex flex-col items-center justify-center gap-1" style="height: 120px; background-color: #f8fafc;">
                    <span class="text-[13px]">✅</span>
-                   <span class="text-[8px] font-black text-gray-400 tracking-widest leading-none writing-mode-vertical" style="writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); letter-spacing:0.15em;">할 일</span>
+                   <span class="text-[8px] font-black text-gray-400 text-center leading-tight">할 일</span>
                  </div>
                  <div id="weeklyTimeLabels" class="relative flex flex-col w-full pb-4"></div>
                </div>
@@ -5848,10 +5848,11 @@ function renderMemoFolders() {
                      <span class="text-[8px] md:text-[9px] text-gray-400 leading-tight break-keep">* 체크리스트 클릭 시 자동 동기화되며, 일간 트래커 데이터가 요일별로 요약 표시됩니다.</span>
                  </div>
                  <div class="flex flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-gray-50">
-                   <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col">
+                   <div class="w-12 md:w-16 flex-shrink-0 bg-[#fdfbf7] border-r border-[#e6e2d8] z-20 sticky left-0 flex flex-col" id="weeklyLeftCol">
+                     <div class="flex-shrink-0 border-b border-[#e6e2d8] box-border h-10 bg-[#f8fafc]"></div>
                      <div id="weeklyChecklistSpacer" class="flex-shrink-0 border-b border-[#e6e2d8] box-border flex flex-col items-center justify-center gap-1" style="height: 120px; background-color: #f8fafc;">
                        <span class="text-[13px]">✅</span>
-                       <span class="text-[8px] font-black text-gray-400 tracking-widest leading-none" style="writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); letter-spacing:0.15em;">할 일</span>
+                       <span class="text-[8px] font-black text-gray-400 text-center leading-tight">할 일</span>
                      </div>
                      <div id="weeklyTimeLabels" class="relative flex flex-col w-full pb-4"></div>
                    </div>
