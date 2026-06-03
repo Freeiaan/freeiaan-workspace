@@ -349,6 +349,14 @@
     body.dark #pomodoroPanel input[type="number"] { background-color: #374151 !important; border-color: #6b7280 !important; color: #f3f4f6 !important; }
     body.dark #pomodoroToggleBtn          { background-color: #1f2937 !important; border-color: #4b5563 !important; color: #9ca3af !important; }
 
+    /* 🆕 데일리 플래너 오늘 할 일 헤더 다크모드 */
+    body.dark #dailyTasksTitleText          { color: #ffffff !important; }
+    body.dark #dailyTasksToggleText         { color: #4ade80 !important; }
+    body.dark #dailyTasksToggleIcon         { color: #4ade80 !important; }
+    body.dark button[onclick="toggleDailyTasks()"] { background-color: #14291f !important; border-color: #374151 !important; }
+    body.dark #plannerNewTaskInput          { color: #d1d5db !important; }
+    body.dark #plannerNewTaskInput::placeholder { color: #6b7280 !important; }
+
     /* 🆕 설정 모달 토글 버튼 영역 */
     body.dark #darkModeToggleWrap         { background-color: #374151 !important; border-color: #4b5563 !important; }
 
@@ -1709,6 +1717,17 @@ function handleContextMoveDown(e) {
 document.addEventListener('click', () => {
     const menu = document.getElementById('contextMenu');
     if(menu) menu.classList.add('hidden');
+    // 데일리 플래너에서 숨긴 버튼 복원
+    const btnAdd     = document.getElementById('btnCtxAdd');
+    const btnCopy    = document.getElementById('btnCtxCopy');
+    const btnPaste   = document.getElementById('btnCtxPaste');
+    const btnDup     = document.getElementById('btnCtxDuplicate');
+    const ctxDivTop  = document.getElementById('ctxDividerTop');
+    if (btnAdd)   btnAdd.style.display   = '';
+    if (btnCopy)  btnCopy.style.display  = '';
+    if (btnPaste) btnPaste.style.display = '';
+    if (btnDup)   btnDup.style.display   = '';
+    if (ctxDivTop) ctxDivTop.style.display = '';
 });
 
 // 📄 복사 기능
@@ -3413,8 +3432,39 @@ function loadFromCloud() {
             textSpan.style.color = t.isChecked ? '#888' : textColor;
             textSpan.style.borderRadius = '6px';
             textSpan.style.padding = '1px 6px';
-            textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); }; 
-            textWrapper.appendChild(textSpan); 
+            textWrapper.onclick = (e) => { e.stopPropagation(); openModal('editSingle', { dateKey: dateKey, index: idx, ...t }); };
+
+            // 🖱️ 우클릭 컨텍스트 메뉴 (복사 제외, 반복일정은 수정/삭제만)
+            item.addEventListener('contextmenu', (e) => {
+                e.preventDefault(); e.stopPropagation();
+
+                // allTasks에서 실제 인덱스 찾기
+                const _realIdx = t._repeatId
+                    ? idx
+                    : (allTasks[dateKey] || []).findIndex(x => x === t);
+                selectedTaskDateKey = dateKey;
+                selectedTaskIndex = _realIdx >= 0 ? _realIdx : idx;
+
+                // 버튼 표시/숨김 설정
+                const btnAdd      = document.getElementById('btnCtxAdd');
+                const btnCopy     = document.getElementById('btnCtxCopy');
+                const btnPaste    = document.getElementById('btnCtxPaste');
+                const btnDup      = document.getElementById('btnCtxDuplicate');
+                const ctxDivTop   = document.getElementById('ctxDividerTop');
+                if (btnAdd)    btnAdd.style.display    = 'none';
+                if (btnCopy)   btnCopy.style.display   = 'none';
+                if (btnPaste)  btnPaste.style.display  = 'none';
+                if (ctxDivTop) ctxDivTop.style.display = 'none';
+                // 반복일정은 복제도 숨기기
+                if (btnDup) btnDup.style.display = t._repeatId ? 'none' : '';
+
+                const menu = document.getElementById('contextMenu');
+                menu.style.left = e.clientX + 'px';
+                menu.style.top  = e.clientY + 'px';
+                menu.classList.remove('hidden');
+            });
+
+            textWrapper.appendChild(textSpan);
             item.appendChild(circle); 
             item.appendChild(textWrapper); 
             item.onclick = () => selectBrush(cat.color, item); 
@@ -5907,7 +5957,8 @@ function renderMemoFolders() {
                                if (actualIdx >= 0) allTasks[dateKey][actualIdx].isChecked = e.target.checked;
                            }
                            t.isChecked = e.target.checked;
-                           span.style.color = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
+                           span.style.color = t.isChecked ? '#888' : getContrastColor(cat.color);
+                           span.style.backgroundColor = hexToRgba(cat.color, t.isChecked ? 0.4 : 1);
                            if (t.isChecked) span.classList.add('line-through', 'opacity-50');
                            else span.classList.remove('line-through', 'opacity-50');
                            saveAndRefresh();
