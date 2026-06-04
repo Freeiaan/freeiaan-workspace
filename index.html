@@ -1736,27 +1736,36 @@ document.addEventListener('contextmenu', function(e) {
 function handleContextMoveUp(e) {
     if (e) e.stopPropagation(); 
     if (!selectedTaskDateKey || selectedTaskIndex === null) return;
-    const tasks = allTasks[selectedTaskDateKey];
-    const idx = parseInt(selectedTaskIndex);
-    if (idx > 0) {
-        [tasks[idx - 1], tasks[idx]] = [tasks[idx], tasks[idx - 1]];
-        selectedTaskIndex = idx - 1; 
-        saveAndRefresh();
-        if (currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
-    }
+    const dateKey = selectedTaskDateKey;
+    const dayIdx = parseInt(selectedTaskIndex);
+    // dayTasks에서 반복일정 수 계산해서 실제 allTasks 인덱스 구하기
+    const year = new Date(dateKey).getFullYear(), month = new Date(dateKey).getMonth();
+    const repeatCount = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey))
+        .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id)).length;
+    const actualIdx = dayIdx - repeatCount;
+    const tasks = allTasks[dateKey];
+    if (!tasks || actualIdx <= 0) return;
+    [tasks[actualIdx - 1], tasks[actualIdx]] = [tasks[actualIdx], tasks[actualIdx - 1]];
+    selectedTaskIndex = dayIdx - 1;
+    saveAndRefresh();
+    if (currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
 }
 
 function handleContextMoveDown(e) {
     if (e) e.stopPropagation(); 
     if (!selectedTaskDateKey || selectedTaskIndex === null) return;
-    const tasks = allTasks[selectedTaskDateKey];
-    const idx = parseInt(selectedTaskIndex);
-    if (idx < tasks.length - 1) {
-        [tasks[idx], tasks[idx + 1]] = [tasks[idx + 1], tasks[idx]];
-        selectedTaskIndex = idx + 1; 
-        saveAndRefresh();
-        if (currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
-    }
+    const dateKey = selectedTaskDateKey;
+    const dayIdx = parseInt(selectedTaskIndex);
+    const year = new Date(dateKey).getFullYear(), month = new Date(dateKey).getMonth();
+    const repeatCount = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey))
+        .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id)).length;
+    const actualIdx = dayIdx - repeatCount;
+    const tasks = allTasks[dateKey];
+    if (!tasks || actualIdx < 0 || actualIdx >= tasks.length - 1) return;
+    [tasks[actualIdx], tasks[actualIdx + 1]] = [tasks[actualIdx + 1], tasks[actualIdx]];
+    selectedTaskIndex = dayIdx + 1;
+    saveAndRefresh();
+    if (currentPlannerDateKey) renderPlannerTasks(currentPlannerDateKey);
 }
 
 document.addEventListener('click', () => {
@@ -4187,7 +4196,13 @@ function renderTimeGrid(dateKey) {
         $('modalDesc').value = (data && data.description) ? data.description : ''; 
         
         buildCategoryUI(); 
-        if (data && data.dateKey) { const d = new Date(data.dateKey); $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 ✏️`; $('modalDateInput').value = data.dateKey; } else { $('modalDateLabel').textContent = ''; }
+        if (data && data.dateKey) {
+            const d = new Date(data.dateKey);
+            $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 ✏️`;
+            // input[type=date]는 YYYY-MM-DD 형식 필요 (YYYY-M-D 넣으면 브라우저마다 오작동)
+            const _dp = data.dateKey.split('-');
+            $('modalDateInput').value = `${_dp[0]}-${String(_dp[1]).padStart(2,'0')}-${String(_dp[2]).padStart(2,'0')}`;
+        } else { $('modalDateLabel').textContent = ''; }
     }
 
     window.changeModalDate = function(newDateKey) {
@@ -4638,16 +4653,20 @@ function renderTimeGrid(dateKey) {
                  cb.addEventListener('change', (e) => {
                      e.stopPropagation();
                      if (t._isRepeat) {
-                         // 반복일정 체크 → allTasks에 저장
+                         // 반복일정 체크 → allTasks에 일반 일정으로 저장 (_repeatId 유지해야 중복 방지 필터 작동)
                          if (!allTasks[dateKey]) allTasks[dateKey] = [];
-                         const existing = allTasks[dateKey].find(x => x._repeatId === t._repeatId);
-                         if (existing) { existing.isChecked = e.target.checked; }
-                         else { allTasks[dateKey].push({ ...t, isChecked: e.target.checked, _isRepeat: undefined }); }
+                         const existing = allTasks[dateKey].find(x => x._repeatId === t._repeatId && !x._deleted);
+                         if (existing) {
+                             existing.isChecked = e.target.checked;
+                         } else {
+                             // _isRepeat 제거, _repeatId 유지 (중복 방지 필터용)
+                             allTasks[dateKey].push({ text: t.text, categoryId: t.categoryId, isChecked: e.target.checked, _repeatId: t._repeatId });
+                         }
                      } else {
-                         // 일반 일정 체크
-                         const realIdx = _regularTasks.indexOf(t);
-                         const actualIdx = (allTasks[dateKey] || []).findIndex(x => x === t || (x.text === t.text && !x._deleted));
+                         // 일반 일정 체크 - 객체 참조로 직접 찾기
+                         const actualIdx = (allTasks[dateKey] || []).indexOf(t);
                          if (actualIdx >= 0) allTasks[dateKey][actualIdx].isChecked = e.target.checked;
+                         else t.isChecked = e.target.checked;
                      }
                      t.isChecked = e.target.checked;
                      span.style.color = t.isChecked ? hexToRgba(cat.color, 0.6) : cat.color;
