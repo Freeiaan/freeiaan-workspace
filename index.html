@@ -1499,12 +1499,16 @@
         const d = new Date(date);
         const day = d.getDay();
         const mondayStart = localStorage.getItem('ianMondayStart') === '1';
+        
         if (mondayStart) {
-            const diff = d.getDate() - ((day === 0) ? 6 : day - 1);
-            return new Date(d.setDate(diff));
+            // 월요일(day=1)을 시작으로: day가 1이면 0, 2-6이면 -(day-1), 0(일)이면 -6
+            const diff = day === 0 ? -6 : -(day - 1);
+            d.setDate(d.getDate() + diff);
+        } else {
+            // 일요일(day=0)을 시작으로
+            d.setDate(d.getDate() - day);
         }
-        const diff = d.getDate() - day;
-        return new Date(d.setDate(diff));
+        return d;
     }
     const isDateBetween = (d, s, e) => { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; };
     const firebaseConfig = {
@@ -6340,6 +6344,10 @@ function renderMemoFolders() {
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderCalendar();
         renderDashboard();
+        // 위클리 플래너가 열려있으면 재렌더링
+        if (!$('weeklyPlannerModal').classList.contains('hidden')) {
+            openCurrentWeekPlanner();
+        }
     };
     window.openSettingsModal = function() {
         document.getElementById('settingsModal').classList.remove('hidden');
