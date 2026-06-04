@@ -662,7 +662,7 @@
             </div>
 
             <!-- 카드 리스트 뷰 -->
-            <div class="flex-1 p-3 overflow-y-auto custom-scrollbar bg-white rounded-b-xl" id="memoCardListView">
+            <div class="flex-1 p-3 overflow-y-auto custom-scrollbar bg-[#fdfbf7] rounded-b-xl" id="memoCardListView">
               <button onclick="createNewMemoCard()" class="w-full py-2.5 mb-2 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 font-bold text-xs hover:border-gray-300 hover:text-gray-500 hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5">
                 <span class="text-base leading-none">+</span> 새 메모 추가
               </button>
@@ -4147,6 +4147,8 @@ function renderTimeGrid(dateKey) {
     // 🔥 [수정됨] 모달창 열 때 세부 내용(Description) 필드도 함께 불러오기
     function openModal(mode, data) { 
         currentMode = mode; editData = data; 
+        // 수정 모드에서 원본 날짜 보존 (날짜 변경 시 기존 날짜에서 삭제하기 위함)
+        if (mode === 'editSingle' && data && data.dateKey) editData._origDateKey = data.dateKey;
         if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; 
         if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; 
         $('eventModal').classList.remove('hidden'); 
@@ -4163,23 +4165,8 @@ function renderTimeGrid(dateKey) {
         if (!newDateKey) return;
         const d = new Date(newDateKey);
         $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일`;
-        // currentMode에 따라 선택된 날짜 업데이트
-        if (currentMode === 'createSingle') {
-            selectedTaskDateKey = newDateKey;
-        } else if (currentMode === 'editSingle') {
-            // 수정 모드에서 날짜 바꾸면 기존 날짜에서 새 날짜로 이동
-            if (selectedTaskDateKey && selectedTaskIndex !== null) {
-                const tasks = allTasks[selectedTaskDateKey];
-                if (tasks && tasks[selectedTaskIndex]) {
-                    const task = tasks.splice(selectedTaskIndex, 1)[0];
-                    if (!allTasks[newDateKey]) allTasks[newDateKey] = [];
-                    allTasks[newDateKey].push(task);
-                    selectedTaskDateKey = newDateKey;
-                    selectedTaskIndex = allTasks[newDateKey].length - 1;
-                    saveAndRefresh();
-                }
-            }
-        }
+        // editData.dateKey 업데이트 → 저장 시 새 날짜에 저장됨
+        if (editData) editData.dateKey = newDateKey;
     };
     
     function closeModal() { $('eventModal').classList.add('hidden'); }
@@ -4364,14 +4351,22 @@ function renderTimeGrid(dateKey) {
   }
       else if (currentMode === 'editSingle') {
           if (editData._repeatId) {
-              // 반복일정 수정 → 이 날만 별도 저장 (_deleted 플래그 제거 후 수정된 버전으로 교체)
+              // 반복일정 수정 → 이 날만 별도 저장
               if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
               const existIdx = allTasks[editData.dateKey].findIndex(t => t._repeatId === editData._repeatId);
               const updated = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked || false, _repeatId: editData._repeatId };
               if (existIdx !== -1) { allTasks[editData.dateKey][existIdx] = updated; }
               else { allTasks[editData.dateKey].push(updated); }
           } else {
-              allTasks[editData.dateKey][editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked };
+              const origDateKey = editData._origDateKey || editData.dateKey;
+              if (origDateKey !== editData.dateKey) {
+                  // 날짜 변경: 기존 날짜에서 삭제 후 새 날짜에 추가
+                  if (allTasks[origDateKey]) allTasks[origDateKey].splice(editData.index, 1);
+                  if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
+                  allTasks[editData.dateKey].push({ text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked });
+              } else {
+                  allTasks[editData.dateKey][editData.index] = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked };
+              }
           }
       }
       else if (currentMode === 'createMulti') { multiTasks.push({ id: Date.now(), start: pendingStart, end: pendingEnd, text: txt, description: desc, categoryId: selectedCategoryId }); } 
