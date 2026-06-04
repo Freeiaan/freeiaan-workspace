@@ -511,7 +511,7 @@
         <div class="day-header day-header-sun weekend-col">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header day-header-sat weekend-col">토</div>
         <div id="calendar" class="contents"></div>
       </div>
-    </div> <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)]">
+    </div> <div class="w-full xl:w-64 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-200 p-5 flex flex-col items-center xl:sticky xl:top-8 z-10 max-h-[calc(100vh-4rem)] overflow-y-auto custom-scrollbar">
       <div class="flex justify-between w-full items-center mb-4 flex-shrink-0">
         <h2 class="text-base font-bold text-black md:block hidden">타이머</h2>
         <h2 class="text-2xl font-black text-gray-800 md:hidden block">Timer ⏱️</h2>
@@ -1037,7 +1037,8 @@
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[400px] p-8 flex flex-col max-h-[90vh]">
       <div class="flex items-center gap-2 mb-5">
         <h3 class="text-lg font-black text-gray-800">일정 등록</h3>
-        <span id="modalDateLabel" class="text-[12px] font-extrabold text-white bg-[#22741C] px-2.5 py-0.5 rounded-full"></span>
+        <span id="modalDateLabel" onclick="document.getElementById('modalDateInput').showPicker ? document.getElementById('modalDateInput').showPicker() : document.getElementById('modalDateInput').click()" class="text-[12px] font-extrabold text-white bg-[#22741C] px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-[#1b5e16] transition-colors select-none" title="클릭해서 날짜 변경"></span>
+        <input type="date" id="modalDateInput" class="absolute opacity-0 pointer-events-none w-0 h-0" onchange="changeModalDate(this.value)">
       </div>
 
   <!-- 🍅 뽀모도로 태그 (뽀모도로 모드일 때만 표시) -->
@@ -3538,7 +3539,7 @@ function renderTimeGrid(dateKey) {
           cell.id = `time-cell-${idx}`; 
           cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; 
           if (m === 5) cell.classList.remove('border-dashed'); 
-          if (color) cell.style.backgroundColor = hexToRgba(color, 0.3); 
+          if (color) { cell.style.backgroundColor = hexToRgba(color, 0.3); if (document.body.classList.contains('dark')) cell.style.filter = 'brightness(1.5) saturate(1.1)'; } 
           
           let pressTimer = null;
           
@@ -3732,7 +3733,7 @@ function renderTimeGrid(dateKey) {
     function applyBrushToCell(idx, cellElement) {
       if(!currentPlannerDateKey || !cellElement) return; 
       if(dragAction === 'erase') { dailyRecords[currentPlannerDateKey].grid[idx] = null; if(dailyRecords[currentPlannerDateKey].labels) delete dailyRecords[currentPlannerDateKey].labels[idx]; cellElement.style.backgroundColor = 'transparent'; } 
-      else { let brush = activeBrushColor || trackerColors[0].color; dailyRecords[currentPlannerDateKey].grid[idx] = brush; cellElement.style.backgroundColor = hexToRgba(brush, 0.3); }
+      else { let brush = activeBrushColor || trackerColors[0].color; dailyRecords[currentPlannerDateKey].grid[idx] = brush; cellElement.style.backgroundColor = hexToRgba(brush, 0.3); if (document.body.classList.contains('dark')) cellElement.style.filter = 'brightness(1.5) saturate(1.1)'; }
       savePlannerData();
     }
 
@@ -4155,8 +4156,31 @@ function renderTimeGrid(dateKey) {
         $('modalDesc').value = (data && data.description) ? data.description : ''; 
         
         buildCategoryUI(); 
-        if (data && data.dateKey) { const d = new Date(data.dateKey); $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일`; } else { $('modalDateLabel').textContent = ''; }
+        if (data && data.dateKey) { const d = new Date(data.dateKey); $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일`; $('modalDateInput').value = data.dateKey; } else { $('modalDateLabel').textContent = ''; }
     }
+
+    window.changeModalDate = function(newDateKey) {
+        if (!newDateKey) return;
+        const d = new Date(newDateKey);
+        $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일`;
+        // currentMode에 따라 선택된 날짜 업데이트
+        if (currentMode === 'createSingle') {
+            selectedTaskDateKey = newDateKey;
+        } else if (currentMode === 'editSingle') {
+            // 수정 모드에서 날짜 바꾸면 기존 날짜에서 새 날짜로 이동
+            if (selectedTaskDateKey && selectedTaskIndex !== null) {
+                const tasks = allTasks[selectedTaskDateKey];
+                if (tasks && tasks[selectedTaskIndex]) {
+                    const task = tasks.splice(selectedTaskIndex, 1)[0];
+                    if (!allTasks[newDateKey]) allTasks[newDateKey] = [];
+                    allTasks[newDateKey].push(task);
+                    selectedTaskDateKey = newDateKey;
+                    selectedTaskIndex = allTasks[newDateKey].length - 1;
+                    saveAndRefresh();
+                }
+            }
+        }
+    };
     
     function closeModal() { $('eventModal').classList.add('hidden'); }
     // 🔁 반복 일정 상태
@@ -4630,7 +4654,7 @@ function renderTimeGrid(dateKey) {
              for(let m = 0; m < 6; m++) {
                  const idx = (h - 5) * 6 + m; const color = gridData ? gridData[idx] : null; const cell = document.createElement('div'); cell.className = 'flex-1 h-full box-border';
                  if (color) {
-                     cell.style.backgroundColor = hexToRgba(color, 0.3);
+                     cell.style.backgroundColor = hexToRgba(color, 0.3); if (document.body.classList.contains('dark')) cell.style.filter = 'brightness(1.5) saturate(1.1)';
                      const hasLabel = labels && labels[idx];
                      // 🔥 [수정됨] 위클리에서도 라벨이 있으면 블록을 분리!
                      if (!currentSegment || currentSegment.color !== color || hasLabel) {
@@ -6034,7 +6058,7 @@ function renderMemoFolders() {
                        const cell = document.createElement('div'); 
                        cell.className = 'flex-1 h-full box-border';
                        if (color) {
-                           cell.style.backgroundColor = hexToRgba(color, 0.3);
+                           cell.style.backgroundColor = hexToRgba(color, 0.3); if (document.body.classList.contains('dark')) cell.style.filter = 'brightness(1.5) saturate(1.1)'; if (document.body.classList.contains('dark')) cell.style.filter = 'brightness(1.5) saturate(1.1)';
                            const hasLabel = labels && labels[idx];
                            if (!currentSegment || currentSegment.color !== color || hasLabel) {
                                if (currentSegment) segments.push(currentSegment);
@@ -6683,11 +6707,12 @@ function renderMemoFolders() {
 
         displayCards.forEach(card => {
             const colorOpt  = CARD_COLOR_OPTIONS.find(c => c.name === (card.color || 'white')) || CARD_COLOR_OPTIONS[0];
+            const isDark = document.body.classList.contains('dark');
             const plainText = card.content.replace(/<[^>]*>?/gm, '').trim() || '내용 없음';
             const div = document.createElement('div');
             div.className = 'p-3 rounded-xl border cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative select-none';
-            div.style.backgroundColor = colorOpt.bg;
-            div.style.borderColor = colorOpt.border;
+            div.style.backgroundColor = isDark ? '#3a3a3c' : colorOpt.bg;
+            div.style.borderColor = isDark ? '#48484a' : colorOpt.border;
             div.draggable = window.innerWidth >= 768; // 모바일에서는 드래그 비활성
             div.dataset.cardId = card.id;
 
