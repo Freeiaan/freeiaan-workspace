@@ -144,7 +144,9 @@
       body.dark                   { background-color: #1c1c1e !important; }
       body.dark .mobile-today-card { background-color: #0d2010 !important; }
       body.dark .mobile-week-card  { background-color: #1a1423 !important; }
-      body.dark #dashboardDrawer   { background-color: #2c2c2e !important; border-color: #3a3a3c !important; }
+      body.dark #dashboardDrawer   { background-color: #3a3a3c !important; border-color: #000 !important; }
+      body.dark #dashboardDrawer > div:first-child { background-color: #3a3a3c !important; border-color: #000 !important; }
+      body.dark #dashboardDrawer > div:nth-child(2) { background-color: #3a3a3c !important; }
       body.dark #mobileHabitSection{ background-color: #1c1c1e !important; }
       body.dark #mobileTabBar      { background-color: #2c2c2e !important; border-color: #3a3a3c !important; }
     }
@@ -204,7 +206,9 @@
 
     /* 주요 섹션 */
     body.dark #mainApp                    { background-color: #1c1c1e !important; }
-    body.dark #dashboardDrawer            { background-color: #2c2c2e !important; border-color: #3a3a3c !important; }
+    body.dark #dashboardDrawer            { background-color: #3a3a3c !important; border-color: #000 !important; }
+    body.dark #dashboardDrawer > div:first-child { background-color: #3a3a3c !important; border-color: #000 !important; }
+    body.dark #dashboardDrawer > div:nth-child(2) { background-color: #3a3a3c !important; }
     body.dark #mobileHabitSection         { background-color: #1c1c1e !important; }
     body.dark #calendarArea               { background-color: #3a3a3c !important; }
     body.dark #memoEditorView             { background-color: #2c2c2e !important; }
@@ -330,7 +334,7 @@
     body.dark #memoCardContainer > div h4 { color: #f3f4f6 !important; }
     body.dark #memoCardContainer > div p  { color: #8e8e93 !important; }
     body.dark #memoCardContainer > div .text-gray-400 { color: #636366 !important; }
-    body.dark #memoCardListView           { background-color: #2c2c2e !important; }
+    body.dark #memoCardListView           { background-color: #3a3a3c !important; }
     body.dark #memoEditorView             { background-color: #2c2c2e !important; }
 
     /* 🆕 인덱스 메모 탭 버튼 (rgba 인라인 스타일 덮기) */
@@ -6555,6 +6559,10 @@ function renderMemoFolders() {
     function applyTabHeaderColor(colorKey) {
         const header = document.getElementById('memoTabHeader');
         if (!header) return;
+        if (document.body.classList.contains('dark')) {
+            header.style.backgroundColor = '#2c2c2e';
+            return;
+        }
         const c = getMemoColorEntry(colorKey);
         header.style.backgroundColor = c.bg;
     }
