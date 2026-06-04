@@ -974,7 +974,7 @@
                 <div class="flex text-[10px] font-bold text-gray-400 mb-2 border-b border-gray-100 pb-1">
                     <div class="w-[45%] pl-1">Objective</div>
                     <div class="w-[55%] flex justify-between px-1">
-                        <div class="w-4 text-center text-red-400">S</div><div class="w-4 text-center">M</div><div class="w-4 text-center">T</div><div class="w-4 text-center">W</div><div class="w-4 text-center">T</div><div class="w-4 text-center">F</div><div class="w-4 text-center text-blue-400">S</div>
+                        <div id="habitDayHeaderPC" class="contents"></div>
                     </div>
                 </div>
                 <div class="habit-list-container flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 flex-1 pb-2"></div>
@@ -1499,16 +1499,12 @@
         const d = new Date(date);
         const day = d.getDay();
         const mondayStart = localStorage.getItem('ianMondayStart') === '1';
-        
         if (mondayStart) {
-            // 월요일(day=1)을 시작으로: day가 1이면 0, 2-6이면 -(day-1), 0(일)이면 -6
-            const diff = day === 0 ? -6 : -(day - 1);
-            d.setDate(d.getDate() + diff);
-        } else {
-            // 일요일(day=0)을 시작으로
-            d.setDate(d.getDate() - day);
+            const diff = d.getDate() - ((day === 0) ? 6 : day - 1);
+            return new Date(d.setDate(diff));
         }
-        return d;
+        const diff = d.getDate() - day;
+        return new Date(d.setDate(diff));
     }
     const isDateBetween = (d, s, e) => { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; };
     const firebaseConfig = {
@@ -4746,6 +4742,17 @@ function renderTimeGrid(dateKey) {
     function renderHabits() {
         const containers = document.querySelectorAll('.habit-list-container');
         if(containers.length === 0) return;
+
+        // 요일 헤더 동적 렌더링
+        const _mon = localStorage.getItem('ianMondayStart') === '1';
+        const _habitDays = _mon
+            ? ['M','T','W','T','F','<span class="text-red-400">S</span>','<span class="text-red-400">S</span>']
+            : ['<span class="text-red-400">S</span>','M','T','W','T','F','<span class="text-blue-400">S</span>'];
+        const _headerHTML = _habitDays.map(d => `<div class="w-4 text-center text-[10px] font-black text-gray-400">${d}</div>`).join('');
+        ['habitDayHeaderPC','habitDayHeaderWeekly'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = _headerHTML;
+        });
         
         let targetWeekKey = window.currentWeekKey;
         if (!targetWeekKey) { targetWeekKey = getDateKey(getStartOfWeek(new Date())); window.currentWeekKey = targetWeekKey; }
@@ -5955,7 +5962,7 @@ function renderMemoFolders() {
                    <div class="flex text-[10px] font-bold text-gray-400 mb-2 border-b border-gray-100 pb-1">
                        <div class="w-[45%] pl-1">Objective</div>
                        <div class="w-[55%] flex justify-between px-1">
-                           <div class="w-4 text-center text-red-400">S</div><div class="w-4 text-center">M</div><div class="w-4 text-center">T</div><div class="w-4 text-center">W</div><div class="w-4 text-center">T</div><div class="w-4 text-center">F</div><div class="w-4 text-center text-blue-400">S</div>
+                           <div id="habitDayHeaderWeekly" class="contents"></div>
                        </div>
                    </div>
                    <div class="habit-list-container flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 flex-1 pb-2"></div>
@@ -6002,7 +6009,7 @@ function renderMemoFolders() {
                col.className = 'flex-1 min-w-[100px] flex-shrink-0 border-r border-[#e6e2d8] last:border-r-0 flex flex-col relative w-full';
                
                const isToday = getDateKey(new Date()) === dateKey; 
-               const isWeekend = (i === 0 || i === 6); 
+               const isWeekend = localStorage.getItem('ianMondayStart') === '1' ? (i === 5 || i === 6) : (i === 0 || i === 6); 
                
                const header = document.createElement('div'); 
                const textColor = isToday ? 'text-white' : (isWeekend ? 'text-red-500' : 'text-gray-700');
@@ -6344,10 +6351,6 @@ function renderMemoFolders() {
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderCalendar();
         renderDashboard();
-        // 위클리 플래너가 열려있으면 재렌더링
-        if (!$('weeklyPlannerModal').classList.contains('hidden')) {
-            openCurrentWeekPlanner();
-        }
     };
     window.openSettingsModal = function() {
         document.getElementById('settingsModal').classList.remove('hidden');
