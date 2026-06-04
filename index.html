@@ -4162,7 +4162,7 @@ function renderTimeGrid(dateKey) {
         $('modalDesc').value = (data && data.description) ? data.description : ''; 
         
         buildCategoryUI(); 
-        if (data && data.dateKey) { const d = new Date(data.dateKey); $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일`; $('modalDateInput').value = data.dateKey; } else { $('modalDateLabel').textContent = ''; }
+        if (data && data.dateKey) { const d = new Date(data.dateKey); $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 ✏️`; $('modalDateInput').value = data.dateKey; } else { $('modalDateLabel').textContent = ''; }
     }
 
     window.changeModalDate = function(newDateKey) {
@@ -4171,7 +4171,7 @@ function renderTimeGrid(dateKey) {
         const parts = newDateKey.split('-');
         const normalized = `${parts[0]}-${parseInt(parts[1])}-${parseInt(parts[2])}`;
         const d = new Date(normalized);
-        $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일`;
+        $('modalDateLabel').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 ✏️`;
         if (editData) editData.dateKey = normalized;
     };
     
