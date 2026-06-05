@@ -7299,31 +7299,38 @@ function renderMemoFolders() {
                     const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
                     if (card) { card.content = this.innerHTML; saveMemoData(); }
                 }
-                // 🔹 "- " → "• " 자동 변환
-                const sel = window.getSelection();
-                if (!sel || !sel.rangeCount) return;
-                const range = sel.getRangeAt(0);
-                const node  = range.startContainer;
-                if (node.nodeType !== Node.TEXT_NODE) return;
-                const text = node.textContent, offset = range.startOffset;
-                if (offset >= 2 && text.slice(offset - 2, offset) === '- ') {
-                    const before = text.slice(0, offset - 2);
-                    const after  = text.slice(offset);
-                    const bulletNode = document.createTextNode((before || '') + '\u2022 ');
-                    const afterNode  = document.createTextNode(after || '\u200b');
-                    const frag = document.createDocumentFragment();
-                    frag.appendChild(bulletNode);
-                    frag.appendChild(afterNode);
-                    node.parentNode.replaceChild(frag, node);
-                    const nr = document.createRange();
-                    nr.setStart(afterNode, 0); nr.collapse(true);
-                    sel.removeAllRanges(); sel.addRange(nr);
-                }
             });
 
             editor.addEventListener('blur', saveMemoData);
 
             editor.addEventListener('keydown', function(e) {
+                // 🔹 Space 키에서 "- " → "• " 변환 (IME 한글 입력 호환)
+                if (e.key === ' ' || e.code === 'Space') {
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount) {
+                        const range = sel.getRangeAt(0);
+                        const node  = range.startContainer;
+                        if (node.nodeType === Node.TEXT_NODE) {
+                            const text = node.textContent, offset = range.startOffset;
+                            if (offset >= 1 && text.slice(offset - 1, offset) === '-') {
+                                e.preventDefault();
+                                const before = text.slice(0, offset - 1);
+                                const after  = text.slice(offset);
+                                const bulletNode = document.createTextNode((before || '') + '\u2022 ');
+                                const afterNode  = document.createTextNode(after || '\u200b');
+                                const frag = document.createDocumentFragment();
+                                frag.appendChild(bulletNode);
+                                frag.appendChild(afterNode);
+                                node.parentNode.replaceChild(frag, node);
+                                const nr = document.createRange();
+                                nr.setStart(afterNode, 0); nr.collapse(true);
+                                sel.removeAllRanges(); sel.addRange(nr);
+                                saveAndUpdate();
+                                return;
+                            }
+                        }
+                    }
+                }
                 if (e.key === 'Tab') {
                     e.preventDefault();
                     document.execCommand(e.shiftKey ? 'outdent' : 'indent');
@@ -7373,7 +7380,7 @@ function renderMemoFolders() {
                         const y = touch.clientY > 80 ? touch.clientY - 52 : touch.clientY + 10;
                         showRichFormatMenu(touch.clientX, y);
                     }
-                }, 100);
+                }, 300);
             });
         }
 
@@ -7522,25 +7529,27 @@ function renderMemoFolders() {
   </script>
 
   <!-- 📐 메모 레이아웃 선택 모달 -->
-  <div id="memoLayoutModal" class="hidden fixed inset-0 z-[9300] flex items-end justify-center">
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeMemoLayoutModal()"></div>
-    <div class="relative bg-[#faf8f5] rounded-t-3xl w-full max-w-sm p-6 pb-10 shadow-2xl">
-      <h3 class="text-[15px] font-black text-gray-800 mb-5 text-center">메모 형식 선택</h3>
-      <div class="flex flex-col gap-3">
-        <button onclick="createMemoWithLayout('default')" class="flex items-center gap-4 p-4 bg-white border border-[#e6e2d8] rounded-2xl hover:bg-gray-50 transition-colors text-left active:scale-95">
-          <span class="text-2xl">📄</span>
-          <div><div class="text-[13px] font-black text-gray-800">기본형</div><div class="text-[11px] text-gray-400 mt-0.5">자유롭게 기록해요</div></div>
+  <div id="memoLayoutModal" class="hidden fixed inset-0 z-[9300] flex items-center justify-center md:items-center md:justify-center items-end justify-center">
+    <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeMemoLayoutModal()"></div>
+    <div class="relative bg-[#faf8f5] rounded-2xl w-full max-w-[260px] p-4 shadow-2xl border border-[#e6e2d8]
+                md:rounded-2xl md:max-w-[260px] md:p-4
+                rounded-t-3xl max-w-sm p-6 pb-8">
+      <h3 class="text-[13px] font-black text-gray-800 mb-3 text-center">메모 형식 선택</h3>
+      <div class="flex flex-col gap-2">
+        <button onclick="createMemoWithLayout('default')" class="flex items-center gap-3 p-3 bg-white border border-[#e6e2d8] rounded-xl hover:bg-gray-50 transition-colors text-left active:scale-95">
+          <span class="text-lg">📄</span>
+          <div><div class="text-[12px] font-black text-gray-800">기본형</div><div class="text-[10px] text-gray-400">자유롭게 기록해요</div></div>
         </button>
-        <button onclick="createMemoWithLayout('split')" class="flex items-center gap-4 p-4 bg-white border border-[#e6e2d8] rounded-2xl hover:bg-gray-50 transition-colors text-left active:scale-95">
-          <span class="text-2xl">📋</span>
-          <div><div class="text-[13px] font-black text-gray-800">좌우 분할형</div><div class="text-[11px] text-gray-400 mt-0.5">메모와 정리를 나눠서 써요</div></div>
+        <button onclick="createMemoWithLayout('split')" class="flex items-center gap-3 p-3 bg-white border border-[#e6e2d8] rounded-xl hover:bg-gray-50 transition-colors text-left active:scale-95">
+          <span class="text-lg">📋</span>
+          <div><div class="text-[12px] font-black text-gray-800">좌우 분할형</div><div class="text-[10px] text-gray-400">메모와 정리를 나눠서 써요</div></div>
         </button>
-        <button onclick="createMemoWithLayout('checklist')" class="flex items-center gap-4 p-4 bg-white border border-[#e6e2d8] rounded-2xl hover:bg-gray-50 transition-colors text-left active:scale-95">
-          <span class="text-2xl">✅</span>
-          <div><div class="text-[13px] font-black text-gray-800">체크리스트형</div><div class="text-[11px] text-gray-400 mt-0.5">할 일 목록을 만들어요</div></div>
+        <button onclick="createMemoWithLayout('checklist')" class="flex items-center gap-3 p-3 bg-white border border-[#e6e2d8] rounded-xl hover:bg-gray-50 transition-colors text-left active:scale-95">
+          <span class="text-lg">✅</span>
+          <div><div class="text-[12px] font-black text-gray-800">체크리스트형</div><div class="text-[10px] text-gray-400">할 일 목록을 만들어요</div></div>
         </button>
       </div>
-      <button onclick="closeMemoLayoutModal()" class="w-full mt-4 py-3 text-[12px] font-bold text-gray-400">취소</button>
+      <button onclick="closeMemoLayoutModal()" class="w-full mt-3 py-2 text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors">취소</button>
     </div>
   </div>
   <div id="richMemoFormatMenu" class="hidden fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 flex gap-0.5">
