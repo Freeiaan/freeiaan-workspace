@@ -1041,8 +1041,11 @@
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[400px] p-8 flex flex-col max-h-[90vh]">
       <div class="flex items-center gap-2 mb-5">
         <h3 class="text-lg font-black text-gray-800">일정 등록</h3>
-        <span id="modalDateLabel" onclick="document.getElementById('modalDateInput').showPicker ? document.getElementById('modalDateInput').showPicker() : document.getElementById('modalDateInput').click()" class="text-[12px] font-extrabold text-white bg-[#22741C] px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-[#1b5e16] transition-colors select-none" title="클릭해서 날짜 변경"></span>
-        <input type="date" id="modalDateInput" class="absolute opacity-0 pointer-events-none w-0 h-0" onchange="changeModalDate(this.value)">
+        <div class="relative inline-block">
+          <span id="modalDateLabel" class="text-[12px] font-extrabold text-white bg-[#22741C] px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-[#1b5e16] transition-colors select-none" title="클릭해서 날짜 변경"></span>
+          <input type="date" id="modalDateInput" onchange="changeModalDate(this.value)"
+            style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+        </div>
       </div>
 
   <!-- 🍅 뽀모도로 태그 (뽀모도로 모드일 때만 표시) -->
@@ -2343,6 +2346,13 @@ function loadFromCloud() {
             // 📝 인덱스 메모장 데이터 복원
             if (data.richMemoTabs) {
                 localStorage.setItem('freeiaan_memoTabs', JSON.stringify(data.richMemoTabs));
+                // 🔥 인메모리 변수도 즉시 업데이트 (이게 없으면 PC에서 반영 안 됨)
+                if (typeof richMemoTabs !== 'undefined') {
+                    try {
+                        const parsed = JSON.parse(JSON.stringify(data.richMemoTabs));
+                        if (Array.isArray(parsed) && parsed.length > 0) richMemoTabs = parsed;
+                    } catch(e) {}
+                }
             }
             if (data.richMemoTrash) {
                 localStorage.setItem('freeiaan_memoTrash', JSON.stringify(data.richMemoTrash));
@@ -6813,7 +6823,19 @@ function renderMemoFolders() {
         displayCards.forEach(card => {
             const colorOpt  = CARD_COLOR_OPTIONS.find(c => c.name === (card.color || 'white')) || CARD_COLOR_OPTIONS[0];
             const isDark = document.body.classList.contains('dark');
-            const plainText = card.content.replace(/<[^>]*>?/gm, '').trim() || '내용 없음';
+            const layout = card.layout || 'default';
+            // 레이아웃별 미리보기 텍스트
+            let plainText;
+            if (layout === 'split') {
+                const left = (card.contentLeft || '').replace(/<[^>]*>?/gm, '').trim();
+                const right = (card.contentRight || '').replace(/<[^>]*>?/gm, '').trim();
+                plainText = left || right || '내용 없음';
+            } else if (layout === 'checklist') {
+                const items = card.checkItems || [];
+                plainText = items.length ? items.map(i => (i.checked ? '☑ ' : '☐ ') + i.text).join('\n') : '항목 없음';
+            } else {
+                plainText = (card.content || '').replace(/<[^>]*>?/gm, '').trim() || '내용 없음';
+            }
             const div = document.createElement('div');
             div.className = 'p-3 rounded-xl border cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group relative select-none';
             div.style.backgroundColor = isDark ? '#3a3a3c' : colorOpt.bg;
@@ -6823,8 +6845,11 @@ function renderMemoFolders() {
 
             div.innerHTML =
                 (card.pinned ? '<div class="absolute top-2 right-2 text-[10px] leading-none">📌</div>' : '') +
-                '<h4 class="text-[12px] font-black text-gray-800 mb-1 truncate ' + (card.pinned ? 'pr-5' : '') + '">' + (card.title || '제목 없음') + '</h4>' +
-                '<p class="text-[11px] text-gray-500 leading-relaxed overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">' + plainText + '</p>' +
+                '<div class="flex items-center gap-1 mb-1">' +
+                '<h4 class="text-[12px] font-black text-gray-800 truncate flex-1 ' + (card.pinned ? 'pr-5' : '') + '">' + (card.title || '제목 없음') + '</h4>' +
+                (layout !== 'default' ? '<span class="text-[9px] text-gray-400 flex-shrink-0">' + (layout === 'split' ? '⬜' : '✅') + '</span>' : '') +
+                '</div>' +
+                '<p class="text-[11px] text-gray-500 leading-relaxed overflow-hidden whitespace-pre-line" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">' + plainText + '</p>' +
                 '<div class="text-[10px] text-gray-400 mt-1.5">' + card.date + '</div>';
 
             div.onclick = (e) => {
@@ -6965,23 +6990,41 @@ function renderMemoFolders() {
     });
 
     // ── 에디터 열기/닫기 ──────────────────────────────────
-    window.createNewMemoCard = function() {
+    window.openMemoLayoutModal  = function() {
+        const m = document.getElementById('memoLayoutModal');
+        if (m) m.classList.remove('hidden');
+    };
+    window.closeMemoLayoutModal = function() {
+        const m = document.getElementById('memoLayoutModal');
+        if (m) m.classList.add('hidden');
+    };
+    window.createMemoWithLayout = function(layout) {
+        closeMemoLayoutModal();
         const tab = richMemoTabs.find(t => t.id === richMemoActiveId);
         if (!tab) return;
         if (!tab.cards) tab.cards = [];
-        const newCard = { id: 'card_' + Date.now(), title: '', content: '', date: new Date().toLocaleDateString('ko-KR'), color: 'white', pinned: false };
+        const newCard = {
+            id: 'card_' + Date.now(),
+            title: '', content: '', date: new Date().toLocaleDateString('ko-KR'),
+            color: 'white', pinned: false, layout: layout,
+            contentLeft: '', contentRight: '',
+            checkItems: []
+        };
         tab.cards.push(newCard);
         saveMemoData();
         openMemoEditor(newCard.id);
     };
+    window.createNewMemoCard = function() { openMemoLayoutModal(); };
 
     function openMemoEditor(cardId) {
         richMemoActiveCardId = cardId;
         const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
         const card = tab && tab.cards.find(c => c.id === cardId);
         if (!card) return;
+        const layout = card.layout || 'default';
+        window._memoActiveLayout = layout;
 
-        // 열기 전 두 에디터 모두 초기화 (이전 카드 잔재 방지)
+        // 열기 전 초기화
         const _me = document.getElementById('richMemoEditor');
         const _pe = document.getElementById('richMemoEditorPC');
         if (_me) _me.innerHTML = '';
@@ -6989,16 +7032,19 @@ function renderMemoFolders() {
 
         const titleInput = document.getElementById('memoCardTitleInput');
         const editor     = document.getElementById('richMemoEditor');
-        titleInput.value   = card.title;
-        editor.innerHTML   = card.content;
-        editor.style.backgroundColor = '#ffffff';
-        if (!editor.innerHTML.trim() || editor.innerHTML === '<br>') editor.classList.add('empty');
-        else editor.classList.remove('empty');
+        titleInput.value = card.title;
 
-
+        // 레이아웃별 에디터 내용 로드
+        if (layout === 'default') {
+            editor.innerHTML = card.content || '';
+        } else if (layout === 'split') {
+            editor.innerHTML = card.contentLeft || '';
+        } else if (layout === 'checklist') {
+            editor.innerHTML = '';
+        }
 
         if (window.innerWidth < 768) {
-            // 모바일: 중앙 팝업 모달
+            // 모바일: 모달
             const modal = document.getElementById('memoEditorModal');
             modal.style.display = 'flex';
             setTimeout(() => {
@@ -7007,54 +7053,164 @@ function renderMemoFolders() {
                 inner.classList.remove('scale-95');
                 inner.classList.add('scale-100');
                 inner.style.transform = 'none';
+                // 레이아웃별 에디터 영역 렌더
+                _renderLayoutEditor(card, 'mobile');
             }, 10);
-            // 🛡️ iOS Safari: contenteditable이 모달 안에서 input 이벤트 미발동 버그 대응
-            // → 2초마다 변경사항 체크해서 자동저장 (polling 방식)
+            // iOS 자동저장 폴링
             if (window._memoAutoSaveTimer) clearInterval(window._memoAutoSaveTimer);
-            let _lastSavedContent = card.content || '';
-            let _lastSavedTitle   = card.title   || '';
             window._memoAutoSaveTimer = setInterval(() => {
                 if (!richMemoActiveCardId) { clearInterval(window._memoAutoSaveTimer); return; }
-                const mEditor = document.getElementById('richMemoEditor');
-                const mTitle  = document.getElementById('memoCardTitleInput');
-                if (!mEditor || !mTitle) return;
-                const curContent = mEditor.innerHTML;
-                const curTitle   = mTitle.value;
-                if (curContent !== _lastSavedContent || curTitle !== _lastSavedTitle) {
-                    const t = richMemoTabs.find(t => t.id === richMemoActiveId);
-                    const c = t && t.cards.find(c => c.id === richMemoActiveCardId);
-                    if (c) {
-                        c.content = curContent;
-                        c.title   = curTitle;
-                        saveMemoData();
-                        _lastSavedContent = curContent;
-                        _lastSavedTitle   = curTitle;
-                    }
-                }
+                _saveLayoutContent(richMemoActiveCardId, 'mobile');
             }, 2000);
-            // 키패드 자동 안 뜨게 - 직접 터치할 때만
-            // titleInput.focus(); editor.focus() 제거
         } else {
-            // PC/태블릿: 기존 인라인 방식
-            // PC용 별도 input/editor 동기화
+            // PC/태블릿: 인라인 에디터
             const pcTitle = document.getElementById('memoCardTitleInputPC');
             const pcEditor = document.getElementById('richMemoEditorPC');
             if (pcTitle) pcTitle.value = card.title;
-            if (pcEditor) {
-                pcEditor.innerHTML = card.content;
-                pcEditor.style.backgroundColor = '#ffffff';
-                if (!pcEditor.innerHTML.trim() || pcEditor.innerHTML === '<br>') pcEditor.classList.add('empty');
-                else pcEditor.classList.remove('empty');
-
+            if (layout === 'default') {
+                if (pcEditor) pcEditor.innerHTML = card.content || '';
+            } else if (layout === 'split') {
+                if (pcEditor) pcEditor.innerHTML = card.contentLeft || '';
             }
             document.getElementById('memoCardListView').classList.add('hidden');
             const editorView = document.getElementById('memoEditorView');
             editorView.classList.remove('hidden');
             editorView.style.display = 'flex';
-            if (!card.title) { if(pcTitle) pcTitle.focus(); }
-            else { if(pcEditor) pcEditor.focus(); }
+            // 레이아웃별 에디터 영역 렌더
+            setTimeout(() => _renderLayoutEditor(card, 'pc'), 10);
         }
     }
+
+    // 레이아웃별 추가 에디터 영역 렌더링
+    function _renderLayoutEditor(card, mode) {
+        const layout = card.layout || 'default';
+        const suffix = mode === 'mobile' ? '' : 'PC';
+        const editorEl = document.getElementById('richMemoEditor' + suffix);
+        // 기존 split/checklist 컨테이너 제거
+        ['_splitContainer' + suffix, '_checklistContainer' + suffix].forEach(id => {
+            const old = document.getElementById(id);
+            if (old) old.remove();
+        });
+        if (layout === 'default') {
+            if (editorEl) editorEl.style.display = '';
+            return;
+        }
+        if (editorEl) editorEl.style.display = 'none';
+        const parent = editorEl ? editorEl.parentElement : null;
+        if (!parent) return;
+
+        if (layout === 'split') {
+            const wrap = document.createElement('div');
+            wrap.id = '_splitContainer' + suffix;
+            wrap.className = 'flex gap-2 flex-1 min-h-[200px]';
+            wrap.innerHTML = `
+                <div class="flex-1 flex flex-col min-w-0">
+                    <div class="text-[10px] font-black text-gray-400 mb-1">✏️ 메모</div>
+                    <div id="_splitLeft${suffix}" contenteditable="true" class="flex-1 outline-none text-[13px] leading-relaxed overflow-y-auto">${card.contentLeft || ''}</div>
+                </div>
+                <div class="w-px bg-gray-200 flex-shrink-0"></div>
+                <div class="flex-1 flex flex-col min-w-0">
+                    <div class="text-[10px] font-black text-gray-400 mb-1">📌 정리</div>
+                    <div id="_splitRight${suffix}" contenteditable="true" class="flex-1 outline-none text-[13px] leading-relaxed overflow-y-auto">${card.contentRight || ''}</div>
+                </div>`;
+            parent.appendChild(wrap);
+            // 자동저장 이벤트
+            ['_splitLeft' + suffix, '_splitRight' + suffix].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => _saveLayoutContent(richMemoActiveCardId, mode));
+            });
+        } else if (layout === 'checklist') {
+            const wrap = document.createElement('div');
+            wrap.id = '_checklistContainer' + suffix;
+            wrap.className = 'flex-1 flex flex-col min-h-[200px]';
+            wrap.innerHTML = `
+                <div id="_checklistItems${suffix}" class="flex flex-col gap-1 flex-1 overflow-y-auto mb-2"></div>
+                <div class="flex items-center gap-2 border-t border-gray-100 pt-2">
+                    <input type="text" id="_checklistNew${suffix}" placeholder="+ 항목 추가 후 Enter"
+                        class="flex-1 text-[13px] outline-none bg-transparent text-gray-500 placeholder-gray-300"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();_addChecklistItem('${suffix}');}">
+                </div>`;
+            parent.appendChild(wrap);
+            // 기존 항목 렌더
+            _renderChecklistItems(card.checkItems || [], suffix);
+        }
+    }
+
+    // 체크리스트 아이템 렌더
+    window._renderChecklistItems = function(items, suffix) {
+        const container = document.getElementById('_checklistItems' + suffix);
+        if (!container) return;
+        container.innerHTML = '';
+        items.forEach((item, i) => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 py-1 group';
+            div.innerHTML = `
+                <input type="checkbox" class="w-4 h-4 flex-shrink-0 accent-[#22741C]" ${item.checked ? 'checked' : ''}
+                    onchange="this.nextElementSibling.classList.toggle('line-through',this.checked);this.nextElementSibling.classList.toggle('opacity-50',this.checked);_saveLayoutContent(richMemoActiveCardId,'${suffix.length?'pc':'mobile'}');">
+                <input type="text" value="${(item.text||'').replace(/"/g,'&quot;')}"
+                    class="flex-1 text-[13px] outline-none bg-transparent ${item.checked?'line-through opacity-50':''}"
+                    oninput="_saveLayoutContent(richMemoActiveCardId,'${suffix.length?'pc':'mobile'}');"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();_addChecklistItem('${suffix}');}">
+                <button onclick="this.closest('.group').remove();_saveLayoutContent(richMemoActiveCardId,'${suffix.length?'pc':'mobile'}');"
+                    class="text-gray-200 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>`;
+            container.appendChild(div);
+        });
+    };
+
+    window._addChecklistItem = function(suffix) {
+        const input = document.getElementById('_checklistNew' + suffix);
+        if (!input) return;
+        const text = input.value.trim();
+        input.value = '';
+        const container = document.getElementById('_checklistItems' + suffix);
+        if (!container) return;
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2 py-1 group';
+        const mode = suffix.length ? 'pc' : 'mobile';
+        div.innerHTML = `
+            <input type="checkbox" class="w-4 h-4 flex-shrink-0 accent-[#22741C]"
+                onchange="this.nextElementSibling.classList.toggle('line-through',this.checked);this.nextElementSibling.classList.toggle('opacity-50',this.checked);_saveLayoutContent(richMemoActiveCardId,'${mode}');">
+            <input type="text" value="${text.replace(/"/g,'&quot;')}"
+                class="flex-1 text-[13px] outline-none bg-transparent"
+                oninput="_saveLayoutContent(richMemoActiveCardId,'${mode}');"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();_addChecklistItem('${suffix}');}">
+            <button onclick="this.closest('.group').remove();_saveLayoutContent(richMemoActiveCardId,'${mode}');"
+                class="text-gray-200 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>`;
+        container.appendChild(div);
+        div.querySelector('input[type=text]').focus();
+        _saveLayoutContent(richMemoActiveCardId, mode);
+    };
+
+    // 레이아웃별 저장
+    window._saveLayoutContent = function(cardId, mode) {
+        if (!cardId) return;
+        const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
+        const card = tab && tab.cards.find(c => c.id === cardId);
+        if (!card) return;
+        const layout = card.layout || 'default';
+        const suffix = mode === 'pc' ? 'PC' : '';
+        const titleEl = document.getElementById('memoCardTitleInput' + suffix);
+        if (titleEl) card.title = titleEl.value;
+
+        if (layout === 'split') {
+            const left  = document.getElementById('_splitLeft' + suffix);
+            const right = document.getElementById('_splitRight' + suffix);
+            if (left)  card.contentLeft  = left.innerHTML;
+            if (right) card.contentRight = right.innerHTML;
+        } else if (layout === 'checklist') {
+            const container = document.getElementById('_checklistItems' + suffix);
+            if (container) {
+                card.checkItems = [...container.querySelectorAll('.group')].map(row => ({
+                    text: (row.querySelector('input[type=text]')?.value || ''),
+                    checked: row.querySelector('input[type=checkbox]')?.checked || false
+                }));
+            }
+        } else {
+            const editor = document.getElementById('richMemoEditor' + suffix);
+            if (editor) card.content = editor.innerHTML;
+        }
+        saveMemoData();
+    };
 
     window.closeMemoEditor = function() {
         // 🛡️ 모바일 폴링 타이머 중단
@@ -7062,18 +7218,21 @@ function renderMemoFolders() {
             clearInterval(window._memoAutoSaveTimer);
             window._memoAutoSaveTimer = null;
         }
-        // 닫기 전 마지막 저장 (모바일 에디터 내용 직접 반영)
+        // 레이아웃별 최종 저장
         if (richMemoActiveCardId) {
-            const mEditor = document.getElementById('richMemoEditor');
-            const mTitle  = document.getElementById('memoCardTitleInput');
-            const tab = richMemoTabs.find(t => t.id === richMemoActiveId);
-            const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
-            if (card && mEditor && mTitle) {
-                card.content = mEditor.innerHTML;
-                card.title   = mTitle.value;
-            }
+            const mode = window.innerWidth < 768 ? 'mobile' : 'pc';
+            _saveLayoutContent(richMemoActiveCardId, mode);
         }
-        saveMemoData();
+        // split/checklist 동적 에디터 제거
+        ['_splitContainer', '_splitContainerPC', '_checklistContainer', '_checklistContainerPC'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
+        // 기본 에디터 복원
+        ['richMemoEditor', 'richMemoEditorPC'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.innerHTML = ''; el.style.display = ''; }
+        });
         // 모바일 팝업 닫기
         const modal = document.getElementById('memoEditorModal');
         if (modal && modal.style.display !== 'none') {
@@ -7140,8 +7299,26 @@ function renderMemoFolders() {
                     const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
                     if (card) { card.content = this.innerHTML; saveMemoData(); }
                 }
-
-
+                // 🔹 "- " → "• " 자동 변환
+                const sel = window.getSelection();
+                if (!sel || !sel.rangeCount) return;
+                const range = sel.getRangeAt(0);
+                const node  = range.startContainer;
+                if (node.nodeType !== Node.TEXT_NODE) return;
+                const text = node.textContent, offset = range.startOffset;
+                if (offset >= 2 && text.slice(offset - 2, offset) === '- ') {
+                    const before = text.slice(0, offset - 2);
+                    const after  = text.slice(offset);
+                    const bulletNode = document.createTextNode((before || '') + '\u2022 ');
+                    const afterNode  = document.createTextNode(after || '\u200b');
+                    const frag = document.createDocumentFragment();
+                    frag.appendChild(bulletNode);
+                    frag.appendChild(afterNode);
+                    node.parentNode.replaceChild(frag, node);
+                    const nr = document.createRange();
+                    nr.setStart(afterNode, 0); nr.collapse(true);
+                    sel.removeAllRanges(); sel.addRange(nr);
+                }
             });
 
             editor.addEventListener('blur', saveMemoData);
@@ -7308,15 +7485,14 @@ function renderMemoFolders() {
     }
 
     window.applyRichFormat = function(command, value) {
-        const editor = document.getElementById('richMemoEditor');
         document.execCommand(command, false, value || null);
-        if (editor) {
+        // 현재 활성 에디터에 저장 (모바일/PC 모두 대응)
+        const isMobile = window.innerWidth < 768;
+        const editorId = isMobile ? 'richMemoEditor' : 'richMemoEditorPC';
+        const editor = document.getElementById(editorId);
+        if (editor && richMemoActiveCardId) {
             editor.focus();
-            if (richMemoActiveCardId) {
-                const tab  = richMemoTabs.find(t => t.id === richMemoActiveId);
-                const card = tab && tab.cards.find(c => c.id === richMemoActiveCardId);
-                if (card) { card.content = editor.innerHTML; saveMemoData(); }
-            }
+            _saveLayoutContent(richMemoActiveCardId, isMobile ? 'mobile' : 'pc');
         }
         const menu = document.getElementById('richMemoFormatMenu');
         if (menu) menu.classList.add('hidden');
@@ -7345,7 +7521,28 @@ function renderMemoFolders() {
 
   </script>
 
-  <!-- 📝 포맷 메뉴 팝업 -->
+  <!-- 📐 메모 레이아웃 선택 모달 -->
+  <div id="memoLayoutModal" class="hidden fixed inset-0 z-[9300] flex items-end justify-center">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeMemoLayoutModal()"></div>
+    <div class="relative bg-[#faf8f5] rounded-t-3xl w-full max-w-sm p-6 pb-10 shadow-2xl">
+      <h3 class="text-[15px] font-black text-gray-800 mb-5 text-center">메모 형식 선택</h3>
+      <div class="flex flex-col gap-3">
+        <button onclick="createMemoWithLayout('default')" class="flex items-center gap-4 p-4 bg-white border border-[#e6e2d8] rounded-2xl hover:bg-gray-50 transition-colors text-left active:scale-95">
+          <span class="text-2xl">📄</span>
+          <div><div class="text-[13px] font-black text-gray-800">기본형</div><div class="text-[11px] text-gray-400 mt-0.5">자유롭게 기록해요</div></div>
+        </button>
+        <button onclick="createMemoWithLayout('split')" class="flex items-center gap-4 p-4 bg-white border border-[#e6e2d8] rounded-2xl hover:bg-gray-50 transition-colors text-left active:scale-95">
+          <span class="text-2xl">📋</span>
+          <div><div class="text-[13px] font-black text-gray-800">좌우 분할형</div><div class="text-[11px] text-gray-400 mt-0.5">메모와 정리를 나눠서 써요</div></div>
+        </button>
+        <button onclick="createMemoWithLayout('checklist')" class="flex items-center gap-4 p-4 bg-white border border-[#e6e2d8] rounded-2xl hover:bg-gray-50 transition-colors text-left active:scale-95">
+          <span class="text-2xl">✅</span>
+          <div><div class="text-[13px] font-black text-gray-800">체크리스트형</div><div class="text-[11px] text-gray-400 mt-0.5">할 일 목록을 만들어요</div></div>
+        </button>
+      </div>
+      <button onclick="closeMemoLayoutModal()" class="w-full mt-4 py-3 text-[12px] font-bold text-gray-400">취소</button>
+    </div>
+  </div>
   <div id="richMemoFormatMenu" class="hidden fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-gray-100 p-1.5 flex gap-0.5">
     <button onclick="applyRichFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-xl font-black text-gray-800 transition-colors text-sm" title="굵게"><b>B</b></button>
     <div class="w-px h-5 bg-gray-200 mx-0.5 self-center"></div>
