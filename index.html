@@ -1550,6 +1550,8 @@ window.addEventListener('beforeunload', (event) => {
 
 // ☁️ 동기화 팝업 조종 마법사
 function showSyncUI(isSaving) {
+    // 모바일/태블릿에서는 저장 알림 숨김 (하단 탭바 가림 방지)
+    if (window.innerWidth < 1024) return;
     let indicator = document.getElementById('syncIndicator');
     let dot = document.getElementById('syncDot');
     let text = document.getElementById('syncText');
