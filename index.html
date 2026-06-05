@@ -680,7 +680,18 @@
               </div>
               <input type="text" id="memoCardTitleInputPC" placeholder="제목을 입력하세요"
                 class="text-sm font-black text-gray-800 bg-transparent border-none outline-none mb-2 w-full placeholder-gray-300">
-              <div class="w-full h-px bg-gray-100 mb-2"></div>
+              <!-- 고정 포맷 툴바 -->
+              <div class="flex items-center gap-1 mb-2 pb-2 border-b border-gray-100">
+                <button onclick="applyRichFormat('bold')" class="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="굵게"><b>B</b></button>
+                <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
+                <button onclick="applyRichFormat('foreColor','#EF4444')" class="w-7 h-7 flex items-center justify-center hover:bg-red-50 rounded-lg font-black text-red-500 text-sm transition-colors">A</button>
+                <button onclick="applyRichFormat('foreColor','#3B82F6')" class="w-7 h-7 flex items-center justify-center hover:bg-blue-50 rounded-lg font-black text-blue-500 text-sm transition-colors">A</button>
+                <button onclick="applyRichFormat('foreColor','#10B981')" class="w-7 h-7 flex items-center justify-center hover:bg-green-50 rounded-lg font-black text-green-600 text-sm transition-colors">A</button>
+                <button onclick="applyRichFormat('foreColor','#F59E0B')" class="w-7 h-7 flex items-center justify-center hover:bg-yellow-50 rounded-lg font-black text-yellow-500 text-sm transition-colors">A</button>
+                <button onclick="applyRichFormat('foreColor','#374151')" class="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors">A</button>
+                <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
+                <button onclick="applyRichFormat('removeFormat')" class="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-400 text-xs font-bold transition-colors" title="서식 제거">✕</button>
+              </div>
               <div id="richMemoEditorPC"
                 contenteditable="true"
                 spellcheck="false"
@@ -6827,12 +6838,12 @@ function renderMemoFolders() {
             // 레이아웃별 미리보기 텍스트
             let plainText;
             if (layout === 'split') {
-                const left = (card.contentLeft || '').replace(/<[^>]*>?/gm, '').trim();
+                const left  = (card.contentLeft  || '').replace(/<[^>]*>?/gm, '').trim();
                 const right = (card.contentRight || '').replace(/<[^>]*>?/gm, '').trim();
-                plainText = left || right || '내용 없음';
+                plainText = [left, right].filter(Boolean).join(' | ') || '내용 없음';
             } else if (layout === 'checklist') {
                 const items = card.checkItems || [];
-                plainText = items.length ? items.map(i => (i.checked ? '☑ ' : '☐ ') + i.text).join('\n') : '항목 없음';
+                plainText = items.length ? items.map(i => i.text).filter(Boolean).join(', ') : '항목 없음';
             } else {
                 plainText = (card.content || '').replace(/<[^>]*>?/gm, '').trim() || '내용 없음';
             }
@@ -7589,6 +7600,18 @@ function renderMemoFolders() {
           class="flex-1 text-sm font-black text-gray-800 bg-transparent border-none outline-none placeholder-gray-300 text-center mx-2"
           autocomplete="off" autocorrect="off" autocapitalize="off">
         <div class="w-10"></div>
+      </div>
+      <!-- 고정 포맷 툴바 -->
+      <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-100 bg-white flex-shrink-0">
+        <button onclick="applyRichFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors"><b>B</b></button>
+        <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
+        <button onclick="applyRichFormat('foreColor','#EF4444')" class="w-8 h-8 flex items-center justify-center hover:bg-red-50 active:bg-red-100 rounded-xl font-black text-red-500 text-sm transition-colors">A</button>
+        <button onclick="applyRichFormat('foreColor','#3B82F6')" class="w-8 h-8 flex items-center justify-center hover:bg-blue-50 active:bg-blue-100 rounded-xl font-black text-blue-500 text-sm transition-colors">A</button>
+        <button onclick="applyRichFormat('foreColor','#10B981')" class="w-8 h-8 flex items-center justify-center hover:bg-green-50 active:bg-green-100 rounded-xl font-black text-green-600 text-sm transition-colors">A</button>
+        <button onclick="applyRichFormat('foreColor','#F59E0B')" class="w-8 h-8 flex items-center justify-center hover:bg-yellow-50 active:bg-yellow-100 rounded-xl font-black text-yellow-500 text-sm transition-colors">A</button>
+        <button onclick="applyRichFormat('foreColor','#374151')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors">A</button>
+        <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
+        <button onclick="applyRichFormat('removeFormat')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl text-gray-400 text-xs font-bold transition-colors">✕</button>
       </div>
       <!-- 에디터 스크롤 영역 -->
       <div class="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar" style="overscroll-behavior:none;">
