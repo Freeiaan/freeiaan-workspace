@@ -3453,14 +3453,13 @@ function loadFromCloud() {
         const year = new Date(dateKey).getFullYear();
         const month = new Date(dateKey).getMonth();
         const repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, year, month).includes(dateKey));
+        // [버그수정] repeatItems 필터: _deleted 체크 제거 → 삭제된 항목도 repeatItems에서 정확히 제외
+        // [버그수정] allTasksForDay: !t._repeatId 조건 제거 → 체크된 반복일정이 사라지는 버그 수정
+        // 체크된 반복일정은 allTasks에 _repeatId와 함께 저장되므로 allTasksForDay에서 보여줘야 함
         const repeatItems = repeatForDay
-            .filter(r => !(allTasks[dateKey] || []).some(t => t && t._repeatId === r.id && !t._deleted))
-            .map(r => {
-                // allTasks에 저장된 체크 상태 반영
-                const saved = (allTasks[dateKey] || []).find(t => t._repeatId === r.id);
-                return { text: r.text, description: r.description, categoryId: r.categoryId, isChecked: saved ? !!saved.isChecked : false, _repeatId: r.id };
-            });
-        const allTasksForDay = (allTasks[dateKey] || []).filter(t => t && !t._deleted && !t._repeatId);
+            .filter(r => !(allTasks[dateKey] || []).some(t => t && t._repeatId === r.id))
+            .map(r => ({ text: r.text, description: r.description, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+        const allTasksForDay = (allTasks[dateKey] || []).filter(t => t && !t._deleted);
         let tasks = [...repeatItems, ...allTasksForDay];
         
         // 💡 [실시간 연동] 남은 할 일(체크 안 된 것) 개수를 세어서 아코디언 바 텍스트에 즉시 반영!
@@ -4686,13 +4685,12 @@ function renderTimeGrid(dateKey) {
          const _year = currentDay.getFullYear();
          const _month = currentDay.getMonth();
          const _repeatForDay = repeatTasks.filter(r => getRepeatDatesInMonth(r, _year, _month).includes(dateKey));
+         // [버그수정] repeatItems 필터: _deleted 체크 제거 → 삭제된 항목도 정확히 제외
+         // [버그수정] _regularTasks: !t._repeatId 조건 제거 → 체크된 반복일정이 위클리에서 사라지는 버그 수정
          const _repeatItems = _repeatForDay
-             .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id && !t._deleted))
-             .map(r => {
-                 const saved = (allTasks[dateKey] || []).find(t => t._repeatId === r.id);
-                 return { text: r.text, categoryId: r.categoryId, isChecked: saved ? !!saved.isChecked : false, _repeatId: r.id, _isRepeat: true };
-             });
-         const _regularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted && !t._repeatId);
+             .filter(r => !(allTasks[dateKey] || []).some(t => t._repeatId === r.id))
+             .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id, _isRepeat: true }));
+         const _regularTasks = (allTasks[dateKey] || []).filter(t => !t._deleted);
          const _allDayTasks = [..._repeatItems, ..._regularTasks];
 
          if (_allDayTasks.length > 0) {
@@ -5042,25 +5040,9 @@ function renderCalendar() {
               item.innerHTML = `<input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox tiny-calendar-checkbox md:w-[15px] md:h-[15px] md:border-[1.5px] md:mt-0 flex-shrink-0" style="${t.description && t.description.trim() !== '' ? 'box-shadow:0 0 0 2px #000000;' : ''}"> <span class="${isCheckedClass} truncate leading-tight md:leading-none tracking-tighter md:tracking-normal px-1.5 py-0.5 rounded-md flex-1 inline-flex items-center" style="position:relative;background-color: ${bgColor}; color: ${fontColor};">${t.text}${calDescIcon}</span>`;
               
               item.ondragstart = (e) => { draggedTaskInfo = { type: 'single', dateKey: key, index: idx, task: t }; e.dataTransfer.setData('text/plain', ''); }; 
-              // ✅ 체크박스: 모바일 터치 즉시 반영
-              item.querySelector('input').addEventListener('pointerdown', (e) => {
-                  e.stopPropagation();
-                  if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                      t.isChecked = !t.isChecked;
-                      e.target.checked = t.isChecked;
-                      const span = item.querySelector('span');
-                      if (t.isChecked) { span.classList.add('opacity-50', 'line-through'); }
-                      else { span.classList.remove('opacity-50', 'line-through'); }
-                      // 반복일정이면 allTasks에 체크 상태 저장
-                      if (t._repeatId) {
-                          if (!allTasks[key]) allTasks[key] = [];
-                          const existing = allTasks[key].find(x => x._repeatId === t._repeatId && !x._deleted);
-                          if (existing) { existing.isChecked = t.isChecked; }
-                          else { allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId }); }
-                      }
-                      saveAndRefresh();
-                  }
-              });
+              // ✅ 체크박스: click 단일 이벤트만 사용
+              // [버그수정] pointerdown에서 saveAndRefresh() 호출 시 sort로 DOM 순서가 바뀌어
+              // 이어지는 click 이벤트가 다른 요소를 건드리는 좌표 오염 버그 → pointerdown 핸들러 제거
               item.querySelector('input').addEventListener('click', (e) => {
                   e.stopPropagation();
                   t.isChecked = e.target.checked;
