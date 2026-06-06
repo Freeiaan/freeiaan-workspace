@@ -4942,6 +4942,9 @@ function renderCalendar() {
         cell.onpointerdown = (e) => { 
             if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.resize-handle') || e.target.closest('.date-trigger')) return;
             
+            // 터치/마우스 구분 추적 (태블릿 터치 감지용)
+            window._calLastPointerType = e.pointerType;
+            
             downTime = Date.now();
             quickMenuTargetKey = key;
             
@@ -4964,11 +4967,13 @@ function renderCalendar() {
         cell.onpointermove = () => { clearTimeout(pressTimer); }; 
         cell.onpointerup = () => { clearTimeout(pressTimer); };
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
-        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
+        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger') && window._calLastPointerType === 'mouse') openModal('createSingle', { dateKey: key }); };
         
         cell.onclick = (e) => {
-            if (window.innerWidth < 768) {
-                // 모바일: 짧게 터치 시 일정 목록 팝업
+            // 터치/펜 입력이면 태블릿도 모바일과 동일하게 상세 팝업
+            const _isTouchOrPen = window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
+            if (window.innerWidth < 768 || _isTouchOrPen) {
+                // 모바일/태블릿 터치: 짧게 탭 → 상세 일정 팝업
                 if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
                     if (Date.now() - downTime < 300) {
                         openDetailModal(key, d);
@@ -4976,6 +4981,7 @@ function renderCalendar() {
                 }
                 return;
             }
+            // PC 마우스: 빈 공간 클릭 → 일정 등록
             if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
                 if (Date.now() - downTime < 300) { 
                     openModal('createSingle', { dateKey: key }); 
@@ -5057,9 +5063,10 @@ function renderCalendar() {
               });
               
               let itemPressTimer = null;
-              // 모바일: 터치로는 드래그 완전 비활성 (컨텍스트 메뉴 '다른 탭으로 이동'으로만 이동 가능)
+              // 모바일/태블릿 터치: 드래그 비활성 + 포인터 타입 추적
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
+                  window._calLastPointerType = e.pointerType; // 터치/마우스 구분
                   e.stopPropagation();
               });
               item.addEventListener('pointerup', (e) => {
@@ -5071,11 +5078,13 @@ function renderCalendar() {
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
-                  if (window.innerWidth < 768) {
-                      // 모바일: 일정 터치 → 플로팅카드 열기
+                  // 터치/펜 입력이면 태블릿도 상세 팝업으로 (체크는 팝업 내에서)
+                  const _isTouchOrPen = window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
+                  if (window.innerWidth < 768 || _isTouchOrPen) {
                       openDetailModal(key, d);
                       return;
                   }
+                  // PC 마우스: 직접 수정 모달
                   openModal('editSingle', { dateKey: key, index: idx, ...t });
               };
               todoContainer.appendChild(item);
