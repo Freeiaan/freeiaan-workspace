@@ -4806,7 +4806,10 @@ function renderTimeGrid(dateKey) {
 
     // 📅 위클리 플래너 안에서 ◀ ▶ 으로 주차 이동
     function moveWeeklyPlanner(dir) {
-        const current = new Date(window.currentWeekKey);
+        // iOS Safari: "2026-6-1" 형식을 못 파싱 → "2026-06-01" 변환 필요
+        const parts = window.currentWeekKey.split('-');
+        const isoKey = `${parts[0]}-${String(parts[1]).padStart(2,'0')}-${String(parts[2]).padStart(2,'0')}`;
+        const current = new Date(isoKey);
         current.setDate(current.getDate() + dir * 7);
         const end = new Date(current);
         end.setDate(current.getDate() + 6);
