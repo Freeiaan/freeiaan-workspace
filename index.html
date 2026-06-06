@@ -3373,11 +3373,14 @@ function loadFromCloud() {
         tLaps = 0;
         isR = false;
         clearInterval(tInt);
-        // sessionElapsed는 각 세션마다 초기화 (타이머 내부에서 누적됨)
-        // 단, 집중 세션이 끝날 때마다 pomodoroTotalElapsed에 누적
         sessionElapsed = 0;
         updateTUI();
         updatePomodoroUI();
+
+        // 🎵 시작음 (focus/shortBreak 전환 시)
+        if (phase === 'focus' || phase === 'shortBreak') {
+            playTimerStartSound();
+        }
 
         // 모든 체크박스 채워지면 종료 팝업
         if (phase === 'done' || pomodoroSessionCount >= longEvery) {
@@ -6554,26 +6557,36 @@ function renderMemoFolders() {
         }
     }, { passive: false });
 
+    function _playNote(ctx, freq, t, dur) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(1.0, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t); o.stop(t + dur);
+    }
+
+    // 🎵 시작음: 3, 2, 1, 시작!
+    function playTimerStartSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            _playNote(ctx, 440, ctx.currentTime,       0.15); // 3
+            _playNote(ctx, 440, ctx.currentTime + 1.0, 0.15); // 2
+            _playNote(ctx, 440, ctx.currentTime + 2.0, 0.15); // 1
+            _playNote(ctx, 880, ctx.currentTime + 3.0, 0.4);  // 시작!
+        } catch(e) { console.error('오디오 에러:', e); }
+    }
+
+    // 🎵 종료음: 높은음 → 낮아지며 끝
     function playTimerEndSound() {
         try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const playChime = (freq, startTime, duration) => {
-                const osc = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, startTime);
-                gainNode.gain.setValueAtTime(0.2, startTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-                osc.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                osc.start(startTime);
-                osc.stop(startTime + duration);
-            };
-            playChime(523.25, audioCtx.currentTime, 0.4);
-            playChime(659.25, audioCtx.currentTime + 0.15, 0.5);
-        } catch (e) {
-            console.error("오디오 재생 에러:", e);
-        }
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            _playNote(ctx, 880, ctx.currentTime,       0.15);
+            _playNote(ctx, 660, ctx.currentTime + 0.3, 0.15);
+            _playNote(ctx, 440, ctx.currentTime + 0.6, 0.4);
+        } catch(e) { console.error('오디오 에러:', e); }
     }
 
     // 🍎 애플 스타일 팝업 '기록하기' 버튼 동작
