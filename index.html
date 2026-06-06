@@ -849,7 +849,7 @@
             <div class="flex justify-between items-end mb-1">
               <div class="flex items-center gap-2">
                   <h3 class="font-bold text-sm text-gray-800 tracking-wide">TIME TRACKER</h3>
-                  <button onclick="clearGreyBlocks()" class="text-[10px] bg-red-50 text-red-500 border border-red-100 px-2 py-0.5 rounded-md font-bold hover:bg-red-100 transition shadow-sm active:scale-95">🧹 회색 블록 삭제</button>
+                  <button onclick="clearGreyBlocks()" id="clearBlockBtn" class="text-[10px] bg-red-50 text-red-500 border border-red-100 px-2 py-0.5 rounded-md font-bold hover:bg-red-100 transition shadow-sm active:scale-95">🧹 회색 블록 삭제</button>
               </div>
               <div id="modalRecordDisplay" class="text-[11px] font-bold text-[#22741C]"></div>
           </div>
@@ -3600,7 +3600,14 @@ function renderTimeGrid(dateKey) {
           cell.id = `time-cell-${idx}`; 
           cell.className = 'flex-1 border-r border-dashed border-[#e6e2d8] cursor-crosshair time-cell'; 
           if (m === 5) cell.classList.remove('border-dashed'); 
-          if (color) { cell.style.backgroundColor = hexToRgba(color, 0.3); if (document.body.classList.contains('dark')) cell.style.filter = 'brightness(1.5) saturate(1.1)'; } 
+          if (color) {
+              const _isDark = document.body.classList.contains('dark');
+              const _defaultColor = trackerColors[0] ? trackerColors[0].color : '#000000';
+              // 다크모드에서 기본색(회색) 블록은 아이보리로 표시
+              const displayColor = (_isDark && color === _defaultColor) ? '#f5efe0' : color;
+              cell.style.backgroundColor = hexToRgba(displayColor, _isDark ? 0.5 : 0.3);
+              cell.style.filter = '';
+          }
           
           let pressTimer = null;
           
@@ -3769,15 +3776,16 @@ function renderTimeGrid(dateKey) {
     // 🧹 회색 블록(기본 컬러)만 싹 골라 지우는 함수
     function clearGreyBlocks() {
         if (!currentPlannerDateKey) return;
-        if (!confirm("칠해진 '회색' 블록들을 모두 지우시겠습니까? \n(글자가 써진 블록도 회색이면 함께 삭제됩니다!)")) return;
-        
+        const _isDark = document.body.classList.contains('dark');
+        const blockName = _isDark ? '아이보리' : '회색';
+        const blockColor = _isDark ? '#f5efe0' : trackerColors[0].color;
+        if (!confirm(`칠해진 '${blockName}' 블록들을 모두 지우시겠습니까? \n(글자가 써진 블록도 ${blockName}이면 함께 삭제됩니다!)`)) return;
+
         const data = dailyRecords[currentPlannerDateKey];
-        const greyColor = trackerColors[0].color; // 현재 설정된 첫 번째 기본 색상(회색)
 
         let isDeleted = false;
         for (let i = 0; i < 144; i++) {
-            // 해당 칸의 색상이 기본 회색과 같다면 삭제!
-            if (data.grid[i] === greyColor) {
+            if (data.grid[i] === blockColor) {
                 data.grid[i] = null;
                 if (data.labels && data.labels[i]) delete data.labels[i];
                 isDeleted = true;
@@ -3794,7 +3802,17 @@ function renderTimeGrid(dateKey) {
     function applyBrushToCell(idx, cellElement) {
       if(!currentPlannerDateKey || !cellElement) return; 
       if(dragAction === 'erase') { dailyRecords[currentPlannerDateKey].grid[idx] = null; if(dailyRecords[currentPlannerDateKey].labels) delete dailyRecords[currentPlannerDateKey].labels[idx]; cellElement.style.backgroundColor = 'transparent'; } 
-      else { let brush = activeBrushColor || trackerColors[0].color; dailyRecords[currentPlannerDateKey].grid[idx] = brush; cellElement.style.backgroundColor = hexToRgba(brush, 0.3); if (document.body.classList.contains('dark')) cellElement.style.filter = 'brightness(1.5) saturate(1.1)'; }
+      else {
+          const _isDark = document.body.classList.contains('dark');
+          const _defaultColor = _isDark ? '#f5efe0' : trackerColors[0].color;
+          let brush = activeBrushColor || _defaultColor;
+          dailyRecords[currentPlannerDateKey].grid[idx] = brush;
+          cellElement.style.backgroundColor = hexToRgba(brush, _isDark ? 0.5 : 0.3);
+          cellElement.style.filter = '';
+          // 버튼 텍스트 동기화
+          const btn = document.getElementById('clearBlockBtn');
+          if (btn) btn.textContent = '🧹 ' + (_isDark ? '아이보리 블록 삭제' : '회색 블록 삭제');
+      }
       savePlannerData();
     }
 
