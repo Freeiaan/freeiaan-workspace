@@ -4985,7 +4985,7 @@ function renderCalendar() {
                 // 모바일/태블릿: 탭 → 해당 날짜 상세 팝업
                 if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
                     const _qm = document.getElementById('mobileQuickMenu');
-                    if (!(_qm && _qm.style.display === 'flex') && Date.now() - downTime < 500) {
+                    if (!(_qm && _qm.style.display === 'flex')) {
                         openDetailModal(key, d);
                     }
                 }
