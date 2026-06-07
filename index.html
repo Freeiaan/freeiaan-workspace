@@ -7719,12 +7719,12 @@ function renderMemoFolders() {
         <button onclick="applyRichFormat('removeFormat')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl text-gray-400 text-xs font-bold transition-colors">✕</button>
       </div>
       <!-- 에디터 스크롤 영역 -->
-      <div class="flex-1 px-4 py-4 overflow-y-auto custom-scrollbar" style="overscroll-behavior:none;">
+      <div class="flex-1 px-4 py-4 overflow-hidden flex flex-col">
         <div id="richMemoEditor"
           contenteditable="true"
           spellcheck="false"
           class="w-full text-[15px] leading-relaxed text-gray-800 outline-none relative"
-          style="min-height:60vh;background:white;"
+          style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;background:white;padding-bottom:60px;"
           data-placeholder="텍스트를 드래그하고 탭하면 꾸밀 수 있어요.">
         </div>
       </div>
