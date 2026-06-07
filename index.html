@@ -2413,6 +2413,13 @@ function loadFromCloud() {
     const tDial = $('timerDial'), pSlice = $('pieSlice');
 
     function initAppRenders() {
+        // 🩹 일회성 잔재 정리: 태블릿 localStorage에 남아있는 손상된 반복일정 제거
+        // (삭제됐어야 하는데 구버전 버그로 살아남은 것들 → Firebase에도 동기화)
+        const _badIds = [1780767224652]; // 도도 id
+        if (repeatTasks.some(r => _badIds.includes(r.id))) {
+            repeatTasks = repeatTasks.filter(r => !_badIds.includes(r.id));
+            setLocal('ianRepeatTasks', repeatTasks);
+        }
         // allTasks에서 null/undefined 항목 제거
         Object.keys(allTasks).forEach(k => {
             if (Array.isArray(allTasks[k])) {
