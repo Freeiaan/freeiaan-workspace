@@ -4747,57 +4747,50 @@ function renderTimeGrid(dateKey) {
                  row.appendChild(cb);
                  row.appendChild(span);
                  
-                 // 롱프레스(600ms) → 삭제 (반복일정: 이 날만/전체, 일반: 바로 삭제)
-                 let _wRowPressTimer = null;
-                 row.addEventListener('pointerdown', (e) => {
+                 // ✅ iOS PWA 대응: -webkit-touch-callout 차단 + touchstart 롱프레스
+                 // (pointerdown은 iOS에서 텍스트 선택 팝업에 가로채임)
+                 row.style.webkitUserSelect = 'none';
+                 row.style.userSelect = 'none';
+                 row.style.webkitTouchCallout = 'none';
+                 
+                 let _wTimer = null, _wMoved = false, _wTsX = 0, _wTsY = 0;
+                 row.addEventListener('touchstart', (e) => {
                      if (e.target.tagName === 'INPUT') return;
-                     _wRowPressTimer = setTimeout(() => {
-                         _wRowPressTimer = null;
+                     _wMoved = false; _wTsX = e.touches[0].clientX; _wTsY = e.touches[0].clientY;
+                     _wTimer = setTimeout(() => {
+                         if (_wMoved) return;
                          if (navigator.vibrate) navigator.vibrate(40);
                          const repeatId = t._repeatId;
                          if (repeatId) {
-                             // 반복일정: 기존 애플감성 삭제 모달 재활용
                              const modal = document.getElementById('repeatDeleteModal');
                              modal.classList.remove('hidden');
-                             setTimeout(() => {
-                                 modal.classList.remove('opacity-0');
-                                 modal.children[0].classList.remove('scale-95');
-                                 modal.children[0].classList.add('scale-100');
-                             }, 10);
+                             setTimeout(() => { modal.classList.remove('opacity-0'); modal.children[0].classList.remove('scale-95'); modal.children[0].classList.add('scale-100'); }, 10);
                              document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
                                  closeRepeatDeleteModal();
                                  if (!allTasks[dateKey]) allTasks[dateKey] = [];
                                  allTasks[dateKey] = allTasks[dateKey].filter(x => x._repeatId !== repeatId);
                                  allTasks[dateKey].push({ _repeatId: repeatId, _deleted: true });
-                                 setLocal('ianAllTasks', allTasks);
-                                 syncToCloud();
-                                 initAppRenders();
+                                 setLocal('ianAllTasks', allTasks); syncToCloud(); initAppRenders();
                              };
                              document.getElementById('repeatDeleteAllBtn').onclick = () => {
                                  closeRepeatDeleteModal();
                                  repeatTasks = repeatTasks.filter(r => r.id !== repeatId);
-                                 Object.keys(allTasks).forEach(k => {
-                                     allTasks[k] = (allTasks[k] || []).filter(x => x._repeatId !== repeatId);
-                                 });
-                                 setLocal('ianRepeatTasks', repeatTasks);
-                                 setLocal('ianAllTasks', allTasks);
-                                 syncToCloud();
-                                 initAppRenders();
+                                 Object.keys(allTasks).forEach(k => { allTasks[k] = (allTasks[k] || []).filter(x => x._repeatId !== repeatId); });
+                                 setLocal('ianRepeatTasks', repeatTasks); setLocal('ianAllTasks', allTasks); syncToCloud(); initAppRenders();
                              };
                              document.getElementById('repeatDeleteCancelBtn').onclick = () => closeRepeatDeleteModal();
                          } else {
-                             // 일반 일정: 직접 삭제
                              const actualIdx = (allTasks[dateKey] || []).indexOf(t);
-                             if (actualIdx >= 0) {
-                                 allTasks[dateKey].splice(actualIdx, 1);
-                                 setLocal('ianAllTasks', allTasks);
-                                 saveAndRefresh();
-                             }
+                             if (actualIdx >= 0) { allTasks[dateKey].splice(actualIdx, 1); setLocal('ianAllTasks', allTasks); saveAndRefresh(); }
                          }
                      }, 600);
-                 });
-                 row.addEventListener('pointerup', () => { if (_wRowPressTimer) { clearTimeout(_wRowPressTimer); _wRowPressTimer = null; } });
-                 row.addEventListener('pointermove', () => { if (_wRowPressTimer) { clearTimeout(_wRowPressTimer); _wRowPressTimer = null; } });
+                 }, { passive: true });
+                 row.addEventListener('touchmove', (e) => {
+                     if (Math.abs(e.touches[0].clientX - _wTsX) > 8 || Math.abs(e.touches[0].clientY - _wTsY) > 8) {
+                         _wMoved = true; clearTimeout(_wTimer); _wTimer = null;
+                     }
+                 }, { passive: true });
+                 row.addEventListener('touchend', () => { clearTimeout(_wTimer); _wTimer = null; });
                  
                  checklist.appendChild(row);
              });
@@ -5031,29 +5024,33 @@ function renderCalendar() {
         cell.onpointermove = () => { clearTimeout(pressTimer); }; 
         cell.onpointerup = () => { clearTimeout(pressTimer); };
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
-        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && window._calLastPointerType === 'mouse' && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
+        cell.ondblclick = (e) => { if (!('ontouchstart' in window) && window.innerWidth >= 768 && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
         
-        // ✅ touchstart로 터치 여부 감지 (iPad 포함 모든 터치 기기에서 click 전에 반드시 발화)
-        let _cellTouched = false;
-        cell.addEventListener('touchstart', () => { _cellTouched = true; }, { passive: true });
+        // ✅ iOS PWA 대응: touchend 기반 탭 감지
+        // click은 iOS에서 비대화형 div에 발화 안 됨 → touchend로 직접 처리
+        let _cTsX = 0, _cTsY = 0, _cTsTime = 0, _cMoved = false, _cHandled = false;
+        cell.addEventListener('touchstart', (e) => {
+            _cTsX = e.touches[0].clientX; _cTsY = e.touches[0].clientY;
+            _cTsTime = Date.now(); _cMoved = false;
+        }, { passive: true });
+        cell.addEventListener('touchmove', (e) => {
+            if (Math.abs(e.touches[0].clientX - _cTsX) > 8 || Math.abs(e.touches[0].clientY - _cTsY) > 8) _cMoved = true;
+        }, { passive: true });
+        cell.addEventListener('touchend', (e) => {
+            if (_cMoved) return;
+            if (Date.now() - _cTsTime >= 380) return; // 롱프레스(400ms 퀵메뉴)와 구분
+            if (e.target.closest('.multi-task') || e.target.closest('.todo-item') || e.target.closest('.date-trigger')) return;
+            const _qm = document.getElementById('mobileQuickMenu');
+            if (_qm && _qm.style.display === 'flex') return;
+            _cHandled = true; setTimeout(() => { _cHandled = false; }, 400);
+            openDetailModal(key, d);
+        }, { passive: true });
         
         cell.onclick = (e) => {
-            const _isTouch = _cellTouched; _cellTouched = false;
-            if (window.innerWidth < 768 || _isTouch) {
-                // 모바일/태블릿: 탭 → 해당 날짜 상세 팝업
-                if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                    const _qm = document.getElementById('mobileQuickMenu');
-                    if (!(_qm && _qm.style.display === 'flex')) {
-                        openDetailModal(key, d);
-                    }
-                }
-                return;
-            }
-            // PC 마우스: 빈 공간 클릭 → 일정 등록
+            if (_cHandled || 'ontouchstart' in window) return; // 터치 기기는 touchend가 처리
+            // PC 마우스 전용: 빈 공간 클릭 → 일정 등록
             if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                if (Date.now() - downTime < 300) { 
-                    openModal('createSingle', { dateKey: key }); 
-                }
+                if (Date.now() - downTime < 300) openModal('createSingle', { dateKey: key });
             }
         };
         
@@ -5131,9 +5128,22 @@ function renderCalendar() {
               });
               
               let itemPressTimer = null;
-              // ✅ touchstart로 터치 여부 감지 + cell touchstart 전파 차단
-              let _itemTouched = false;
-              item.addEventListener('touchstart', (e) => { _itemTouched = true; e.stopPropagation(); }, { passive: true });
+              // ✅ iOS PWA 대응: touchend 기반 탭 감지
+              let _iTsX = 0, _iTsY = 0, _iMoved = false, _iHandled = false;
+              item.addEventListener('touchstart', (e) => {
+                  if (e.target.tagName === 'INPUT') return;
+                  _iTsX = e.touches[0].clientX; _iTsY = e.touches[0].clientY; _iMoved = false;
+                  e.stopPropagation();
+              }, { passive: true });
+              item.addEventListener('touchmove', (e) => {
+                  if (Math.abs(e.touches[0].clientX - _iTsX) > 8 || Math.abs(e.touches[0].clientY - _iTsY) > 8) _iMoved = true;
+              }, { passive: true });
+              item.addEventListener('touchend', (e) => {
+                  if (_iMoved || e.target.tagName === 'INPUT') return;
+                  e.stopPropagation();
+                  _iHandled = true; setTimeout(() => { _iHandled = false; }, 400);
+                  openDetailModal(key, d);
+              }, { passive: true });
               // 드래그 비활성 (기존 유지)
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
@@ -5147,14 +5157,8 @@ function renderCalendar() {
               });
               item.onclick = (e) => {
                   e.stopPropagation();
-                  if (e.target.tagName === 'INPUT') return;
-                  const _isTouch = _itemTouched; _itemTouched = false;
-                  if (window.innerWidth < 768 || _isTouch) {
-                      // 모바일/태블릿: 상세 팝업 (체크는 팝업 안에서)
-                      openDetailModal(key, d);
-                      return;
-                  }
-                  // PC 마우스: 직접 수정 모달
+                  if (e.target.tagName === 'INPUT' || _iHandled || 'ontouchstart' in window) return;
+                  // PC 마우스 전용: 직접 수정 모달
                   openModal('editSingle', { dateKey: key, index: idx, ...t });
               };
               todoContainer.appendChild(item);
