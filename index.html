@@ -798,14 +798,14 @@
     </div>
   </div>
 
-  <div id="extendedMemoModal" class="hidden fixed inset-0 z-[800] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) closeExtendedMemo()">
-    <div class="bg-[#faf8f5] w-full max-w-3xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
-      <header class="p-6 md:px-8 md:pt-8 md:pb-4 flex justify-between items-center bg-white border-b border-[#e6e2d8] flex-shrink-0">
-         <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)" class="text-2xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-orange-300 w-2/3 transition-colors text-black placeholder-gray-300" placeholder="메모 제목을 입력하세요">
-         <button onclick="closeExtendedMemo()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+  <div id="extendedMemoModal" class="hidden fixed inset-0 z-[800] bg-black bg-opacity-40 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target === this) closeExtendedMemo()">
+    <div class="bg-[#faf8f5] w-full md:max-w-3xl h-full md:h-[85vh] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border-0 md:border border-[#e6e2d8]">
+      <header class="px-4 md:px-8 pt-3 md:pt-8 pb-3 md:pb-4 flex justify-between items-center bg-white border-b border-[#e6e2d8] flex-shrink-0" style="padding-top: max(env(safe-area-inset-top, 12px), 12px)">
+         <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)" class="text-xl md:text-2xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-orange-300 w-2/3 transition-colors text-black placeholder-gray-300" placeholder="메모 제목을 입력하세요">
+         <button onclick="closeExtendedMemo()" class="text-3xl md:text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
-      <!-- 포맷 툴바 (sticky 고정) -->
-      <div class="flex items-center gap-1 px-6 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0 sticky top-0 z-10">
+      <!-- 포맷 툴바 (flex-shrink-0으로 항상 상단 고정) -->
+      <div class="flex items-center gap-1 px-4 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0">
         <button onclick="applyExtFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="굵게"><b>B</b></button>
         <button onclick="applyExtFormat('underline')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="밑줄"><u>U</u></button>
         <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
@@ -817,13 +817,13 @@
         <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
         <button onclick="applyExtFormat('clear')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-400 text-[10px] font-bold transition-colors" title="서식 제거">✕</button>
       </div>
-      <div class="flex-1 p-6 md:p-8 bg-[#fffbeb] flex flex-col min-h-0 overflow-hidden">
+      <div class="flex-1 p-4 md:p-8 bg-[#fffbeb] flex flex-col min-h-0 overflow-hidden">
          <div id="extMemoContent"
            contenteditable="true"
            spellcheck="false"
            oninput="updateExtMemoContentDiv()"
-           class="flex-1 w-full bg-transparent outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800 overflow-y-auto"
-           style="min-height:0; -webkit-overflow-scrolling:touch"
+           class="flex-1 w-full bg-transparent outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800 overflow-y-auto overflow-x-hidden"
+           style="min-height:0; -webkit-overflow-scrolling:touch; word-break:break-word; overflow-wrap:break-word;"
            data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
       </div>
     </div>
@@ -894,13 +894,8 @@
                     <button id="dpSubTabKPT" onclick="switchDpSubTab('kpt')" class="pb-2 text-[13px] font-bold text-gray-400 hover:text-black transition-all whitespace-nowrap">KPT 성찰 ✨</button>
                 </div>
             </div>
-            <div id="dpSubContentMemo" class="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <textarea id="plannerNote" oninput="savePlannerData()"
-                  onfocus="if(window.innerWidth<768){var t=document.getElementById('dpSubTabsContainer');if(t)t.style.display='none';}"
-                  onblur="if(window.innerWidth<768){var t=document.getElementById('dpSubTabsContainer');if(t)t.style.display='';}"
-                  class="flex-1 bg-transparent resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar overflow-y-auto"
-                  style="-webkit-overflow-scrolling:touch; min-height:0"
-                  placeholder="자유롭게 기록해보세요..."></textarea>
+            <div id="dpSubContentMemo" class="flex-1 flex flex-col">
+                <textarea id="plannerNote" oninput="savePlannerData()" class="flex-1 bg-transparent resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar" placeholder="자유롭게 기록해보세요..."></textarea>
             </div>
 
             <div id="dpSubContentKPT" class="hidden flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 pb-2">
@@ -4087,14 +4082,7 @@ function renderTimeGrid(dateKey) {
 
         const delBtn = document.createElement('div'); delBtn.className = 'delete-cat-btn'; delBtn.innerHTML = '×'; delBtn.style.display = isEditMode ? 'flex' : 'none';
         delBtn.onclick = (e) => { e.stopPropagation(); if (categories.length > 1) { categories = categories.filter(c => c.id !== cat.id); saveCategories(); buildCategoryUI(); } else { alert("최소 1개의 카테고리는 유지해야 합니다."); } };
-        const picker = document.createElement('input'); picker.type = 'color'; picker.value = cat.color;
-        picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
-        // 편집모드: circle 위에 투명하게 덮어서 모바일에서도 직접 탭 가능
-        if (isEditMode) {
-            picker.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;margin:0;';
-        } else {
-            picker.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0;';
-        }
+        const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
 
         // ── 길게 눌러서 드래그(편집 모드 전용) + 짧게 클릭은 기존 동작 ──
         const LONG_PRESS_MS = 350;
@@ -4196,12 +4184,10 @@ function renderTimeGrid(dateKey) {
             _catDragState = null;
         });
 
+        // 짧게 클릭: 기존 동작 유지 (방금 드래그했으면 무시)
         circle.onclick = (e) => {
             if (_justDragged) { e.preventDefault(); e.stopPropagation(); return; }
-            if (isEditMode) {
-                // 모바일은 picker가 circle 위에 오버레이되어 직접 탭됨. PC는 programmatic click 보조
-                if (!('ontouchstart' in window)) picker.click();
-            }
+            if (isEditMode) picker.click();
             else { selectedCategoryId = cat.id; buildCategoryUI(); }
         };
         
@@ -4941,9 +4927,25 @@ function renderTimeGrid(dateKey) {
         if (!el.innerHTML.trim()) el.classList.add('ext-memo-empty');
         else el.classList.remove('ext-memo-empty');
         $('extendedMemoModal').classList.remove('hidden');
+        // iOS 스크롤 잠금 (overflow:hidden만으로는 iOS에서 body 스크롤 막기 불충분)
+        const scrollY = window.scrollY;
         document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        document.body.dataset.extScrollY = scrollY;
     }
-    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; document.body.style.overflow = ''; }
+    function closeExtendedMemo() {
+        $('extendedMemoModal').classList.add('hidden');
+        currentExtMemoIndex = null;
+        // iOS 스크롤 잠금 해제 + 스크롤 위치 복원
+        const scrollY = parseInt(document.body.dataset.extScrollY || '0');
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+    }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
     function updateExtMemoContentDiv() {
@@ -7723,6 +7725,7 @@ function renderMemoFolders() {
       <!-- 고정 포맷 툴바 -->
       <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-100 bg-white flex-shrink-0">
         <button onclick="applyRichFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors"><b>B</b></button>
+        <button onclick="applyRichFormat('underline')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors"><u>U</u></button>
         <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
         <button onclick="applyRichFormat('foreColor','#EF4444')" class="w-8 h-8 flex items-center justify-center hover:bg-red-50 active:bg-red-100 rounded-xl font-black text-red-500 text-sm transition-colors">A</button>
         <button onclick="applyRichFormat('foreColor','#3B82F6')" class="w-8 h-8 flex items-center justify-center hover:bg-blue-50 active:bg-blue-100 rounded-xl font-black text-blue-500 text-sm transition-colors">A</button>
