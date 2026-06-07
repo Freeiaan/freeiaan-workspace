@@ -4928,9 +4928,8 @@ function renderTimeGrid(dateKey) {
         if (!el.innerHTML.trim()) el.classList.add('ext-memo-empty');
         else el.classList.remove('ext-memo-empty');
         $('extendedMemoModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
     }
-    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; document.body.style.overflow = ''; }
+    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
     function updateExtMemoContentDiv() {
