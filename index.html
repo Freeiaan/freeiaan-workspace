@@ -804,9 +804,10 @@
          <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)" class="text-2xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-orange-300 w-2/3 transition-colors text-black placeholder-gray-300" placeholder="메모 제목을 입력하세요">
          <button onclick="closeExtendedMemo()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
-      <!-- 포맷 툴바 -->
-      <div class="flex items-center gap-1 px-6 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0">
+      <!-- 포맷 툴바 (sticky 고정) -->
+      <div class="flex items-center gap-1 px-6 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0 sticky top-0 z-10">
         <button onclick="applyExtFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="굵게"><b>B</b></button>
+        <button onclick="applyExtFormat('underline')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="밑줄"><u>U</u></button>
         <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
         <button onclick="applyExtFormat('color','#EF4444')" class="w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-lg font-black text-red-500 text-sm transition-colors" title="빨강">A</button>
         <button onclick="applyExtFormat('color','#3B82F6')" class="w-8 h-8 flex items-center justify-center hover:bg-blue-50 rounded-lg font-black text-blue-500 text-sm transition-colors" title="파랑">A</button>
@@ -816,13 +817,13 @@
         <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
         <button onclick="applyExtFormat('clear')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-400 text-[10px] font-bold transition-colors" title="서식 제거">✕</button>
       </div>
-      <div class="flex-1 p-6 md:p-8 bg-[#fffbeb] flex flex-col">
+      <div class="flex-1 p-6 md:p-8 bg-[#fffbeb] flex flex-col min-h-0 overflow-hidden">
          <div id="extMemoContent"
            contenteditable="true"
            spellcheck="false"
            oninput="updateExtMemoContentDiv()"
            class="flex-1 w-full bg-transparent outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800 overflow-y-auto"
-           style="min-height:0"
+           style="min-height:0; -webkit-overflow-scrolling:touch"
            data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
       </div>
     </div>
@@ -893,8 +894,13 @@
                     <button id="dpSubTabKPT" onclick="switchDpSubTab('kpt')" class="pb-2 text-[13px] font-bold text-gray-400 hover:text-black transition-all whitespace-nowrap">KPT 성찰 ✨</button>
                 </div>
             </div>
-            <div id="dpSubContentMemo" class="flex-1 flex flex-col">
-                <textarea id="plannerNote" oninput="savePlannerData()" class="flex-1 bg-transparent resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar" placeholder="자유롭게 기록해보세요..."></textarea>
+            <div id="dpSubContentMemo" class="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <textarea id="plannerNote" oninput="savePlannerData()"
+                  onfocus="if(window.innerWidth<768){var t=document.getElementById('dpSubTabsContainer');if(t)t.style.display='none';}"
+                  onblur="if(window.innerWidth<768){var t=document.getElementById('dpSubTabsContainer');if(t)t.style.display='';}"
+                  class="flex-1 bg-transparent resize-none outline-none text-sm font-medium leading-relaxed custom-scrollbar overflow-y-auto"
+                  style="-webkit-overflow-scrolling:touch; min-height:0"
+                  placeholder="자유롭게 기록해보세요..."></textarea>
             </div>
 
             <div id="dpSubContentKPT" class="hidden flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 pb-2">
@@ -1036,10 +1042,7 @@
       <div class="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-white z-10 flex-shrink-0">
         <div class="flex flex-col">
           <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">상세 일정</span>
-          <div class="flex items-baseline gap-2">
-            <h3 id="detailTitle" class="text-xl font-black text-gray-800 tracking-tight"></h3>
-            <span class="text-[10px] text-gray-300 font-medium whitespace-nowrap">카테고리 탭 → 수정</span>
-          </div>
+          <h3 id="detailTitle" class="text-xl font-black text-gray-800 tracking-tight"></h3>
         </div>
         <button onclick="closeDetailModal()" class="text-3xl text-gray-300 hover:text-gray-600 transition-colors leading-none font-light pb-1">&times;</button>
       </div>
@@ -4084,7 +4087,14 @@ function renderTimeGrid(dateKey) {
 
         const delBtn = document.createElement('div'); delBtn.className = 'delete-cat-btn'; delBtn.innerHTML = '×'; delBtn.style.display = isEditMode ? 'flex' : 'none';
         delBtn.onclick = (e) => { e.stopPropagation(); if (categories.length > 1) { categories = categories.filter(c => c.id !== cat.id); saveCategories(); buildCategoryUI(); } else { alert("최소 1개의 카테고리는 유지해야 합니다."); } };
-        const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
+        const picker = document.createElement('input'); picker.type = 'color'; picker.value = cat.color;
+        picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
+        // 편집모드: circle 위에 투명하게 덮어서 모바일에서도 직접 탭 가능
+        if (isEditMode) {
+            picker.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;margin:0;';
+        } else {
+            picker.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0;';
+        }
 
         // ── 길게 눌러서 드래그(편집 모드 전용) + 짧게 클릭은 기존 동작 ──
         const LONG_PRESS_MS = 350;
@@ -4186,10 +4196,12 @@ function renderTimeGrid(dateKey) {
             _catDragState = null;
         });
 
-        // 짧게 클릭: 기존 동작 유지 (방금 드래그했으면 무시)
         circle.onclick = (e) => {
             if (_justDragged) { e.preventDefault(); e.stopPropagation(); return; }
-            if (isEditMode) picker.click();
+            if (isEditMode) {
+                // 모바일은 picker가 circle 위에 오버레이되어 직접 탭됨. PC는 programmatic click 보조
+                if (!('ontouchstart' in window)) picker.click();
+            }
             else { selectedCategoryId = cat.id; buildCategoryUI(); }
         };
         
@@ -4366,7 +4378,7 @@ function renderTimeGrid(dateKey) {
             div.innerHTML = `
                 <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 flex-shrink-0"> 
                 <span class="flex-1 text-[13px] font-bold text-gray-700 ${t.isChecked ? 'line-through opacity-40' : ''} transition-all">${t.text}${descIcon}</span> 
-                <span class="cat-badge-edit text-[9px] px-2 py-1.5 rounded-md font-extrabold shrink-0 active:scale-95 transition-transform" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>
+                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold shrink-0" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>
             `; 
             const cb = div.querySelector('input');
             cb.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -4388,15 +4400,6 @@ function renderTimeGrid(dateKey) {
                 else { span.classList.remove('line-through', 'opacity-40'); }
                 saveAndRefresh();
             };
-            // 카테고리 뱃지 탭 → 수정 (터치 전용)
-            const catBadge = div.querySelector('.cat-badge-edit');
-            catBadge.addEventListener('pointerup', (e) => {
-                if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                    e.stopPropagation();
-                    closeDetailModal();
-                    openModal('editSingle', { dateKey: key, index: i, ...t });
-                }
-            });
 
             // 꾹 누르기 → 컨텍스트 팝업
             let divPressTimer = null;
@@ -4440,8 +4443,7 @@ function renderTimeGrid(dateKey) {
             div.addEventListener('pointermove', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
 
             div.onclick = (e) => { 
-                if (e.target.tagName !== 'INPUT' && !e.target.closest('.cat-badge-edit')) { 
-                    if ('ontouchstart' in window) return; // 터치는 카테고리 뱃지로 수정
+                if (e.target.tagName !== 'INPUT') { 
                     closeDetailModal(); 
                     openModal('editSingle', { dateKey: key, index: i, ...t }); 
                 } 
@@ -5135,8 +5137,7 @@ function renderCalendar() {
                       if (existing) { existing.isChecked = t.isChecked; }
                       else { allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId }); }
                   }
-                  // [버그수정] 터치 이벤트 시퀀스가 끝난 뒤 재렌더링해야 좌표 오염 방지
-                  setTimeout(() => saveAndRefresh(), 80);
+                  saveAndRefresh();
               });
               
               let itemPressTimer = null;
@@ -7639,6 +7640,7 @@ function renderMemoFolders() {
         if (!el) return;
         el.focus();
         if (type === 'bold') document.execCommand('bold', false, null);
+        else if (type === 'underline') document.execCommand('underline', false, null);
         else if (type === 'color') document.execCommand('foreColor', false, value);
         else if (type === 'clear') document.execCommand('removeFormat', false, null);
         updateExtMemoContentDiv();
