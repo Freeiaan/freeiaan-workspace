@@ -2436,17 +2436,22 @@ function loadFromCloud() {
         });
         // 🩹 [버그수정] 같은 날 같은 _repeatId 중복 정리: _deleted 마커가 있으면
         // 같은 _repeatId의 비-deleted 항목 제거 (체크된 반복일정이 삭제 후에도 남는 버그 방지)
+        let _cleanupChanged = false;
         Object.keys(allTasks).forEach(k => {
             if (!Array.isArray(allTasks[k])) return;
             const deletedIds = new Set(
                 allTasks[k].filter(t => t && t._repeatId && t._deleted).map(t => t._repeatId)
             );
             if (deletedIds.size > 0) {
+                const before = allTasks[k].length;
                 allTasks[k] = allTasks[k].filter(t =>
                     !(t && t._repeatId && deletedIds.has(t._repeatId) && !t._deleted)
                 );
+                if (allTasks[k].length !== before) _cleanupChanged = true;
             }
         });
+        // 클린업 결과를 localStorage + Firebase에 저장 (재실행 시 손상 데이터 다시 불러오는 문제 방지)
+        if (_cleanupChanged) setLocal('ianAllTasks', allTasks);
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
         updateTUI(); buildCategoryUI(); updateRecordDisplay(); renderExtMemoButtons();
@@ -4741,6 +4746,59 @@ function renderTimeGrid(dateKey) {
                  span.textContent = t.text;
                  row.appendChild(cb);
                  row.appendChild(span);
+                 
+                 // 롱프레스(600ms) → 삭제 (반복일정: 이 날만/전체, 일반: 바로 삭제)
+                 let _wRowPressTimer = null;
+                 row.addEventListener('pointerdown', (e) => {
+                     if (e.target.tagName === 'INPUT') return;
+                     _wRowPressTimer = setTimeout(() => {
+                         _wRowPressTimer = null;
+                         if (navigator.vibrate) navigator.vibrate(40);
+                         const repeatId = t._repeatId;
+                         if (repeatId) {
+                             // 반복일정: 기존 애플감성 삭제 모달 재활용
+                             const modal = document.getElementById('repeatDeleteModal');
+                             modal.classList.remove('hidden');
+                             setTimeout(() => {
+                                 modal.classList.remove('opacity-0');
+                                 modal.children[0].classList.remove('scale-95');
+                                 modal.children[0].classList.add('scale-100');
+                             }, 10);
+                             document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
+                                 closeRepeatDeleteModal();
+                                 if (!allTasks[dateKey]) allTasks[dateKey] = [];
+                                 allTasks[dateKey] = allTasks[dateKey].filter(x => x._repeatId !== repeatId);
+                                 allTasks[dateKey].push({ _repeatId: repeatId, _deleted: true });
+                                 setLocal('ianAllTasks', allTasks);
+                                 syncToCloud();
+                                 initAppRenders();
+                             };
+                             document.getElementById('repeatDeleteAllBtn').onclick = () => {
+                                 closeRepeatDeleteModal();
+                                 repeatTasks = repeatTasks.filter(r => r.id !== repeatId);
+                                 Object.keys(allTasks).forEach(k => {
+                                     allTasks[k] = (allTasks[k] || []).filter(x => x._repeatId !== repeatId);
+                                 });
+                                 setLocal('ianRepeatTasks', repeatTasks);
+                                 setLocal('ianAllTasks', allTasks);
+                                 syncToCloud();
+                                 initAppRenders();
+                             };
+                             document.getElementById('repeatDeleteCancelBtn').onclick = () => closeRepeatDeleteModal();
+                         } else {
+                             // 일반 일정: 직접 삭제
+                             const actualIdx = (allTasks[dateKey] || []).indexOf(t);
+                             if (actualIdx >= 0) {
+                                 allTasks[dateKey].splice(actualIdx, 1);
+                                 setLocal('ianAllTasks', allTasks);
+                                 saveAndRefresh();
+                             }
+                         }
+                     }, 600);
+                 });
+                 row.addEventListener('pointerup', () => { if (_wRowPressTimer) { clearTimeout(_wRowPressTimer); _wRowPressTimer = null; } });
+                 row.addEventListener('pointermove', () => { if (_wRowPressTimer) { clearTimeout(_wRowPressTimer); _wRowPressTimer = null; } });
+                 
                  checklist.appendChild(row);
              });
          } else {
