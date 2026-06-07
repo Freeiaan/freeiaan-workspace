@@ -4973,18 +4973,19 @@ function renderCalendar() {
         cell.onpointermove = () => { clearTimeout(pressTimer); }; 
         cell.onpointerup = () => { clearTimeout(pressTimer); };
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
-        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !IS_TOUCH_DEVICE && !e.target.closest('.date-trigger') && window._calLastPointerType === 'mouse') openModal('createSingle', { dateKey: key }); };
+        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && window._calLastPointerType === 'mouse' && !e.target.closest('.date-trigger')) openModal('createSingle', { dateKey: key }); };
+        
+        // ✅ touchstart로 터치 여부 감지 (iPad 포함 모든 터치 기기에서 click 전에 반드시 발화)
+        let _cellTouched = false;
+        cell.addEventListener('touchstart', () => { _cellTouched = true; }, { passive: true });
         
         cell.onclick = (e) => {
-            // 터치 기기(태블릿 포함)는 모바일과 동일하게 상세 팝업
-            const _useDetail = window.innerWidth < 768 || IS_TOUCH_DEVICE
-                || window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
-            if (_useDetail) {
+            const _isTouch = _cellTouched; _cellTouched = false;
+            if (window.innerWidth < 768 || _isTouch) {
+                // 모바일/태블릿: 탭 → 해당 날짜 상세 팝업
                 if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                    // 롱프레스로 퀵메뉴가 떴으면 팝업 안 띄움
                     const _qm = document.getElementById('mobileQuickMenu');
-                    const _qmOpen = _qm && _qm.style.display === 'flex';
-                    if (!_qmOpen && Date.now() - downTime < 500) {
+                    if (!(_qm && _qm.style.display === 'flex') && Date.now() - downTime < 500) {
                         openDetailModal(key, d);
                     }
                 }
@@ -5072,10 +5073,12 @@ function renderCalendar() {
               });
               
               let itemPressTimer = null;
-              // 모바일/태블릿 터치: 드래그 비활성 + 포인터 타입 추적
+              // ✅ touchstart로 터치 여부 감지 + cell touchstart 전파 차단
+              let _itemTouched = false;
+              item.addEventListener('touchstart', (e) => { _itemTouched = true; e.stopPropagation(); }, { passive: true });
+              // 드래그 비활성 (기존 유지)
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
-                  window._calLastPointerType = e.pointerType; // 터치/마우스 구분
                   e.stopPropagation();
               });
               item.addEventListener('pointerup', (e) => {
@@ -5087,10 +5090,9 @@ function renderCalendar() {
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
-                  // 터치 기기(태블릿 포함)는 상세 팝업으로 (체크는 팝업 내에서)
-                  const _useDetail = window.innerWidth < 768 || IS_TOUCH_DEVICE
-                      || window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
-                  if (_useDetail) {
+                  const _isTouch = _itemTouched; _itemTouched = false;
+                  if (window.innerWidth < 768 || _isTouch) {
+                      // 모바일/태블릿: 상세 팝업 (체크는 팝업 안에서)
                       openDetailModal(key, d);
                       return;
                   }
