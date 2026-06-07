@@ -1030,13 +1030,16 @@
     </div>
   </div>
 
-  <div id="mobileDetailModal" class="hidden fixed inset-0 z-[5000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-5">
+  <div id="mobileDetailModal" class="hidden fixed inset-0 z-[5000] flex items-center justify-center bg-black/40 backdrop-blur-sm md:hidden px-5">
     <div class="bg-white w-full max-w-sm rounded-[28px] shadow-2xl overflow-hidden flex flex-col relative" style="max-height: 75vh;">
       
       <div class="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-white z-10 flex-shrink-0">
         <div class="flex flex-col">
           <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">상세 일정</span>
-          <h3 id="detailTitle" class="text-xl font-black text-gray-800 tracking-tight"></h3>
+          <div class="flex items-baseline gap-2">
+            <h3 id="detailTitle" class="text-xl font-black text-gray-800 tracking-tight"></h3>
+            <span class="text-[10px] text-gray-300 font-medium whitespace-nowrap">카테고리 탭 → 수정</span>
+          </div>
         </div>
         <button onclick="closeDetailModal()" class="text-3xl text-gray-300 hover:text-gray-600 transition-colors leading-none font-light pb-1">&times;</button>
       </div>
@@ -4363,7 +4366,7 @@ function renderTimeGrid(dateKey) {
             div.innerHTML = `
                 <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 flex-shrink-0"> 
                 <span class="flex-1 text-[13px] font-bold text-gray-700 ${t.isChecked ? 'line-through opacity-40' : ''} transition-all">${t.text}${descIcon}</span> 
-                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold shrink-0" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>
+                <span class="cat-badge-edit text-[9px] px-2 py-1.5 rounded-md font-extrabold shrink-0 active:scale-95 transition-transform" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>
             `; 
             const cb = div.querySelector('input');
             cb.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -4385,6 +4388,15 @@ function renderTimeGrid(dateKey) {
                 else { span.classList.remove('line-through', 'opacity-40'); }
                 saveAndRefresh();
             };
+            // 카테고리 뱃지 탭 → 수정 (터치 전용)
+            const catBadge = div.querySelector('.cat-badge-edit');
+            catBadge.addEventListener('pointerup', (e) => {
+                if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                    e.stopPropagation();
+                    closeDetailModal();
+                    openModal('editSingle', { dateKey: key, index: i, ...t });
+                }
+            });
 
             // 꾹 누르기 → 컨텍스트 팝업
             let divPressTimer = null;
@@ -4428,7 +4440,8 @@ function renderTimeGrid(dateKey) {
             div.addEventListener('pointermove', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
 
             div.onclick = (e) => { 
-                if (e.target.tagName !== 'INPUT') { 
+                if (e.target.tagName !== 'INPUT' && !e.target.closest('.cat-badge-edit')) { 
+                    if ('ontouchstart' in window) return; // 터치는 카테고리 뱃지로 수정
                     closeDetailModal(); 
                     openModal('editSingle', { dateKey: key, index: i, ...t }); 
                 } 
@@ -5122,7 +5135,8 @@ function renderCalendar() {
                       if (existing) { existing.isChecked = t.isChecked; }
                       else { allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId }); }
                   }
-                  saveAndRefresh();
+                  // [버그수정] 터치 이벤트 시퀀스가 끝난 뒤 재렌더링해야 좌표 오염 방지
+                  setTimeout(() => saveAndRefresh(), 80);
               });
               
               let itemPressTimer = null;
