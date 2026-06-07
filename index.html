@@ -1896,13 +1896,9 @@ function handleContextDelete() {
         document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
             closeRepeatDeleteModal();
             if (!allTasks[dateKey]) allTasks[dateKey] = [];
-            // 이미 _repeatId로 저장된 항목(세부내용 등)이 있으면 _deleted로 교체, 없으면 새로 추가
-            const existIdx = allTasks[dateKey].findIndex(t => t._repeatId === targetTask._repeatId);
-            if (existIdx !== -1) {
-                allTasks[dateKey][existIdx] = { _repeatId: targetTask._repeatId, _deleted: true };
-            } else {
-                allTasks[dateKey].push({ _repeatId: targetTask._repeatId, _deleted: true });
-            }
+            // [버그수정] 같은 _repeatId 항목 전부 제거 후 _deleted 마커 1개만 추가 (체크된 항목 잔존 방지)
+            allTasks[dateKey] = allTasks[dateKey].filter(t => t._repeatId !== targetTask._repeatId);
+            allTasks[dateKey].push({ _repeatId: targetTask._repeatId, _deleted: true });
             syncToCloud();
             initAppRenders();
         };
@@ -2407,6 +2403,8 @@ function loadFromCloud() {
     let activeBrushColor = null, isPainting = false, dragHasMoved = false, dragStartIdx = -1, dragAction = 'paint';
     let tbCurrentIdx = -1, isTbColorEditMode = false;
     let downTime = 0, pressTimer = null, quickMenuTargetKey = null;
+    // 터치 가능 기기 감지 (iPad 등 태블릿 → 상세팝업 사용)
+    const IS_TOUCH_DEVICE = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
     let analyticsDate = new Date(), analyticsMode = 'month', analyticsSelectedWeekKey = null;
     let timeLeft = 0, tInt = null, isR = false, isDT = false, lastA = 0, tLaps = 0, timerMode = 'idle', sessionElapsed = 0, timerLastTick = 0;
@@ -2435,6 +2433,19 @@ function loadFromCloud() {
                 delete t._deleted;
                 return true;
             });
+        });
+        // 🩹 [버그수정] 같은 날 같은 _repeatId 중복 정리: _deleted 마커가 있으면
+        // 같은 _repeatId의 비-deleted 항목 제거 (체크된 반복일정이 삭제 후에도 남는 버그 방지)
+        Object.keys(allTasks).forEach(k => {
+            if (!Array.isArray(allTasks[k])) return;
+            const deletedIds = new Set(
+                allTasks[k].filter(t => t && t._repeatId && t._deleted).map(t => t._repeatId)
+            );
+            if (deletedIds.size > 0) {
+                allTasks[k] = allTasks[k].filter(t =>
+                    !(t && t._repeatId && deletedIds.has(t._repeatId) && !t._deleted)
+                );
+            }
         });
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderFilterBar(); renderCalendar(); renderDashboard(); renderInbox(); 
@@ -4442,10 +4453,9 @@ function renderTimeGrid(dateKey) {
           if (editData._repeatId) {
               // 반복일정 수정 → 이 날만 별도 저장
               if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
-              const existIdx = allTasks[editData.dateKey].findIndex(t => t._repeatId === editData._repeatId);
-              const updated = { text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked || false, _repeatId: editData._repeatId };
-              if (existIdx !== -1) { allTasks[editData.dateKey][existIdx] = updated; }
-              else { allTasks[editData.dateKey].push(updated); }
+              // [버그수정] 같은 _repeatId 항목 전부 제거 후 수정본 1개만 추가 (중복 방지)
+              allTasks[editData.dateKey] = allTasks[editData.dateKey].filter(t => t._repeatId !== editData._repeatId);
+              allTasks[editData.dateKey].push({ text: txt, description: desc, categoryId: selectedCategoryId, isChecked: editData.isChecked || false, _repeatId: editData._repeatId });
           } else {
               const origDateKey = editData._origDateKey || editData.dateKey;
               if (origDateKey !== editData.dateKey) {
@@ -4485,13 +4495,9 @@ function renderTimeGrid(dateKey) {
           document.getElementById('repeatDeleteOnlyBtn').onclick = () => {
               closeRepeatDeleteModal();
               if (!allTasks[editData.dateKey]) allTasks[editData.dateKey] = [];
-              // 세부내용 등으로 이미 저장된 항목이 있으면 _deleted로 교체, 없으면 새로 추가
-              const existIdx = allTasks[editData.dateKey].findIndex(t => t._repeatId === editData._repeatId);
-              if (existIdx !== -1) {
-                  allTasks[editData.dateKey][existIdx] = { _repeatId: editData._repeatId, _deleted: true };
-              } else {
-                  allTasks[editData.dateKey].push({ _repeatId: editData._repeatId, _deleted: true });
-              }
+              // [버그수정] 같은 _repeatId 항목 전부 제거 후 _deleted 마커 1개만 추가 (체크된 항목 잔존 방지)
+              allTasks[editData.dateKey] = allTasks[editData.dateKey].filter(t => t._repeatId !== editData._repeatId);
+              allTasks[editData.dateKey].push({ _repeatId: editData._repeatId, _deleted: true });
               syncToCloud(); initAppRenders();
           };
           // 전체 삭제
@@ -4967,15 +4973,18 @@ function renderCalendar() {
         cell.onpointermove = () => { clearTimeout(pressTimer); }; 
         cell.onpointerup = () => { clearTimeout(pressTimer); };
         cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); }; cell.ondrop = (e) => handleDrop(e, key); 
-        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !e.target.closest('.date-trigger') && window._calLastPointerType === 'mouse') openModal('createSingle', { dateKey: key }); };
+        cell.ondblclick = (e) => { if (window.innerWidth >= 768 && !IS_TOUCH_DEVICE && !e.target.closest('.date-trigger') && window._calLastPointerType === 'mouse') openModal('createSingle', { dateKey: key }); };
         
         cell.onclick = (e) => {
-            // 터치/펜 입력이면 태블릿도 모바일과 동일하게 상세 팝업
-            const _isTouchOrPen = window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
-            if (window.innerWidth < 768 || _isTouchOrPen) {
-                // 모바일/태블릿 터치: 짧게 탭 → 상세 일정 팝업
+            // 터치 기기(태블릿 포함)는 모바일과 동일하게 상세 팝업
+            const _useDetail = window.innerWidth < 768 || IS_TOUCH_DEVICE
+                || window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
+            if (_useDetail) {
                 if (!e.target.closest('.multi-task') && !e.target.closest('.todo-item') && !e.target.closest('.date-trigger')) {
-                    if (Date.now() - downTime < 300) {
+                    // 롱프레스로 퀵메뉴가 떴으면 팝업 안 띄움
+                    const _qm = document.getElementById('mobileQuickMenu');
+                    const _qmOpen = _qm && _qm.style.display === 'flex';
+                    if (!_qmOpen && Date.now() - downTime < 500) {
                         openDetailModal(key, d);
                     }
                 }
@@ -5078,9 +5087,10 @@ function renderCalendar() {
               item.onclick = (e) => {
                   e.stopPropagation();
                   if (e.target.tagName === 'INPUT') return;
-                  // 터치/펜 입력이면 태블릿도 상세 팝업으로 (체크는 팝업 내에서)
-                  const _isTouchOrPen = window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
-                  if (window.innerWidth < 768 || _isTouchOrPen) {
+                  // 터치 기기(태블릿 포함)는 상세 팝업으로 (체크는 팝업 내에서)
+                  const _useDetail = window.innerWidth < 768 || IS_TOUCH_DEVICE
+                      || window._calLastPointerType === 'touch' || window._calLastPointerType === 'pen';
+                  if (_useDetail) {
                       openDetailModal(key, d);
                       return;
                   }
