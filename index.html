@@ -113,11 +113,11 @@
       body[data-mobile-tab="memo"] #mainApp { display: none !important; }
       body[data-mobile-tab="home"] #dashboardDrawer > div:first-child { display: none !important; } 
       
-      .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; overflow: hidden !important; }
-      .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; overflow: hidden !important; }
+      .mobile-today-card { background-color: #f0fdf4 !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; }
+      .mobile-week-card { background-color: #faf5ff !important; border: none !important; box-shadow: none !important; border-radius: 24px !important; padding: 20px !important; margin-bottom: 16px; }
       .mobile-today-card .dashboard-item, .mobile-week-card .dashboard-item { background: transparent !important; border: none !important; box-shadow: none !important; padding-left: 0 !important; padding-top: 1px !important; padding-bottom: 1px !important; }
 
-      #todayTasksList, #weekTasksList { max-height: none; overflow-y: auto; height: 100%; flex: 1; padding-top: 1px; padding-bottom: 1px; }
+      #todayTasksList, #weekTasksList { max-height: 180px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-top: 1px; padding-bottom: 1px; }
       #todayTasksList::-webkit-scrollbar, #weekTasksList::-webkit-scrollbar { display: none; }
       .drag-handle-dash { display: none !important; }
 
@@ -643,13 +643,12 @@
             <div id="todayTasksList" class="flex-1 flex flex-col gap-1 pb-1 pr-1.5 overflow-hidden transition-all duration-300" ondragover="handleDashOver(event)" ondrop="handleDashDrop(event, 'today')"></div>
           </div>
           
-          <!-- 이번주 남은 할 일 (접기/펼치기 적용) -->
+          <!-- 내일 할 일 (접기/펼치기 적용) -->
           <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col mobile-week-card transition-all">
             <div class="flex justify-between items-center mb-2 cursor-pointer group" onclick="toggleDashList('week')">
-              <h3 class="font-extrabold text-black text-[13px] flex items-center gap-2"><span class="w-1.5 h-4 bg-gray-800 rounded-sm md:block hidden"></span> 이번주 남은 할 일</h3>
+              <h3 class="font-extrabold text-black text-[13px] flex items-center gap-2"><span class="w-1.5 h-4 bg-gray-800 rounded-sm md:block hidden"></span> 내일 할 일</h3>
               <div class="flex items-center gap-2">
                   <span id="weekDateStr" class="text-[11px] md:text-[10px] text-gray-400 font-bold bg-transparent md:bg-gray-100 px-0 md:px-2 py-0.5 rounded-md"></span>
-                  <!-- 🔥 접기/펼치기 화살표 아이콘 추가 -->
                   <span id="weekToggleIcon" class="text-gray-400 group-hover:text-black transition-transform duration-300 text-xs font-bold">▲</span>
               </div>
             </div>
@@ -798,38 +797,32 @@
     </div>
   </div>
 
-  <div id="extendedMemoModal" class="hidden fixed inset-0 z-[6000] bg-black/50 backdrop-blur-sm" onclick="if(event.target === this) closeExtendedMemo()">
-    <div class="absolute left-0 right-0 top-0 bottom-0 bg-[#faf8f5] flex flex-col" style="padding-top: env(safe-area-inset-top, 44px);">
-      <!-- 헤더 -->
-      <div class="flex items-center justify-between px-4 pt-3 pb-3 flex-shrink-0 border-b border-[#e6e2d8] bg-white">
-        <button onclick="closeExtendedMemo()" class="text-sm font-bold text-blue-500 active:text-blue-700 transition-colors px-1 py-1">닫기</button>
-        <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)"
-          class="flex-1 text-sm font-black text-gray-800 bg-transparent border-none outline-none placeholder-gray-300 text-center mx-2"
-          autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="메모 제목">
-        <div class="w-10"></div>
+  <div id="extendedMemoModal" class="hidden fixed inset-0 z-[800] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) closeExtendedMemo()">
+    <div class="bg-[#faf8f5] w-full max-w-3xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
+      <header class="p-6 md:px-8 md:pt-8 md:pb-4 flex justify-between items-center bg-white border-b border-[#e6e2d8] flex-shrink-0">
+         <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)" class="text-2xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-orange-300 w-2/3 transition-colors text-black placeholder-gray-300" placeholder="메모 제목을 입력하세요">
+         <button onclick="closeExtendedMemo()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+      </header>
+      <!-- 포맷 툴바 -->
+      <div class="flex items-center gap-1 px-6 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0">
+        <button onclick="applyExtFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="굵게"><b>B</b></button>
+        <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
+        <button onclick="applyExtFormat('color','#EF4444')" class="w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-lg font-black text-red-500 text-sm transition-colors" title="빨강">A</button>
+        <button onclick="applyExtFormat('color','#3B82F6')" class="w-8 h-8 flex items-center justify-center hover:bg-blue-50 rounded-lg font-black text-blue-500 text-sm transition-colors" title="파랑">A</button>
+        <button onclick="applyExtFormat('color','#10B981')" class="w-8 h-8 flex items-center justify-center hover:bg-green-50 rounded-lg font-black text-green-600 text-sm transition-colors" title="초록">A</button>
+        <button onclick="applyExtFormat('color','#F59E0B')" class="w-8 h-8 flex items-center justify-center hover:bg-yellow-50 rounded-lg font-black text-yellow-500 text-sm transition-colors" title="노랑">A</button>
+        <button onclick="applyExtFormat('color','#374151')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="기본">A</button>
+        <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
+        <button onclick="applyExtFormat('clear')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-400 text-[10px] font-bold transition-colors" title="서식 제거">✕</button>
       </div>
-      <!-- 포맷 툴바 (flex-shrink-0 → 항상 상단 고정) -->
-      <div class="flex items-center gap-1 px-4 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0">
-        <button onclick="applyExtFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors"><b>B</b></button>
-        <button onclick="applyExtFormat('underline')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors"><u>U</u></button>
-        <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
-        <button onclick="applyExtFormat('color','#EF4444')" class="w-8 h-8 flex items-center justify-center hover:bg-red-50 active:bg-red-100 rounded-xl font-black text-red-500 text-sm transition-colors">A</button>
-        <button onclick="applyExtFormat('color','#3B82F6')" class="w-8 h-8 flex items-center justify-center hover:bg-blue-50 active:bg-blue-100 rounded-xl font-black text-blue-500 text-sm transition-colors">A</button>
-        <button onclick="applyExtFormat('color','#10B981')" class="w-8 h-8 flex items-center justify-center hover:bg-green-50 active:bg-green-100 rounded-xl font-black text-green-600 text-sm transition-colors">A</button>
-        <button onclick="applyExtFormat('color','#F59E0B')" class="w-8 h-8 flex items-center justify-center hover:bg-yellow-50 active:bg-yellow-100 rounded-xl font-black text-yellow-500 text-sm transition-colors">A</button>
-        <button onclick="applyExtFormat('color','#374151')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors">A</button>
-        <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
-        <button onclick="applyExtFormat('clear')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl text-gray-400 text-xs font-bold transition-colors">✕</button>
-      </div>
-      <!-- 스크롤 래퍼 (인덱스메모와 동일한 구조) -->
-      <div class="flex-1 px-4 py-4 bg-[#fffbeb] overflow-y-auto custom-scrollbar" style="overscroll-behavior:none; -webkit-overflow-scrolling:touch;">
-        <div id="extMemoContent"
-          contenteditable="true"
-          spellcheck="false"
-          oninput="updateExtMemoContentDiv()"
-          class="w-full bg-transparent outline-none text-[15px] font-medium leading-relaxed text-gray-800 relative"
-          style="min-height:60vh; word-break:break-word; overflow-wrap:break-word;"
-          data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
+      <div class="flex-1 p-6 md:p-8 bg-[#fffbeb] flex flex-col">
+         <div id="extMemoContent"
+           contenteditable="true"
+           spellcheck="false"
+           oninput="updateExtMemoContentDiv()"
+           class="flex-1 w-full bg-transparent outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800 overflow-y-auto"
+           style="min-height:0"
+           data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
       </div>
     </div>
   </div>
@@ -3963,9 +3956,11 @@ function renderTimeGrid(dateKey) {
 
     function renderDashboard() {
       const now = new Date(); now.setHours(0, 0, 0, 0); const tK = getDateKey(now); $('todayDateStr').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일`;
-      const daysToSaturday = 6 - now.getDay(); const saturday = new Date(now); saturday.setDate(now.getDate() + daysToSaturday); $('weekDateStr').textContent = `~ ${saturday.getMonth() + 1}월 ${saturday.getDate()}일 토요일까지`;
       const tL = $('todayTasksList'), wL = $('weekTasksList'); tL.innerHTML = ''; wL.innerHTML = '';
-      let todayTasksCount = 0, todayDoneCount = 0;
+      // 내일 날짜 계산
+      const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+      const tomorrowKey = getDateKey(tomorrow);
+      $('weekDateStr').textContent = `${tomorrow.getMonth() + 1}월 ${tomorrow.getDate()}일`;
 
       // 오늘 할 일: 반복 일정 + 일반 일정 합치기
       const _ty = now.getFullYear(), _tm = now.getMonth();
@@ -3990,28 +3985,24 @@ function renderTimeGrid(dateKey) {
           else greetingEl.innerHTML = `${userName}, <br>벌써 <span class="text-[#22741C]">${todayDoneCount}개</span>를 해내셨네요! 🔥`;
       }
 
-      // 이번주 남은 할 일: 반복 일정 + 일반 일정 합치기
-      for (let i = 1; i <= daysToSaturday; i++) {
-          let d = new Date(now); d.setDate(now.getDate() + i);
-          let k = getDateKey(d);
-          const _dy = d.getFullYear(), _dm = d.getMonth();
-          const _dayRepeatItems = repeatTasks
-              .filter(r => getRepeatDatesInMonth(r, _dy, _dm).includes(k))
-              .filter(r => !(allTasks[k] || []).some(t => t._repeatId === r.id))
-              .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
-          const _dayCombined = [..._dayRepeatItems, ...(Array.isArray(allTasks[k]) ? allTasks[k] : [])];
-          _dayCombined.forEach((t, idx) => {
-              if (t && !t.isChecked && !t._deleted && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) {
-                  wL.appendChild(createDashItem(t, k, idx, true));
-              }
-          });
-      }
+      // 내일 할 일: 반복 일정 + 일반 일정
+      const _ty2 = tomorrow.getFullYear(), _tm2 = tomorrow.getMonth();
+      const _tomorrowRepeatItems = repeatTasks
+          .filter(r => getRepeatDatesInMonth(r, _ty2, _tm2).includes(tomorrowKey))
+          .filter(r => !(allTasks[tomorrowKey] || []).some(t => t._repeatId === r.id))
+          .map(r => ({ text: r.text, categoryId: r.categoryId, isChecked: false, _repeatId: r.id }));
+      const _tomorrowCombined = [..._tomorrowRepeatItems, ...(Array.isArray(allTasks[tomorrowKey]) ? allTasks[tomorrowKey] : [])];
+      _tomorrowCombined.forEach((t, idx) => {
+          if (t && !t._deleted && (selectedFilters.has('all') || selectedFilters.has(t.categoryId))) {
+              wL.appendChild(createDashItem(t, tomorrowKey, idx, false));
+          }
+      });
     }
 
     function createDashItem(t, key, idx, showDate = false) {
     const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
     const div = document.createElement('div'); 
-    div.draggable = true; 
+    div.draggable = window.innerWidth >= 768; // 모바일에서는 드래그 순서변경 비활성
     div.className = "dashboard-item bg-white rounded-xl border border-gray-100 shadow-sm cursor-move flex-shrink-0 pr-3 py-2"; 
     div.setAttribute('data-key', key); 
     div.setAttribute('data-idx', idx);
@@ -7631,7 +7622,6 @@ function renderMemoFolders() {
         if (!el) return;
         el.focus();
         if (type === 'bold') document.execCommand('bold', false, null);
-        else if (type === 'underline') document.execCommand('underline', false, null);
         else if (type === 'color') document.execCommand('foreColor', false, value);
         else if (type === 'clear') document.execCommand('removeFormat', false, null);
         updateExtMemoContentDiv();
