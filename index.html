@@ -3956,11 +3956,10 @@ function renderTimeGrid(dateKey) {
 
     function renderDashboard() {
       const now = new Date(); now.setHours(0, 0, 0, 0); const tK = getDateKey(now); $('todayDateStr').textContent = `${now.getMonth() + 1}월 ${now.getDate()}일`;
-      const tL = $('todayTasksList'), wL = $('weekTasksList'); tL.innerHTML = ''; wL.innerHTML = '';
-      // 내일 날짜 계산
-      const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
-      const tomorrowKey = getDateKey(tomorrow);
+      const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1); const tomorrowKey = getDateKey(tomorrow);
       $('weekDateStr').textContent = `${tomorrow.getMonth() + 1}월 ${tomorrow.getDate()}일`;
+      const tL = $('todayTasksList'), wL = $('weekTasksList'); tL.innerHTML = ''; wL.innerHTML = '';
+      let todayTasksCount = 0, todayDoneCount = 0;
 
       // 오늘 할 일: 반복 일정 + 일반 일정 합치기
       const _ty = now.getFullYear(), _tm = now.getMonth();
@@ -4002,7 +4001,7 @@ function renderTimeGrid(dateKey) {
     function createDashItem(t, key, idx, showDate = false) {
     const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
     const div = document.createElement('div'); 
-    div.draggable = window.innerWidth >= 768; // 모바일에서는 드래그 순서변경 비활성
+    div.draggable = window.innerWidth >= 768;
     div.className = "dashboard-item bg-white rounded-xl border border-gray-100 shadow-sm cursor-move flex-shrink-0 pr-3 py-2"; 
     div.setAttribute('data-key', key); 
     div.setAttribute('data-idx', idx);
