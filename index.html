@@ -798,14 +798,14 @@
     </div>
   </div>
 
-  <div id="extendedMemoModal" class="hidden fixed inset-0 z-[6000] bg-black bg-opacity-40 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target === this) closeExtendedMemo()">
-    <div class="bg-[#faf8f5] w-full md:max-w-3xl h-full md:h-[85vh] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border-0 md:border border-[#e6e2d8]">
-      <header class="px-4 md:px-8 pt-3 md:pt-8 pb-3 md:pb-4 flex justify-between items-center bg-white border-b border-[#e6e2d8] flex-shrink-0" style="padding-top: max(env(safe-area-inset-top, 12px), 12px)">
-         <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)" class="text-xl md:text-2xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-orange-300 w-2/3 transition-colors text-black placeholder-gray-300" placeholder="메모 제목을 입력하세요">
-         <button onclick="closeExtendedMemo()" class="text-3xl md:text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
+  <div id="extendedMemoModal" class="hidden fixed inset-0 z-[6000] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target === this) closeExtendedMemo()">
+    <div class="bg-[#faf8f5] w-full max-w-3xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-[#e6e2d8]">
+      <header class="p-6 md:px-8 md:pt-8 md:pb-4 flex justify-between items-center bg-white border-b border-[#e6e2d8] flex-shrink-0">
+         <input type="text" id="extMemoTitle" oninput="updateExtMemoTitle(this.value)" class="text-2xl font-bold bg-transparent outline-none border-b-2 border-transparent focus:border-orange-300 w-2/3 transition-colors text-black placeholder-gray-300" placeholder="메모 제목을 입력하세요">
+         <button onclick="closeExtendedMemo()" class="text-4xl text-gray-400 hover:text-black leading-none font-light">&times;</button>
       </header>
-      <!-- 포맷 툴바 (flex-shrink-0으로 항상 상단 고정) -->
-      <div class="flex items-center gap-1 px-4 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0">
+      <!-- 포맷 툴바 (flex-shrink-0 → 항상 상단 고정) -->
+      <div class="flex items-center gap-1 px-6 md:px-8 py-2 border-b border-[#e6e2d8] bg-white flex-shrink-0">
         <button onclick="applyExtFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="굵게"><b>B</b></button>
         <button onclick="applyExtFormat('underline')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg font-black text-gray-700 text-sm transition-colors" title="밑줄"><u>U</u></button>
         <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
@@ -817,14 +817,15 @@
         <div class="w-px h-5 bg-gray-200 mx-0.5"></div>
         <button onclick="applyExtFormat('clear')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg text-gray-400 text-[10px] font-bold transition-colors" title="서식 제거">✕</button>
       </div>
-      <div class="flex-1 p-4 md:p-8 bg-[#fffbeb] flex flex-col min-h-0 overflow-hidden">
-         <div id="extMemoContent"
-           contenteditable="true"
-           spellcheck="false"
-           oninput="updateExtMemoContentDiv()"
-           class="flex-1 w-full bg-transparent outline-none custom-scrollbar text-[14px] font-medium leading-relaxed text-gray-800 overflow-y-auto overflow-x-hidden"
-           style="min-height:0; -webkit-overflow-scrolling:touch; word-break:break-word; overflow-wrap:break-word;"
-           data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
+      <!-- 스크롤 래퍼 (인덱스메모와 동일한 구조) -->
+      <div class="flex-1 p-6 md:p-8 bg-[#fffbeb] overflow-y-auto custom-scrollbar" style="-webkit-overflow-scrolling:touch; overscroll-behavior:none;">
+        <div id="extMemoContent"
+          contenteditable="true"
+          spellcheck="false"
+          oninput="updateExtMemoContentDiv()"
+          class="w-full bg-transparent outline-none text-[14px] font-medium leading-relaxed text-gray-800"
+          style="min-height:50vh; word-break:break-word; overflow-wrap:break-word;"
+          data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
       </div>
     </div>
   </div>
@@ -4927,25 +4928,9 @@ function renderTimeGrid(dateKey) {
         if (!el.innerHTML.trim()) el.classList.add('ext-memo-empty');
         else el.classList.remove('ext-memo-empty');
         $('extendedMemoModal').classList.remove('hidden');
-        // iOS 스크롤 잠금 (overflow:hidden만으로는 iOS에서 body 스크롤 막기 불충분)
-        const scrollY = window.scrollY;
         document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollY}px`;
-        document.body.style.width = '100%';
-        document.body.dataset.extScrollY = scrollY;
     }
-    function closeExtendedMemo() {
-        $('extendedMemoModal').classList.add('hidden');
-        currentExtMemoIndex = null;
-        // iOS 스크롤 잠금 해제 + 스크롤 위치 복원
-        const scrollY = parseInt(document.body.dataset.extScrollY || '0');
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        window.scrollTo(0, scrollY);
-    }
+    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; document.body.style.overflow = ''; }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
     function updateExtMemoContentDiv() {
@@ -7725,7 +7710,6 @@ function renderMemoFolders() {
       <!-- 고정 포맷 툴바 -->
       <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-100 bg-white flex-shrink-0">
         <button onclick="applyRichFormat('bold')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors"><b>B</b></button>
-        <button onclick="applyRichFormat('underline')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl font-black text-gray-700 text-sm transition-colors"><u>U</u></button>
         <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
         <button onclick="applyRichFormat('foreColor','#EF4444')" class="w-8 h-8 flex items-center justify-center hover:bg-red-50 active:bg-red-100 rounded-xl font-black text-red-500 text-sm transition-colors">A</button>
         <button onclick="applyRichFormat('foreColor','#3B82F6')" class="w-8 h-8 flex items-center justify-center hover:bg-blue-50 active:bg-blue-100 rounded-xl font-black text-blue-500 text-sm transition-colors">A</button>
