@@ -5126,7 +5126,7 @@ function renderCalendar() {
         const holidayName = getHolidayName(d);
         if (holidayName) {
             const holidayEl = document.createElement('div');
-            holidayEl.className = 'text-[8px] font-bold text-red-500 leading-none mt-0.5 truncate px-0.5 pointer-events-none';
+            holidayEl.className = 'text-[10px] font-bold text-red-500 leading-none mt-0.5 truncate px-0.5 pointer-events-none';
             holidayEl.textContent = holidayName;
             dateWrap.appendChild(holidayEl);
         }
