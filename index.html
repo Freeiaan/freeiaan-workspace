@@ -5125,11 +5125,11 @@ function renderCalendar() {
         let textColor = (isWeekend || isHoliday) ? 'text-red-500' : 'text-gray-700';
         if (!isCurrentMonth) textColor = (isWeekend || isHoliday) ? 'text-red-300' : 'text-gray-400';
         let bgClass = 'bg-transparent'; if (isToday) bgClass = 'today-highlight'; else if (isCurrentMonth) bgClass = 'other-day-highlight';
-        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass} flex-shrink-0`;
+        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${holidayName ? 'bg-transparent' : bgClass} flex-shrink-0`;
         dateNum.textContent = d.getDate(); dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); };
         if (holidayName) {
-            // 날짜 옆에 공휴일 이름 표시, 넘치면 ... 처리
-            dateWrap.className = 'w-full flex items-center gap-0.5 overflow-hidden';
+            // 날짜 옆에 공휴일 이름 표시, bgClass를 dateWrap으로 올려서 배경 통일
+            dateWrap.className = `w-full flex items-center gap-0.5 overflow-hidden ${bgClass}`;
             dateNum.style.setProperty('width', 'auto', 'important'); // .date-block의 width:100%!important 오버라이드
             dateWrap.appendChild(dateNum);
             const holidayEl = document.createElement('div');
