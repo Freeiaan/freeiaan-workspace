@@ -5130,9 +5130,10 @@ function renderCalendar() {
         if (holidayName) {
             // 날짜 옆에 공휴일 이름 표시, 넘치면 ... 처리
             dateWrap.className = 'w-full flex items-center gap-0.5 overflow-hidden';
+            dateNum.style.setProperty('width', 'auto', 'important'); // .date-block의 width:100%!important 오버라이드
             dateWrap.appendChild(dateNum);
             const holidayEl = document.createElement('div');
-            holidayEl.className = 'text-[10px] font-bold text-red-500 truncate pointer-events-none leading-none flex-1 min-w-0';
+            holidayEl.className = 'text-[10px] font-bold text-red-500 truncate pointer-events-none leading-none min-w-0';
             holidayEl.textContent = holidayName;
             dateWrap.appendChild(holidayEl);
         } else {
