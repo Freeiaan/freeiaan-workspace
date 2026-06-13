@@ -5329,26 +5329,60 @@ function renderCalendar() {
                   saveAndRefresh();
               });
               
-              // 🔥 [UX] 모바일 캘린더 일정: 탭→상세모달 / 꾹+드래그→날짜이동 / 스크롤 즉시 차단
+              // 🔥 [UX] 모바일 캘린더 일정: 탭→상세모달 / 꾹+드래그→날짜이동
               let itemPressTimer = null;
               let _dragMode = false;
               let _dragHighlight = null;
+              let _ghost = null;
               let _startX, _startY;
+
+              const _cleanupDrag = () => {
+                  if (_dragHighlight) { _dragHighlight.classList.remove('drag-over-highlight'); _dragHighlight = null; }
+                  if (_ghost) { _ghost.remove(); _ghost = null; }
+                  item.style.opacity = ''; item.style.outline = '';
+                  item.style.removeProperty('touch-action');
+                  document.body.style.overflow = '';
+                  document.body.style.touchAction = '';
+                  const cal = document.getElementById('calendarArea');
+                  if (cal) cal.style.overflow = '';
+                  _dragMode = false;
+              };
 
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
                   if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
                   e.stopPropagation();
-                  // 터치 즉시 스크롤 차단
                   item.style.setProperty('touch-action', 'none', 'important');
                   _dragMode = false;
                   _startX = e.clientX; _startY = e.clientY;
+                  item.setPointerCapture(e.pointerId);
+
                   itemPressTimer = setTimeout(() => {
                       itemPressTimer = null;
                       if (t._repeatId) return; // 반복 일정은 이동 불가
                       _dragMode = true;
                       if (navigator.vibrate) navigator.vibrate(60);
-                      item.style.opacity = '0.5';
+
+                      // 🔒 전체 스크롤 즉시 잠금
+                      document.body.style.overflow = 'hidden';
+                      document.body.style.touchAction = 'none';
+                      const cal = document.getElementById('calendarArea');
+                      if (cal) cal.style.overflow = 'hidden';
+
+                      // 👻 ghost 생성 - 손가락 따라다니는 미리보기
+                      _ghost = document.createElement('div');
+                      _ghost.className = 'fixed z-[99999] pointer-events-none rounded-md px-2 py-1 text-[11px] font-bold shadow-xl';
+                      _ghost.style.backgroundColor = bgColor;
+                      _ghost.style.color = fontColor;
+                      _ghost.style.maxWidth = '140px';
+                      _ghost.style.left = (_startX - 20) + 'px';
+                      _ghost.style.top  = (_startY - 30) + 'px';
+                      _ghost.style.opacity = '0.9';
+                      _ghost.style.transform = 'rotate(-3deg) scale(1.05)';
+                      _ghost.textContent = t.text;
+                      document.body.appendChild(_ghost);
+
+                      item.style.opacity = '0.3';
                       item.style.outline = '2px solid #22741C';
                   }, 500);
               }, { passive: false });
@@ -5357,16 +5391,22 @@ function renderCalendar() {
                   if (!_dragMode) {
                       if (itemPressTimer) {
                           const dx = Math.abs(e.clientX - _startX), dy = Math.abs(e.clientY - _startY);
-                          if (dx > 8 || dy > 8) {
-                              // 많이 움직이면 탭 취소 + 스크롤 허용
+                          if (dx > 10 || dy > 10) {
                               clearTimeout(itemPressTimer); itemPressTimer = null;
                               item.style.removeProperty('touch-action');
                           }
                       }
                       return;
                   }
-                  // 드래그 모드: 손가락 아래 셀 감지
-                  if (_itemDragHighlight) { _itemDragHighlight.classList.remove('drag-over-highlight'); _itemDragHighlight = null; }
+                  e.preventDefault();
+
+                  // ghost 위치 업데이트
+                  if (_ghost) {
+                      _ghost.style.left = (e.clientX - 20) + 'px';
+                      _ghost.style.top  = (e.clientY - 35) + 'px';
+                  }
+
+                  // 대상 셀 감지
                   if (_dragHighlight) { _dragHighlight.classList.remove('drag-over-highlight'); _dragHighlight = null; }
                   item.style.visibility = 'hidden';
                   const el = document.elementFromPoint(e.clientX, e.clientY);
@@ -5376,27 +5416,24 @@ function renderCalendar() {
                       targetCell.classList.add('drag-over-highlight');
                       _dragHighlight = targetCell;
                   }
-              });
+              }, { passive: false });
 
               item.addEventListener('pointerup', (e) => {
-                  if (_dragHighlight) { _dragHighlight.classList.remove('drag-over-highlight'); }
-                  item.style.opacity = ''; item.style.outline = '';
-                  item.style.removeProperty('touch-action');
                   if (itemPressTimer) {
-                      // 짧은 탭 → 상세 모달
                       clearTimeout(itemPressTimer); itemPressTimer = null;
+                      _cleanupDrag();
                       if ((e.pointerType === 'touch' || e.pointerType === 'pen') && e.target.tagName !== 'INPUT') {
                           openDetailModal(key, d);
                       }
                       return;
                   }
                   if (_dragMode) {
-                      _dragMode = false;
                       item.style.visibility = 'hidden';
                       const el = document.elementFromPoint(e.clientX, e.clientY);
                       item.style.visibility = '';
                       const targetCell = el?.closest('.group-cell[data-date]');
                       const targetKey = targetCell?.getAttribute('data-date');
+                      _cleanupDrag();
                       if (targetKey && targetKey !== key && !t._repeatId) {
                           const tasks = allTasks[key] || [];
                           const realIdx = tasks.findIndex(x => x === t);
@@ -5411,10 +5448,8 @@ function renderCalendar() {
               });
 
               item.addEventListener('pointercancel', () => {
-                  if (_dragHighlight) { _dragHighlight.classList.remove('drag-over-highlight'); }
-                  clearTimeout(itemPressTimer); itemPressTimer = null; _dragMode = false;
-                  item.style.opacity = ''; item.style.outline = '';
-                  item.style.removeProperty('touch-action');
+                  clearTimeout(itemPressTimer); itemPressTimer = null;
+                  _cleanupDrag();
               });
               item.onclick = (e) => {
                   e.stopPropagation();
