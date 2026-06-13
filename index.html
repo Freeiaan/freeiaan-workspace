@@ -5118,17 +5118,26 @@ function renderCalendar() {
         };
         
         const isToday = d.getTime() === today.getTime();
-        const dateWrap = document.createElement('div'); dateWrap.className = 'w-full'; const dateNum = document.createElement('div');
-        let textColor = isWeekend ? 'text-red-500' : 'text-gray-700'; if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
-        let bgClass = 'bg-transparent'; if (isToday) bgClass = 'today-highlight'; else if (isCurrentMonth) bgClass = 'other-day-highlight';
-        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`; dateNum.textContent = d.getDate(); dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); }; dateWrap.appendChild(dateNum);
-        // 🇰🇷 공휴일 이름 표시
+        const dateWrap = document.createElement('div'); const dateNum = document.createElement('div');
+        // 🇰🇷 공휴일 체크 먼저 → 날짜 색상에도 반영
         const holidayName = getHolidayName(d);
+        const isHoliday = !!holidayName;
+        let textColor = (isWeekend || isHoliday) ? 'text-red-500' : 'text-gray-700';
+        if (!isCurrentMonth) textColor = (isWeekend || isHoliday) ? 'text-red-300' : 'text-gray-400';
+        let bgClass = 'bg-transparent'; if (isToday) bgClass = 'today-highlight'; else if (isCurrentMonth) bgClass = 'other-day-highlight';
+        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass} flex-shrink-0`;
+        dateNum.textContent = d.getDate(); dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); };
         if (holidayName) {
+            // 날짜 옆에 공휴일 이름 표시, 넘치면 ... 처리
+            dateWrap.className = 'w-full flex items-center gap-0.5 overflow-hidden';
+            dateWrap.appendChild(dateNum);
             const holidayEl = document.createElement('div');
-            holidayEl.className = 'text-[10px] font-bold text-red-500 leading-none mt-0.5 truncate px-0.5 pointer-events-none';
+            holidayEl.className = 'text-[10px] font-bold text-red-500 truncate pointer-events-none leading-none min-w-0';
             holidayEl.textContent = holidayName;
             dateWrap.appendChild(holidayEl);
+        } else {
+            dateWrap.className = 'w-full';
+            dateWrap.appendChild(dateNum);
         }
         cell.appendChild(dateWrap);
 
