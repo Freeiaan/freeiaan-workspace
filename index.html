@@ -1809,6 +1809,8 @@ function handleContextMoveDown(e) {
 document.addEventListener('click', () => {
     const menu = document.getElementById('contextMenu');
     if(menu) menu.classList.add('hidden');
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
     // 데일리 플래너에서 숨긴 버튼 복원
     const btnAdd     = document.getElementById('btnCtxAdd');
     const btnCopy    = document.getElementById('btnCtxCopy');
@@ -1980,6 +1982,16 @@ function handleContextAdd() {
     document.getElementById('contextMenu').classList.add('hidden');
 }
     
+    // 🔥 [UX] 팝업 전체 닫기 + 스크롤 잠금 해제 유틸
+    function closeAllPopups() {
+        const ctx = document.getElementById('contextMenu');
+        if (ctx) ctx.classList.add('hidden');
+        const qm = $('mobileQuickMenu');
+        if (qm) qm.style.display = 'none';
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+    }
+
     function setLocal(key, data) { localStorage.setItem(key, JSON.stringify(data)); syncToCloud(); }
 
     function loginWithGoogle() {
@@ -4365,7 +4377,7 @@ function renderTimeGrid(dateKey) {
         if (mode === 'editSingle' && data && data.dateKey) editData._origDateKey = data.dateKey;
         if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; 
         if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; 
-        $('eventModal').classList.remove('hidden'); 
+        $('eventModal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; document.body.style.touchAction = 'none';
         
         $('modalInput').value = (data && data.text) ? data.text : ''; 
         // 세부 메모장 값 세팅
@@ -4391,7 +4403,7 @@ function renderTimeGrid(dateKey) {
         if (editData) editData.dateKey = normalized;
     };
     
-    function closeModal() { $('eventModal').classList.add('hidden'); }
+    function closeModal() { $('eventModal').classList.add('hidden'); document.body.style.overflow = ''; document.body.style.touchAction = ''; }
     // 🔁 반복 일정 상태
     let currentRepeatType = null, currentRepeatDays = [], currentRepeatEndDate = null;
 
@@ -4460,7 +4472,7 @@ function renderTimeGrid(dateKey) {
         const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
         $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 ${dayNames[date.getDay()]}`; 
         l.innerHTML = ''; 
-        m.classList.remove('hidden');
+        m.classList.remove('hidden'); document.body.style.overflow = 'hidden'; document.body.style.touchAction = 'none';
 
         // 바깥 블러 배경 터치 → 닫기
         m.onclick = (e) => { if (e.target === m) closeDetailModal(); };
@@ -4476,23 +4488,15 @@ function renderTimeGrid(dateKey) {
 
         _combinedTasks.forEach((t, i) => { 
             const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
-            const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70">📝</span>' : '';
-
-            // 🆕 [UX개선] 모바일 상세 모달 - 탭하면 액션 바 인라인 표시 (컨텍스트 팝업 대체)
-            const wrap = document.createElement('div');
-            wrap.className = 'flex flex-col rounded-xl overflow-hidden';
-
-            // ── 일정 행 ──
-            const row = document.createElement('div');
-            row.className = 'flex items-center gap-3 py-2.5 px-2 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer';
-            row.innerHTML = `
-                <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 flex-shrink-0">
-                <span class="flex-1 text-[13px] font-bold text-gray-700 ${t.isChecked ? 'line-through opacity-40' : ''} transition-all">${t.text}${descIcon}</span>
-                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold shrink-0" style="background:${hexToRgba(cat.color,0.1)};color:${cat.color}">${cat.name}</span>
-            `;
-
-            // ── 체크박스 ──
-            const cb = row.querySelector('input');
+            const div = document.createElement('div'); 
+            div.className = "flex items-center gap-3 py-2.5 px-2 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group"; 
+            const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
+            div.innerHTML = `
+                <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 flex-shrink-0"> 
+                <span class="flex-1 text-[13px] font-bold text-gray-700 ${t.isChecked ? 'line-through opacity-40' : ''} transition-all">${t.text}${descIcon}</span> 
+                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold shrink-0" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>
+            `; 
+            const cb = div.querySelector('input');
             cb.addEventListener('pointerdown', (e) => e.stopPropagation());
             cb.onclick = (e) => {
                 e.stopPropagation();
@@ -4503,77 +4507,70 @@ function renderTimeGrid(dateKey) {
                     if (existing) { existing.isChecked = t.isChecked; }
                     else { allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId }); }
                 }
-                const span = row.querySelector('span.flex-1');
-                if (t.isChecked) { span.classList.add('line-through','opacity-40'); } else { span.classList.remove('line-through','opacity-40'); }
+                const span = div.querySelector('span.flex-1');
+                if (t.isChecked) { span.classList.add('line-through', 'opacity-40'); }
+                else { span.classList.remove('line-through', 'opacity-40'); }
                 saveAndRefresh();
             };
 
-            // ── 액션 바 (탭 시 표시) ──
-            const actionBar = document.createElement('div');
-            actionBar.className = 'hidden flex gap-1.5 pb-2.5 px-2 ml-7';
-            const moveButtons = !t._repeatId ? `
-                <button class="act-up text-[12px] font-black text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg py-1.5 px-3 active:scale-95 transition-all">▲</button>
-                <button class="act-down text-[12px] font-black text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg py-1.5 px-3 active:scale-95 transition-all">▼</button>` : '';
-            actionBar.innerHTML = `
-                <button class="act-edit flex-1 text-[11px] font-black text-white bg-[#22741C] hover:bg-[#1b5e16] rounded-lg py-1.5 active:scale-95 transition-all">✏️ 수정</button>
-                <button class="act-copy flex-1 text-[11px] font-black text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg py-1.5 active:scale-95 transition-all">📋 복사</button>
-                <button class="act-del flex-1 text-[11px] font-black text-red-500 bg-red-50 hover:bg-red-100 rounded-lg py-1.5 active:scale-95 transition-all">🗑️ 삭제</button>
-                ${moveButtons}
-            `;
-
-            // ── 탭 → 액션 바 토글 ──
-            row.onclick = (e) => {
+            // 🔥 꾹 누르기(500ms) → 컨텍스트 팝업 (다른 팝업 닫고, 스크롤 잠금)
+            let divPressTimer = null;
+            div.addEventListener('pointerdown', (e) => {
                 if (e.target.tagName === 'INPUT') return;
-                // 다른 액션 바 닫기
-                l.querySelectorAll('.detail-action-bar').forEach(ab => { if (ab !== actionBar) ab.classList.add('hidden'); });
-                actionBar.classList.toggle('hidden');
-                selectedTaskDateKey = key; selectedTaskIndex = i;
-            };
+                if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                    divPressTimer = setTimeout(() => {
+                        divPressTimer = null;
+                        closeAllPopups(); // 다른 팝업 먼저 닫기
+                        selectedTaskDateKey = key; selectedTaskIndex = i;
+                        const btnEdit  = document.getElementById('btnCtxEdit');
+                        const btnAdd   = document.getElementById('btnCtxAdd');
+                        const divMove  = document.getElementById('ctxMoveContainer');
+                        const btnCopy  = document.getElementById('btnCtxCopy');
+                        const btnDup   = document.getElementById('btnCtxDuplicate');
+                        const btnDel   = document.getElementById('btnCtxDelete');
+                        const btnPaste = document.getElementById('btnCtxPaste');
+                        const divTop   = document.getElementById('ctxDividerTop');
+                        const divider  = document.getElementById('ctxDivider');
+                        if (btnEdit)  btnEdit.style.display  = 'flex';
+                        if (btnAdd)   btnAdd.style.display   = 'none';
+                        if (divMove)  divMove.style.display  = 'flex';
+                        if (btnCopy)  btnCopy.style.display  = 'flex';
+                        if (btnDup)   btnDup.style.display   = t._repeatId ? 'none' : 'flex';
+                        if (btnDel)   btnDel.style.display   = 'flex';
+                        if (btnPaste) btnPaste.style.display = 'none';
+                        if (divTop)   divTop.style.display   = 'none';
+                        if (divider)  divider.style.display  = 'block';
+                        if (btnDup)   btnDup.onclick = handleContextDuplicate;
+                        if (btnDel)   btnDel.onclick = handleContextDelete;
+                        const ctx = $('contextMenu');
+                        ctx.classList.remove('hidden');
+                        const menuH = ctx.offsetHeight || 200;
+                        const menuW = ctx.offsetWidth || 160;
+                        ctx.style.left = Math.min(e.clientX, window.innerWidth  - menuW - 10) + 'px';
+                        ctx.style.top  = Math.min(e.clientY, window.innerHeight - menuH - 10) + 'px';
+                        document.body.style.overflow = 'hidden'; // 뒷배경 스크롤 잠금
+                        document.body.style.touchAction = 'none';
+                        if (navigator.vibrate) navigator.vibrate(50);
+                    }, 500);
+                }
+            });
+            div.addEventListener('pointerup', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
+            div.addEventListener('pointermove', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
 
-            // ── 액션 버튼 핸들러 ──
-            actionBar.querySelector('.act-edit').onclick = (e) => {
-                e.stopPropagation();
-                closeDetailModal();
-                openModal('editSingle', { dateKey: key, index: i, ...t });
-            };
-            actionBar.querySelector('.act-copy').onclick = (e) => {
-                e.stopPropagation();
-                selectedTaskDateKey = key; selectedTaskIndex = i;
-                handleContextCopy();
-                actionBar.classList.add('hidden');
-            };
-            actionBar.querySelector('.act-del').onclick = (e) => {
-                e.stopPropagation();
-                selectedTaskDateKey = key; selectedTaskIndex = i;
-                handleContextDelete();
-                openDetailModal(key, date);
-            };
-            if (!t._repeatId) {
-                actionBar.querySelector('.act-up').onclick = (e) => {
-                    e.stopPropagation();
-                    selectedTaskDateKey = key; selectedTaskIndex = i;
-                    handleContextMoveUp(e);
-                    openDetailModal(key, date);
-                };
-                actionBar.querySelector('.act-down').onclick = (e) => {
-                    e.stopPropagation();
-                    selectedTaskDateKey = key; selectedTaskIndex = i;
-                    handleContextMoveDown(e);
-                    openDetailModal(key, date);
-                };
-            }
-
-            actionBar.classList.add('detail-action-bar');
-            wrap.appendChild(row);
-            wrap.appendChild(actionBar);
-            l.appendChild(wrap);
+            div.onclick = (e) => { 
+                if (e.target.tagName !== 'INPUT') { 
+                    closeDetailModal(); 
+                    openModal('editSingle', { dateKey: key, index: i, ...t }); 
+                } 
+            }; 
+            l.appendChild(div); 
         }); 
         $('detailAddBtn').onclick = () => { 
             closeDetailModal(); 
             openModal('createSingle', { dateKey: key }); 
         }; 
     }
-    function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); }
+    function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); document.body.style.overflow = ''; document.body.style.touchAction = ''; }
 
     // 🔥 [수정됨] 저장 버튼을 누를 때 세부 내용(description)도 묶어서 클라우드에 전송
     $('modalSaveBtn').onclick = () => {
@@ -5331,52 +5328,17 @@ function renderCalendar() {
                   saveAndRefresh();
               });
               
+              // 🔥 [UX개선] 모바일 캘린더 일정: 탭 → 상세 모달 / 꾹 누르기 컨텍스트 팝업 제거
               let itemPressTimer = null;
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
                   e.stopPropagation();
                   if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                      // 꾹 누르기(500ms) → 컨텍스트 팝업 / 짧은 탭 → openDetailModal
-                      itemPressTimer = setTimeout(() => {
-                          itemPressTimer = null;
-                          selectedTaskDateKey = key;
-                          const _realIdx = t._repeatId
-                              ? idx
-                              : (allTasks[key] || []).findIndex(x => x === t);
-                          selectedTaskIndex = _realIdx >= 0 ? _realIdx : idx;
-                          const btnEdit  = document.getElementById('btnCtxEdit');
-                          const btnAdd   = document.getElementById('btnCtxAdd');
-                          const divMove  = document.getElementById('ctxMoveContainer');
-                          const btnCopy  = document.getElementById('btnCtxCopy');
-                          const btnDup   = document.getElementById('btnCtxDuplicate');
-                          const btnDel   = document.getElementById('btnCtxDelete');
-                          const btnPaste = document.getElementById('btnCtxPaste');
-                          const divTop   = document.getElementById('ctxDividerTop');
-                          const divider  = document.getElementById('ctxDivider');
-                          if (btnEdit)  btnEdit.style.display  = 'flex';
-                          if (btnAdd)   btnAdd.style.display   = 'none';
-                          if (divMove)  divMove.style.display  = 'flex';
-                          if (btnCopy)  btnCopy.style.display  = 'flex';
-                          if (btnDup)   btnDup.style.display   = t._repeatId ? 'none' : 'flex';
-                          if (btnDel)   btnDel.style.display   = 'flex';
-                          if (btnPaste) btnPaste.style.display = 'none';
-                          if (divTop)   divTop.style.display   = 'none';
-                          if (divider)  divider.style.display  = 'block';
-                          if (btnDup)   btnDup.onclick = handleContextDuplicate;
-                          if (btnDel)   btnDel.onclick = handleContextDelete;
-                          const ctx = $('contextMenu');
-                          ctx.classList.remove('hidden');
-                          const menuH = ctx.offsetHeight || 200;
-                          const menuW = ctx.offsetWidth || 160;
-                          ctx.style.left = Math.min(e.clientX, window.innerWidth  - menuW - 10) + 'px';
-                          ctx.style.top  = Math.min(e.clientY, window.innerHeight - menuH - 10) + 'px';
-                          if (navigator.vibrate) navigator.vibrate(50);
-                      }, 500);
+                      itemPressTimer = setTimeout(() => { itemPressTimer = null; }, 500);
                   }
               });
               item.addEventListener('pointerup', (e) => {
                   if (itemPressTimer) {
-                      // 500ms 전에 손을 뗐다면 → 짧은 탭 → 데일모달
                       clearTimeout(itemPressTimer);
                       itemPressTimer = null;
                       if ((e.pointerType === 'touch' || e.pointerType === 'pen') && e.target.tagName !== 'INPUT') {
@@ -5384,7 +5346,6 @@ function renderCalendar() {
                           openDetailModal(key, d);
                       }
                   }
-                  // itemPressTimer가 이미 null이면 컨텍스트 팝업이 열린 것 → 탭 동작 없음
               });
               item.addEventListener('pointermove', (e) => {
                   if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; }
