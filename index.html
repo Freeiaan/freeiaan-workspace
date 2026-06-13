@@ -4970,6 +4970,58 @@ function renderTimeGrid(dateKey) {
         }
     });
 
+// ============================================================
+// 🇰🇷 한국 공휴일 데이터 (고정 + 음력 2024~2030 미리 계산)
+// ============================================================
+function getHolidayName(d) {
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const day = d.getDate();
+    const md = `${m}-${day}`;
+    const ymd = `${y}-${m}-${day}`;
+
+    // 고정 공휴일 (양력)
+    const fixed = {
+        '1-1': '신정', '3-1': '삼일절', '5-5': '어린이날',
+        '6-6': '현충일', '8-15': '광복절', '10-3': '개천절',
+        '10-9': '한글날', '12-25': '성탄절'
+    };
+
+    // 음력 기반 공휴일 (양력 변환 미리 계산, 2024~2030)
+    const lunar = {
+        // 2024
+        '2024-2-8':'설날 연휴', '2024-2-9':'설날', '2024-2-10':'설날 연휴',
+        '2024-5-15':'부처님오신날',
+        '2024-9-16':'추석 연휴', '2024-9-17':'추석', '2024-9-18':'추석 연휴',
+        // 2025
+        '2025-1-28':'설날 연휴', '2025-1-29':'설날', '2025-1-30':'설날 연휴',
+        '2025-5-5':'부처님오신날',
+        '2025-10-5':'추석 연휴', '2025-10-6':'추석', '2025-10-7':'추석 연휴',
+        // 2026
+        '2026-2-16':'설날 연휴', '2026-2-17':'설날', '2026-2-18':'설날 연휴',
+        '2026-5-24':'부처님오신날',
+        '2026-9-24':'추석 연휴', '2026-9-25':'추석', '2026-9-26':'추석 연휴',
+        // 2027
+        '2027-2-5':'설날 연휴', '2027-2-6':'설날', '2027-2-7':'설날 연휴',
+        '2027-5-13':'부처님오신날',
+        '2027-9-14':'추석 연휴', '2027-9-15':'추석', '2027-9-16':'추석 연휴',
+        // 2028
+        '2028-1-25':'설날 연휴', '2028-1-26':'설날', '2028-1-27':'설날 연휴',
+        '2028-5-2':'부처님오신날',
+        '2028-10-2':'추석 연휴', '2028-10-3':'추석', '2028-10-4':'추석 연휴',
+        // 2029
+        '2029-2-12':'설날 연휴', '2029-2-13':'설날', '2029-2-14':'설날 연휴',
+        '2029-5-20':'부처님오신날',
+        '2029-9-21':'추석 연휴', '2029-9-22':'추석', '2029-9-23':'추석 연휴',
+        // 2030
+        '2030-2-2':'설날 연휴', '2030-2-3':'설날', '2030-2-4':'설날 연휴',
+        '2030-5-9':'부처님오신날',
+        '2030-9-11':'추석 연휴', '2030-9-12':'추석', '2030-9-13':'추석 연휴',
+    };
+
+    return fixed[md] || lunar[ymd] || null;
+}
+
 function renderCalendar() {
       const calendar = $('calendar'); if (!calendar) return; calendar.innerHTML = '';
       const year = displayDate.getFullYear(), month = displayDate.getMonth(); $('monthYear').textContent = `${year}년 ${month + 1}월`;
@@ -5069,7 +5121,16 @@ function renderCalendar() {
         const dateWrap = document.createElement('div'); dateWrap.className = 'w-full'; const dateNum = document.createElement('div');
         let textColor = isWeekend ? 'text-red-500' : 'text-gray-700'; if (!isCurrentMonth) textColor = isWeekend ? 'text-red-300' : 'text-gray-400';
         let bgClass = 'bg-transparent'; if (isToday) bgClass = 'today-highlight'; else if (isCurrentMonth) bgClass = 'other-day-highlight';
-        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`; dateNum.textContent = d.getDate(); dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); }; dateWrap.appendChild(dateNum); cell.appendChild(dateWrap);
+        dateNum.className = `date-trigger date-block text-[11px] font-bold ${textColor} ${bgClass}`; dateNum.textContent = d.getDate(); dateNum.onclick = (e) => { e.stopPropagation(); openPlanner(key, d); }; dateWrap.appendChild(dateNum);
+        // 🇰🇷 공휴일 이름 표시
+        const holidayName = getHolidayName(d);
+        if (holidayName) {
+            const holidayEl = document.createElement('div');
+            holidayEl.className = 'text-[8px] font-bold text-red-500 leading-none mt-0.5 truncate px-0.5 pointer-events-none';
+            holidayEl.textContent = holidayName;
+            dateWrap.appendChild(holidayEl);
+        }
+        cell.appendChild(dateWrap);
 
         // 🔥 [가계부 금액 뱃지] 날짜 옆에 지출/수입 표시
         const dayLedger = ledgerData[key] || [];
@@ -5109,7 +5170,10 @@ function renderCalendar() {
           dayTasks.forEach((t, idx) => {
             if (selectedFilters.has('all') || selectedFilters.has(t.categoryId)) {
               const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
-              const item = document.createElement('div'); item.draggable = true; 
+              const item = document.createElement('div');
+              // 🔥 [버그수정] 터치 기기에서 draggable=true가 click(체크박스) 이벤트를 먹는 버그
+              // → 마우스(PC)에서만 드래그 활성화, 터치 기기는 롱프레스 컨텍스트 메뉴로 이동
+              item.draggable = !IS_TOUCH_DEVICE;
               item.className = 'todo-item text-[9px] md:text-[11px] truncate px-0.5 md:px-1 rounded flex items-start md:items-center w-full gap-0 md:gap-1.5';
               item.setAttribute('data-datekey', key);
               item.setAttribute('data-index', idx);
