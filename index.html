@@ -2426,26 +2426,11 @@ function loadFromCloud() {
         if (doc.exists) {
             const data = doc.data();
 
-            // 타임스탬프 비교: 로컬이 더 최신이면 Firebase 덮어쓰기 방지
+            // 🔥 [버그수정] 항상 클라우드 데이터를 먼저 로드한 뒤, 로컬이 더 최신이면 그 상태로 재동기화
+            // (기존: 로컬이 5초 이상 최신이면 클라우드 무시 → 기본 카테고리로 덮어쓰는 버그 수정)
             const localSavedAt  = parseInt(localStorage.getItem('ianLastSavedAt') || '0');
             const cloudSavedAt  = data.savedAt || 0;
-
-            if (localSavedAt > cloudSavedAt + 5000) {
-                // 로컬이 5초 이상 더 최신 → 로컬 데이터로 Firebase 업데이트
-                console.log('로컬이 더 최신. Firebase 업데이트 중...');
-                // 🔥 [버그수정] 로컬이 더 최신이어도 richMemoTabs는 클라우드(PC 수정본) 우선 적용
-                // → 탭에서 수정한 메모가 모바일에 반영 안 되던 버그 수정
-                if (data.richMemoTabs && Array.isArray(data.richMemoTabs) && data.richMemoTabs.length > 0) {
-                    localStorage.setItem('freeiaan_memoTabs', JSON.stringify(data.richMemoTabs));
-                    if (typeof richMemoTabs !== 'undefined') {
-                        try { richMemoTabs = JSON.parse(JSON.stringify(data.richMemoTabs)); } catch(e) {}
-                    }
-                }
-                if (data.richMemoActiveId) localStorage.setItem('freeiaan_activeMemoTab', data.richMemoActiveId);
-                syncToCloud();
-                initAppRenders();
-                return;
-            }
+            const _shouldResync = localSavedAt > cloudSavedAt + 5000;
 
             // 🔥 [버그수정] 빈 배열로 카테고리 날아가는 버그 방지
             if(data.categories && data.categories.length > 0) categories = data.categories;
@@ -2488,6 +2473,8 @@ function loadFromCloud() {
                 localStorage.setItem('freeiaan_activeMemoTab', data.richMemoActiveId);
             }
 
+            // 로컬이 더 최신이었으면, 이제 클라우드 데이터가 메모리에 올라간 상태로 재동기화 (안전)
+            if (_shouldResync) { console.log("로컬 최신 감지. 클라우드 로드 후 재동기화."); syncToCloud(); }
             initAppRenders();
         } else {
             syncToCloud();
