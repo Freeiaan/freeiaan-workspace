@@ -5336,6 +5336,9 @@ function renderCalendar() {
               let _ghost = null;
               let _startX, _startY;
 
+              // 🔒 드래그 모드 시 touchmove preventDefault로 스크롤 완전 차단
+              const _blockScroll = (e) => { if (_dragMode) e.preventDefault(); };
+
               const _cleanupDrag = () => {
                   if (_dragHighlight) { _dragHighlight.classList.remove('drag-over-highlight'); _dragHighlight = null; }
                   if (_ghost) { _ghost.remove(); _ghost = null; }
@@ -5343,8 +5346,7 @@ function renderCalendar() {
                   item.style.removeProperty('touch-action');
                   document.body.style.overflow = '';
                   document.body.style.touchAction = '';
-                  const cal = document.getElementById('calendarArea');
-                  if (cal) cal.style.overflow = '';
+                  document.removeEventListener('touchmove', _blockScroll);
                   _dragMode = false;
               };
 
@@ -5356,18 +5358,14 @@ function renderCalendar() {
                   _dragMode = false;
                   _startX = e.clientX; _startY = e.clientY;
                   item.setPointerCapture(e.pointerId);
+                  // pointerdown 시점에 touchmove 블로커 등록 (passive:false 필수)
+                  document.addEventListener('touchmove', _blockScroll, { passive: false });
 
                   itemPressTimer = setTimeout(() => {
                       itemPressTimer = null;
-                      if (t._repeatId) return; // 반복 일정은 이동 불가
+                      if (t._repeatId) { document.removeEventListener('touchmove', _blockScroll); return; }
                       _dragMode = true;
                       if (navigator.vibrate) navigator.vibrate(60);
-
-                      // 🔒 전체 스크롤 즉시 잠금
-                      document.body.style.overflow = 'hidden';
-                      document.body.style.touchAction = 'none';
-                      const cal = document.getElementById('calendarArea');
-                      if (cal) cal.style.overflow = 'hidden';
 
                       // 👻 ghost 생성 - 손가락 따라다니는 미리보기
                       _ghost = document.createElement('div');
