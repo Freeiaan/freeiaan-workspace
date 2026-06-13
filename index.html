@@ -1323,6 +1323,19 @@
               <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-6">
                   <h3 id="noticeTitle" class="text-[22px] md:text-[26px] font-black mb-4 text-gray-800 leading-tight"></h3>
                   <p id="noticeContent" class="text-[14px] md:text-[15px] font-medium text-gray-600 whitespace-pre-line leading-relaxed"></p>
+                  <!-- 🔒 관리자 전용: 편집 버튼 (사용법 가이드 선택 시에만 노출) -->
+                  <div id="pinnedGuideAdminBar" class="hidden mt-4 pt-3 border-t border-gray-100">
+                      <button onclick="startPinnedGuideEdit()" class="text-[13px] font-black text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 px-4 py-2 rounded-xl transition">✏️ 사용법 가이드 편집</button>
+                  </div>
+                  <!-- 🔒 관리자 전용: 인라인 편집 폼 (기본 숨김) -->
+                  <div id="pinnedGuideEditWrap" class="hidden mt-4 flex flex-col gap-3">
+                      <input id="pinnedGuideEditTitle" type="text" placeholder="가이드 제목" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-green-500 text-black">
+                      <textarea id="pinnedGuideEditContent" rows="8" placeholder="사용법 내용을 입력하세요." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-green-500 resize-none text-black"></textarea>
+                      <div class="flex gap-2">
+                          <button onclick="cancelPinnedGuideEdit()" class="flex-1 py-2.5 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition text-sm border border-gray-200">취소</button>
+                          <button onclick="savePinnedGuide()" class="flex-[2] py-2.5 bg-green-600 hover:bg-green-700 text-white font-black rounded-xl transition text-sm shadow">저장하기 ✅</button>
+                      </div>
+                  </div>
               </div>
 
               <!-- 하단 버튼: 상황에 따라 글씨가 바뀝니다! -->
@@ -1486,7 +1499,7 @@
                   </div>
                   
                   <!-- ✍️ 이안님이 수정한 문구 적용! -->
-                  <textarea id="feedbackContent" rows="8" class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-[14px] focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none mb-5 font-medium text-gray-700" placeholder="스케줄러를 쓰면서 불편했던 점, 작동이 안되는 부분, 추가되었으면 하는 기능을 남겨주세요! 💚"></textarea>
+                  <textarea id="feedbackContent" rows="8" class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-[14px] focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none mb-5 font-medium text-gray-700" placeholder="현재 사용중인 기기와 문제점을 남겨주세요!&#10;(ex. PC - 어떤 문제점 / 아이패드 - 어떤 문제점 / 모바일 - 어떤 문제점)"></textarea>
                   
                   <button onclick="submitFeedback()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 text-[15px]">
                       이안님께 전송하기 🚀
@@ -2190,39 +2203,59 @@ function handleContextAdd() {
         const listContainer = $('userNoticeHistoryList');
         listContainer.innerHTML = '<div class="text-xs text-gray-400 text-center py-10">불러오는 중...</div>';
 
-        db.collection('notice_history').orderBy('timestamp', 'desc').get().then(snapshot => {
+        // 📌 사용법 가이드(고정) 먼저 불러온 후, notice_history 렌더링
+        db.collection('system').doc('pinnedGuide').get().then(pinnedDoc => {
             listContainer.innerHTML = '';
-            if (snapshot.empty) {
-                listContainer.innerHTML = '<div class="text-xs text-gray-400 text-center py-10 font-bold">이전 업데이트가 없습니다.</div>';
-                return;
+
+            // ── 고정 항목 렌더링 ──
+            if (pinnedDoc.exists) {
+                const pinnedData = pinnedDoc.data();
+                const pinnedItem = document.createElement('div');
+                pinnedItem.dataset.pinned = 'true';
+                pinnedItem.className = 'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col gap-1.5 bg-green-50 border-green-200';
+                pinnedItem.innerHTML = `
+                    <div class="flex items-center gap-1">
+                        <span class="text-[11px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded-md">📌 고정</span>
+                    </div>
+                    <div class="text-[13px] truncate text-gray-900 font-extrabold mt-1">${pinnedData.title || '사용법 가이드'}</div>
+                `;
+                pinnedItem.onclick = () => {
+                    deselectAllNoticeItems();
+                    pinnedItem.classList.remove('bg-green-50', 'border-green-200');
+                    pinnedItem.classList.add('bg-green-100', 'border-green-400', 'shadow-sm');
+                    renderPinnedGuideDetail(pinnedData);
+                };
+                listContainer.appendChild(pinnedItem);
             }
+
+            // ── notice_history 렌더링 ──
+            return db.collection('notice_history').orderBy('timestamp', 'desc').get();
+        }).then(snapshot => {
+            if (snapshot.empty) return;
 
             snapshot.forEach((doc, index) => {
                 const data = doc.data();
-                // 첫번째거나 최신버전과 같으면 최신(Latest)으로 취급
                 const isItemLatest = (index === 0 || data.version === latestNoticeVersion); 
                 const isRead = readNotices.includes(data.version);
                 
                 const item = document.createElement('div');
                 item.className = 'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col gap-1.5';
                 
-                // 현재 선택된 항목 표시
                 if (data.version === initialData.version) {
                     item.classList.add('bg-blue-50', 'border-blue-200', 'shadow-sm');
                 } else {
                     item.classList.add('bg-white', 'border-gray-100', 'hover:border-blue-200');
                 }
 
-                // 배지 및 텍스트 스타일 (안 읽었거나 최신이면 진하게, 아니면 회색)
                 let badgeHtml = '';
                 let textStyle = '';
                 if (isItemLatest) {
                     badgeHtml = `<span class="text-[10px] font-black bg-red-100 text-red-500 px-2 py-0.5 rounded-md ml-1 tracking-wider">NEW</span>`;
-                    textStyle = 'text-gray-900 font-extrabold'; // 찐하게!
+                    textStyle = 'text-gray-900 font-extrabold';
                 } else if (!isRead) {
-                    textStyle = 'text-gray-800 font-bold'; // 안읽은 과거
+                    textStyle = 'text-gray-800 font-bold';
                 } else {
-                    textStyle = 'text-gray-400 font-medium'; // 읽은 과거 (연하게)
+                    textStyle = 'text-gray-400 font-medium';
                 }
 
                 const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : '최근';
@@ -2239,26 +2272,18 @@ function handleContextAdd() {
                 `;
 
                 item.onclick = () => {
-                    // 읽음 처리 업데이트
                     if (!readNotices.includes(data.version)) {
                         readNotices.push(data.version);
                         setLocal('ianReadNotices', readNotices);
                     }
-                    
-                    // 시각적 업데이트 (다른 박스들은 하얗게, 클릭한 건 파랗게)
-                    document.querySelectorAll('#userNoticeHistoryList > div').forEach(el => {
-                        el.classList.remove('bg-blue-50', 'border-blue-200', 'shadow-sm');
-                        el.classList.add('bg-white', 'border-gray-100');
-                    });
+                    deselectAllNoticeItems();
                     item.classList.remove('bg-white', 'border-gray-100');
                     item.classList.add('bg-blue-50', 'border-blue-200', 'shadow-sm');
                     
-                    // 글씨 회색(읽음)으로 변경
                     const titleDiv = item.querySelector('.truncate');
                     if(titleDiv && !isItemLatest) {
                         titleDiv.className = 'text-[13px] truncate text-gray-400 font-medium mt-1';
                     }
-
                     renderNoticeDetail(data, isItemLatest);
                 };
 
@@ -2275,7 +2300,12 @@ function handleContextAdd() {
         currentViewingNoticeVersion = data.version;
         $('noticeVersionBadge').textContent = data.version || '공지';
         $('noticeTitle').textContent = data.title || '';
+        $('noticeTitle').classList.remove('hidden');
         $('noticeContent').textContent = data.content || '';
+        $('noticeContent').classList.remove('hidden');
+        // 일반 공지 볼 때: 사용법 가이드 편집 UI 모두 숨기기
+        $('pinnedGuideAdminBar').classList.add('hidden');
+        $('pinnedGuideEditWrap').classList.add('hidden');
         
         // ✨ 상황에 따라 하단 버튼 글씨와 색상이 마법처럼 바뀝니다!
         const btn = $('noticeActionBtn');
@@ -2308,6 +2338,73 @@ function handleContextAdd() {
     // ❌ 그냥 창 닫기
     function closeNotice() {
         $('noticeModal').classList.add('hidden');
+    }
+
+    // 🔄 목록 항목 전체 선택 해제 헬퍼 (고정 항목은 초기 스타일로 복원)
+    function deselectAllNoticeItems() {
+        document.querySelectorAll('#userNoticeHistoryList > div').forEach(el => {
+            el.classList.remove('bg-blue-50', 'border-blue-200', 'bg-green-100', 'border-green-400', 'shadow-sm');
+            if (el.dataset.pinned === 'true') {
+                el.classList.add('bg-green-50', 'border-green-200');
+            } else {
+                el.classList.add('bg-white', 'border-gray-100');
+            }
+        });
+    }
+
+    // 📌 사용법 가이드 상세 표시 (관리자만 편집 버튼 노출)
+    function renderPinnedGuideDetail(data) {
+        currentViewingNoticeVersion = '__pinned__';
+        $('noticeVersionBadge').textContent = '📌 사용법 가이드';
+        $('noticeTitle').textContent = data.title || '사용법 가이드';
+        $('noticeTitle').classList.remove('hidden');
+        $('noticeContent').textContent = data.content || '';
+        $('noticeContent').classList.remove('hidden');
+        $('pinnedGuideEditWrap').classList.add('hidden');
+        // 관리자만 편집 버튼 노출
+        const isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
+        $('pinnedGuideAdminBar').classList.toggle('hidden', !isAdmin);
+        // 하단 버튼: 닫기
+        const btn = $('noticeActionBtn');
+        btn.textContent = "닫기";
+        btn.className = "w-full py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-2xl font-black shadow-sm transition text-[15px] active:scale-95";
+    }
+
+    // ✏️ 관리자: 편집 모드 진입
+    function startPinnedGuideEdit() {
+        $('pinnedGuideEditTitle').value = $('noticeTitle').textContent;
+        $('pinnedGuideEditContent').value = $('noticeContent').textContent;
+        $('noticeTitle').classList.add('hidden');
+        $('noticeContent').classList.add('hidden');
+        $('pinnedGuideAdminBar').classList.add('hidden');
+        $('pinnedGuideEditWrap').classList.remove('hidden');
+    }
+
+    // ↩️ 관리자: 편집 취소
+    function cancelPinnedGuideEdit() {
+        $('pinnedGuideEditWrap').classList.add('hidden');
+        $('noticeTitle').classList.remove('hidden');
+        $('noticeContent').classList.remove('hidden');
+        const isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
+        $('pinnedGuideAdminBar').classList.toggle('hidden', !isAdmin);
+    }
+
+    // 💾 관리자: Firestore에 사용법 가이드 저장
+    function savePinnedGuide() {
+        const title = $('pinnedGuideEditTitle').value.trim();
+        const content = $('pinnedGuideEditContent').value.trim();
+        if (!title || !content) { alert('제목과 내용을 모두 입력해주세요.'); return; }
+        db.collection('system').doc('pinnedGuide').set({ title, content })
+            .then(() => {
+                $('noticeTitle').textContent = title;
+                $('noticeContent').textContent = content;
+                // 좌측 목록 고정 항목 제목도 업데이트
+                const pinnedEl = document.querySelector('#userNoticeHistoryList > div[data-pinned="true"] .truncate');
+                if (pinnedEl) pinnedEl.textContent = title;
+                cancelPinnedGuideEdit();
+                alert('✅ 사용법 가이드가 저장되었습니다!');
+            })
+            .catch(e => alert('저장 실패: ' + e.message));
     }
 
     
@@ -5213,22 +5310,59 @@ function renderCalendar() {
               });
               
               let itemPressTimer = null;
-              // ✅ pointerup으로 탭 감지 (pointerdown이 작동하므로 pointerup도 반드시 작동)
-              let _itemDownTime = 0;
               item.addEventListener('pointerdown', (e) => {
                   if (e.target.tagName === 'INPUT') return;
-                  _itemDownTime = Date.now();
                   e.stopPropagation();
+                  if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                      // 꾹 누르기(500ms) → 컨텍스트 팝업 / 짧은 탭 → openDetailModal
+                      itemPressTimer = setTimeout(() => {
+                          itemPressTimer = null;
+                          selectedTaskDateKey = key;
+                          const _realIdx = t._repeatId
+                              ? idx
+                              : (allTasks[key] || []).findIndex(x => x === t);
+                          selectedTaskIndex = _realIdx >= 0 ? _realIdx : idx;
+                          const btnEdit  = document.getElementById('btnCtxEdit');
+                          const btnAdd   = document.getElementById('btnCtxAdd');
+                          const divMove  = document.getElementById('ctxMoveContainer');
+                          const btnCopy  = document.getElementById('btnCtxCopy');
+                          const btnDup   = document.getElementById('btnCtxDuplicate');
+                          const btnDel   = document.getElementById('btnCtxDelete');
+                          const btnPaste = document.getElementById('btnCtxPaste');
+                          const divTop   = document.getElementById('ctxDividerTop');
+                          const divider  = document.getElementById('ctxDivider');
+                          if (btnEdit)  btnEdit.style.display  = 'flex';
+                          if (btnAdd)   btnAdd.style.display   = 'none';
+                          if (divMove)  divMove.style.display  = 'flex';
+                          if (btnCopy)  btnCopy.style.display  = 'flex';
+                          if (btnDup)   btnDup.style.display   = t._repeatId ? 'none' : 'flex';
+                          if (btnDel)   btnDel.style.display   = 'flex';
+                          if (btnPaste) btnPaste.style.display = 'none';
+                          if (divTop)   divTop.style.display   = 'none';
+                          if (divider)  divider.style.display  = 'block';
+                          if (btnDup)   btnDup.onclick = handleContextDuplicate;
+                          if (btnDel)   btnDel.onclick = handleContextDelete;
+                          const ctx = $('contextMenu');
+                          ctx.classList.remove('hidden');
+                          const menuH = ctx.offsetHeight || 200;
+                          const menuW = ctx.offsetWidth || 160;
+                          ctx.style.left = Math.min(e.clientX, window.innerWidth  - menuW - 10) + 'px';
+                          ctx.style.top  = Math.min(e.clientY, window.innerHeight - menuH - 10) + 'px';
+                          if (navigator.vibrate) navigator.vibrate(50);
+                      }, 500);
+                  }
               });
               item.addEventListener('pointerup', (e) => {
-                  if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; }
-                  if ((e.pointerType === 'touch' || e.pointerType === 'pen') && e.target.tagName !== 'INPUT') {
-                      // 🔥 [버그수정] 380ms → 600ms: iPad는 탭이 느려서 380ms 안에 못 잡히던 버그
-                      if (Date.now() - _itemDownTime < 600) {
+                  if (itemPressTimer) {
+                      // 500ms 전에 손을 뗐다면 → 짧은 탭 → 데일모달
+                      clearTimeout(itemPressTimer);
+                      itemPressTimer = null;
+                      if ((e.pointerType === 'touch' || e.pointerType === 'pen') && e.target.tagName !== 'INPUT') {
                           e.stopPropagation();
                           openDetailModal(key, d);
                       }
                   }
+                  // itemPressTimer가 이미 null이면 컨텍스트 팝업이 열린 것 → 탭 동작 없음
               });
               item.addEventListener('pointermove', (e) => {
                   if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; }
