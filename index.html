@@ -5593,6 +5593,12 @@ function renderCalendar() {
     // 🔥 [버그수정] 키보드 오픈 시 innerWidth는 안 바뀜 → 너비 변화 없으면 무시 (갤럭시 탭 타이머 전환 버그)
     let _prevResizeW = window.innerWidth;
     window.addEventListener('resize', () => {
+        // 🔥 [버그수정 v2] Android Chrome은 키보드 오픈 시 innerWidth가 미세하게 변함
+        // → 입력 필드에 포커스가 있으면 소프트 키보드 때문이라 판단하고 무시
+        const _active = document.activeElement;
+        const _isKeyboardOpen = _active && (_active.tagName === 'INPUT' || _active.tagName === 'TEXTAREA' || _active.isContentEditable);
+        if (_isKeyboardOpen) return;
+
         const curW = window.innerWidth;
         if (curW === _prevResizeW) return; // 높이만 바뀜(키보드 열림) → 무시
         _prevResizeW = curW;
