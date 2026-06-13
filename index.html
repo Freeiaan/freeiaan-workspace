@@ -2328,12 +2328,22 @@ function loadFromCloud() {
             if (localSavedAt > cloudSavedAt + 5000) {
                 // 로컬이 5초 이상 더 최신 → 로컬 데이터로 Firebase 업데이트
                 console.log('로컬이 더 최신. Firebase 업데이트 중...');
+                // 🔥 [버그수정] 로컬이 더 최신이어도 richMemoTabs는 클라우드(PC 수정본) 우선 적용
+                // → 탭에서 수정한 메모가 모바일에 반영 안 되던 버그 수정
+                if (data.richMemoTabs && Array.isArray(data.richMemoTabs) && data.richMemoTabs.length > 0) {
+                    localStorage.setItem('freeiaan_memoTabs', JSON.stringify(data.richMemoTabs));
+                    if (typeof richMemoTabs !== 'undefined') {
+                        try { richMemoTabs = JSON.parse(JSON.stringify(data.richMemoTabs)); } catch(e) {}
+                    }
+                }
+                if (data.richMemoActiveId) localStorage.setItem('freeiaan_activeMemoTab', data.richMemoActiveId);
                 syncToCloud();
                 initAppRenders();
                 return;
             }
 
-            if(data.categories) categories = data.categories;
+            // 🔥 [버그수정] 빈 배열로 카테고리 날아가는 버그 방지
+            if(data.categories && data.categories.length > 0) categories = data.categories;
             if(data.trackerColors) trackerColors = data.trackerColors;
             if(data.allTasks) allTasks = data.allTasks;
             if(data.multiTasks) multiTasks = data.multiTasks;
@@ -2931,8 +2941,7 @@ function loadFromCloud() {
             if (target && target.classList.contains('time-cell')) { 
                 const idx = parseInt(target.id.replace('time-cell-', '')); 
                 
-                // 🔥 [추가] 손가락이 위아래로 삐끗해도, 처음 누른 줄(가로)에서만 색칠되게 철벽 방어!
-                if (Math.floor(idx / 6) !== Math.floor(dragStartIdx / 6)) return;
+                // 🔥 [버그수정] 같은 줄 제한 제거 → 터치 드래그로 여러 시간대 한번에 색칠 가능
 
                 if (!dragHasMoved && dragStartIdx !== idx) { 
                     applyBrushToCell(dragStartIdx, document.getElementById(`time-cell-${dragStartIdx}`)); 
@@ -4083,7 +4092,10 @@ function renderTimeGrid(dateKey) {
 
         const delBtn = document.createElement('div'); delBtn.className = 'delete-cat-btn'; delBtn.innerHTML = '×'; delBtn.style.display = isEditMode ? 'flex' : 'none';
         delBtn.onclick = (e) => { e.stopPropagation(); if (categories.length > 1) { categories = categories.filter(c => c.id !== cat.id); saveCategories(); buildCategoryUI(); } else { alert("최소 1개의 카테고리는 유지해야 합니다."); } };
-        const picker = document.createElement('input'); picker.type = 'color'; picker.className = 'absolute opacity-0 pointer-events-none w-0 h-0'; picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
+        const picker = document.createElement('input'); picker.type = 'color';
+        // 🔥 [버그수정] pointer-events-none 제거 → iOS/iPadOS에서 picker.click() 정상 동작
+        picker.style.cssText = 'position:absolute;opacity:0;width:26px;height:26px;top:0;left:0;cursor:pointer;border:none;padding:0;';
+        picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
 
         // ── 길게 눌러서 드래그(편집 모드 전용) + 짧게 클릭은 기존 동작 ──
         const LONG_PRESS_MS = 350;
@@ -5137,7 +5149,8 @@ function renderCalendar() {
               item.addEventListener('pointerup', (e) => {
                   if (itemPressTimer) { clearTimeout(itemPressTimer); itemPressTimer = null; }
                   if ((e.pointerType === 'touch' || e.pointerType === 'pen') && e.target.tagName !== 'INPUT') {
-                      if (Date.now() - _itemDownTime < 380) {
+                      // 🔥 [버그수정] 380ms → 600ms: iPad는 탭이 느려서 380ms 안에 못 잡히던 버그
+                      if (Date.now() - _itemDownTime < 600) {
                           e.stopPropagation();
                           openDetailModal(key, d);
                       }
@@ -5361,13 +5374,20 @@ function renderCalendar() {
         if (tabName === 'memo' && typeof renderMemoFolders === 'function') renderMemoFolders();
         renderCalendar();
     }
+    // 🔥 [버그수정] 키보드 오픈 시 innerWidth는 안 바뀜 → 너비 변화 없으면 무시 (갤럭시 탭 타이머 전환 버그)
+    let _prevResizeW = window.innerWidth;
     window.addEventListener('resize', () => {
-        if (window.innerWidth >= 768) {
+        const curW = window.innerWidth;
+        if (curW === _prevResizeW) return; // 높이만 바뀜(키보드 열림) → 무시
+        _prevResizeW = curW;
+        if (curW >= 768) {
             document.body.removeAttribute('data-mobile-tab');
             $('dashboardDrawer').style.display = 'none';
+            // 🔥 [버그수정] PC 전환 시 모바일 기본 주말숨김 클래스 제거 (주말 안 보이던 버그)
+            document.body.classList.remove('hide-weekends');
             const secT = $('dpSectionTracker'), secN = $('dpSectionNotes');
             if(secT && secN) { secT.classList.replace('hidden', 'flex'); secN.classList.replace('hidden', 'flex'); }
-        } else if (window.innerWidth < 768 && !document.body.getAttribute('data-mobile-tab')) {
+        } else if (curW < 768 && !document.body.getAttribute('data-mobile-tab')) {
             // 🔥 [수정됨] 화면 크기가 변할 때도 마지막 탭 기억하기
             const lastTab = localStorage.getItem('ianLastTab') || 'home';
             switchMobileTab(lastTab);
@@ -5422,7 +5442,7 @@ function renderCalendar() {
                 db.collection('users').doc(currentUser.email).get().then(doc => {
                     if (doc.exists) {
                         const data = doc.data();
-                        if(data.categories) categories = data.categories; 
+                        if(data.categories && data.categories.length > 0) categories = data.categories; 
                         if(data.trackerColors) trackerColors = data.trackerColors;
                         if(data.allTasks) allTasks = data.allTasks; 
                         if(data.multiTasks) multiTasks = data.multiTasks;
