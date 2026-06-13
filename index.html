@@ -4476,83 +4476,97 @@ function renderTimeGrid(dateKey) {
 
         _combinedTasks.forEach((t, i) => { 
             const cat = categories.find(c => c.id === t.categoryId) || categories[0]; 
-            const div = document.createElement('div'); 
-            div.className = "flex items-center gap-3 py-2.5 px-2 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group"; 
-            const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
-            div.innerHTML = `
-                <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 flex-shrink-0"> 
-                <span class="flex-1 text-[13px] font-bold text-gray-700 ${t.isChecked ? 'line-through opacity-40' : ''} transition-all">${t.text}${descIcon}</span> 
-                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold shrink-0" style="background:${hexToRgba(cat.color, 0.1)}; color:${cat.color}">${cat.name}</span>
-            `; 
-            const cb = div.querySelector('input');
+            const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70">📝</span>' : '';
+
+            // 🆕 [UX개선] 모바일 상세 모달 - 탭하면 액션 바 인라인 표시 (컨텍스트 팝업 대체)
+            const wrap = document.createElement('div');
+            wrap.className = 'flex flex-col rounded-xl overflow-hidden';
+
+            // ── 일정 행 ──
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-3 py-2.5 px-2 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer';
+            row.innerHTML = `
+                <input type="checkbox" ${t.isChecked ? 'checked' : ''} class="todo-checkbox w-4 h-4 flex-shrink-0">
+                <span class="flex-1 text-[13px] font-bold text-gray-700 ${t.isChecked ? 'line-through opacity-40' : ''} transition-all">${t.text}${descIcon}</span>
+                <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold shrink-0" style="background:${hexToRgba(cat.color,0.1)};color:${cat.color}">${cat.name}</span>
+            `;
+
+            // ── 체크박스 ──
+            const cb = row.querySelector('input');
             cb.addEventListener('pointerdown', (e) => e.stopPropagation());
             cb.onclick = (e) => {
                 e.stopPropagation();
                 t.isChecked = e.target.checked;
-                // 반복일정이면 allTasks에 체크 상태 저장
                 if (t._repeatId) {
                     if (!allTasks[key]) allTasks[key] = [];
                     const existing = allTasks[key].find(x => x._repeatId === t._repeatId && !x._deleted);
-                    if (existing) {
-                        existing.isChecked = t.isChecked;
-                    } else {
-                        allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId });
-                    }
+                    if (existing) { existing.isChecked = t.isChecked; }
+                    else { allTasks[key].push({ text: t.text, categoryId: t.categoryId, isChecked: t.isChecked, _repeatId: t._repeatId }); }
                 }
-                const span = div.querySelector('span.flex-1');
-                if (t.isChecked) { span.classList.add('line-through', 'opacity-40'); }
-                else { span.classList.remove('line-through', 'opacity-40'); }
+                const span = row.querySelector('span.flex-1');
+                if (t.isChecked) { span.classList.add('line-through','opacity-40'); } else { span.classList.remove('line-through','opacity-40'); }
                 saveAndRefresh();
             };
 
-            // 꾹 누르기 → 컨텍스트 팝업
-            let divPressTimer = null;
-            div.addEventListener('pointerdown', (e) => {
-                if (e.target.tagName === 'INPUT') return;
-                if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                    divPressTimer = setTimeout(() => {
-                        divPressTimer = null;
-                        selectedTaskDateKey = key; selectedTaskIndex = i;
-                        const btnEdit = document.getElementById('btnCtxEdit');
-                        const btnAdd = document.getElementById('btnCtxAdd');
-                        const divMove = document.getElementById('ctxMoveContainer');
-                        const btnCopy = document.getElementById('btnCtxCopy');
-                        const btnDup = document.getElementById('btnCtxDuplicate');
-                        const btnDel = document.getElementById('btnCtxDelete');
-                        const btnPaste = document.getElementById('btnCtxPaste');
-                        const divTop = document.getElementById('ctxDividerTop');
-                        const divider = document.getElementById('ctxDivider');
-                        if(btnEdit) btnEdit.style.display = 'flex';
-                        if(btnAdd) btnAdd.style.display = 'none';
-                        if(divMove) divMove.style.display = 'flex';
-                        if(btnCopy) btnCopy.style.display = 'flex';
-                        if(btnDup) btnDup.style.display = 'flex';
-                        if(btnDel) btnDel.style.display = 'flex';
-                        if(btnPaste) btnPaste.style.display = 'none';
-                        if(divTop) divTop.style.display = 'none';
-                        if(divider) divider.style.display = 'block';
-                        if(btnDup) btnDup.onclick = handleContextDuplicate;
-                        if(btnDel) btnDel.onclick = handleContextDelete;
-                        const ctx = $('contextMenu');
-                        ctx.classList.remove('hidden');
-                        const menuH = ctx.offsetHeight || 200;
-                        const menuW = ctx.offsetWidth || 160;
-                        ctx.style.left = Math.min(e.clientX, window.innerWidth - menuW - 10) + 'px';
-                        ctx.style.top = Math.min(e.clientY, window.innerHeight - menuH - 10) + 'px';
-                        if (navigator.vibrate) navigator.vibrate(50);
-                    }, 500);
-                }
-            });
-            div.addEventListener('pointerup', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
-            div.addEventListener('pointermove', () => { if (divPressTimer) { clearTimeout(divPressTimer); divPressTimer = null; } });
+            // ── 액션 바 (탭 시 표시) ──
+            const actionBar = document.createElement('div');
+            actionBar.className = 'hidden flex gap-1.5 pb-2.5 px-2 ml-7';
+            const moveButtons = !t._repeatId ? `
+                <button class="act-up text-[12px] font-black text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg py-1.5 px-3 active:scale-95 transition-all">▲</button>
+                <button class="act-down text-[12px] font-black text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg py-1.5 px-3 active:scale-95 transition-all">▼</button>` : '';
+            actionBar.innerHTML = `
+                <button class="act-edit flex-1 text-[11px] font-black text-white bg-[#22741C] hover:bg-[#1b5e16] rounded-lg py-1.5 active:scale-95 transition-all">✏️ 수정</button>
+                <button class="act-copy flex-1 text-[11px] font-black text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg py-1.5 active:scale-95 transition-all">📋 복사</button>
+                <button class="act-del flex-1 text-[11px] font-black text-red-500 bg-red-50 hover:bg-red-100 rounded-lg py-1.5 active:scale-95 transition-all">🗑️ 삭제</button>
+                ${moveButtons}
+            `;
 
-            div.onclick = (e) => { 
-                if (e.target.tagName !== 'INPUT') { 
-                    closeDetailModal(); 
-                    openModal('editSingle', { dateKey: key, index: i, ...t }); 
-                } 
-            }; 
-            l.appendChild(div); 
+            // ── 탭 → 액션 바 토글 ──
+            row.onclick = (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                // 다른 액션 바 닫기
+                l.querySelectorAll('.detail-action-bar').forEach(ab => { if (ab !== actionBar) ab.classList.add('hidden'); });
+                actionBar.classList.toggle('hidden');
+                selectedTaskDateKey = key; selectedTaskIndex = i;
+            };
+
+            // ── 액션 버튼 핸들러 ──
+            actionBar.querySelector('.act-edit').onclick = (e) => {
+                e.stopPropagation();
+                closeDetailModal();
+                openModal('editSingle', { dateKey: key, index: i, ...t });
+            };
+            actionBar.querySelector('.act-copy').onclick = (e) => {
+                e.stopPropagation();
+                selectedTaskDateKey = key; selectedTaskIndex = i;
+                handleContextCopy();
+                actionBar.classList.add('hidden');
+            };
+            actionBar.querySelector('.act-del').onclick = (e) => {
+                e.stopPropagation();
+                selectedTaskDateKey = key; selectedTaskIndex = i;
+                handleContextDelete();
+                openDetailModal(key, date);
+            };
+            if (!t._repeatId) {
+                actionBar.querySelector('.act-up').onclick = (e) => {
+                    e.stopPropagation();
+                    selectedTaskDateKey = key; selectedTaskIndex = i;
+                    handleContextMoveUp(e);
+                    openDetailModal(key, date);
+                };
+                actionBar.querySelector('.act-down').onclick = (e) => {
+                    e.stopPropagation();
+                    selectedTaskDateKey = key; selectedTaskIndex = i;
+                    handleContextMoveDown(e);
+                    openDetailModal(key, date);
+                };
+            }
+
+            actionBar.classList.add('detail-action-bar');
+            wrap.appendChild(row);
+            wrap.appendChild(actionBar);
+            l.appendChild(wrap);
         }); 
         $('detailAddBtn').onclick = () => { 
             closeDetailModal(); 
