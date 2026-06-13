@@ -2206,24 +2206,32 @@ function handleContextAdd() {
         // 📌 사용법 가이드(고정) 먼저 불러온 후, notice_history 렌더링
         db.collection('system').doc('pinnedGuide').get().then(pinnedDoc => {
             listContainer.innerHTML = '';
+            const _isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
 
-            // ── 고정 항목 렌더링 ──
-            if (pinnedDoc.exists) {
-                const pinnedData = pinnedDoc.data();
+            // ── 고정 항목 렌더링 (데이터 있으면 모두에게, 없으면 관리자에게만) ──
+            if (pinnedDoc.exists || _isAdmin) {
+                const pinnedData = pinnedDoc.exists ? pinnedDoc.data() : null;
                 const pinnedItem = document.createElement('div');
                 pinnedItem.dataset.pinned = 'true';
                 pinnedItem.className = 'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col gap-1.5 bg-green-50 border-green-200';
                 pinnedItem.innerHTML = `
                     <div class="flex items-center gap-1">
                         <span class="text-[11px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded-md">📌 고정</span>
+                        ${!pinnedDoc.exists ? '<span class="text-[10px] text-gray-400 font-bold">미작성</span>' : ''}
                     </div>
-                    <div class="text-[13px] truncate text-gray-900 font-extrabold mt-1">${pinnedData.title || '사용법 가이드'}</div>
+                    <div class="text-[13px] truncate text-gray-900 font-extrabold mt-1">${pinnedData ? (pinnedData.title || '사용법 가이드') : '사용법 가이드 (클릭해서 작성)'}</div>
                 `;
                 pinnedItem.onclick = () => {
                     deselectAllNoticeItems();
                     pinnedItem.classList.remove('bg-green-50', 'border-green-200');
                     pinnedItem.classList.add('bg-green-100', 'border-green-400', 'shadow-sm');
-                    renderPinnedGuideDetail(pinnedData);
+                    if (pinnedData) {
+                        renderPinnedGuideDetail(pinnedData);
+                    } else {
+                        // 데이터 없는 상태 → 관리자: 바로 편집 모드로 진입
+                        renderPinnedGuideDetail({ title: '', content: '' });
+                        startPinnedGuideEdit();
+                    }
                 };
                 listContainer.appendChild(pinnedItem);
             }
