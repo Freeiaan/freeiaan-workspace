@@ -357,7 +357,7 @@
     body.dark #dailyTasksTitleText          { color: #ffffff !important; }
     body.dark #dailyTasksToggleText         { color: #4ade80 !important; }
     body.dark #dailyTasksToggleIcon         { color: #4ade80 !important; }
-    body.dark button[onclick="toggleDailyTasks()"] { background-color: #0d2010 !important; border-color: #3a3a3c !important; }
+    body.dark div[onclick="toggleDailyTasks()"] { background-color: #0d2010 !important; border-color: #3a3a3c !important; }
     body.dark #plannerNewTaskInput          { color: #d1d5db !important; }
     body.dark #plannerNewTaskInput::placeholder { color: #636366 !important; }
 
@@ -868,19 +868,19 @@
          <div id="dpSectionNotes" class="hidden md:flex w-full md:w-1/2 flex-col h-full gap-6 flex-shrink-0 pr-4 md:pr-6">
         
         <div class="flex-shrink-0 flex flex-col mb-2 border border-[#e6e2d8] rounded-2xl bg-white shadow-sm overflow-hidden transition-all duration-300">
-           <button onclick="toggleDailyTasks()" class="w-full flex justify-between items-center bg-[#f0fdf4] hover:bg-[#e4f8c4] border-b border-[#e6e2d8] text-gray-800 py-3 px-4 transition-colors group cursor-pointer">
+           <div class="w-full flex justify-between items-center bg-[#f0fdf4] hover:bg-[#e4f8c4] border-b border-[#e6e2d8] text-gray-800 py-3 px-4 transition-colors cursor-pointer" onclick="toggleDailyTasks()">
                <div class="flex items-center gap-2.5">
                    <span class="text-sm">☑️</span>
                    <span id="dailyTasksTitleText" class="text-[13px] font-black tracking-wide text-[#1b4332]">오늘 할 일 (계산 중...)</span>
                </div>
                <div class="flex items-center gap-2">
-                   <button onclick="event.stopPropagation(); if(currentPlannerDateKey) openModal('createSingle', { dateKey: currentPlannerDateKey });" class="text-[11px] font-black text-white bg-[#22741C] hover:bg-[#1b5e16] px-2.5 py-1 rounded-full shadow-sm transition-all active:scale-95">+ 일정 추가</button>
-                   <div class="flex items-center gap-1 bg-white border border-[#cce8d6] px-2.5 py-1 rounded-full shadow-sm group-hover:border-[#22741C] transition-colors">
+                   <div onclick="event.stopPropagation(); if(currentPlannerDateKey) openModal('createSingle', { dateKey: currentPlannerDateKey });" class="text-[11px] font-black text-white bg-[#22741C] hover:bg-[#1b5e16] px-2.5 py-1 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer select-none">+ 일정 추가</div>
+                   <div class="flex items-center gap-1 bg-white border border-[#cce8d6] px-2.5 py-1 rounded-full shadow-sm transition-colors">
                        <span id="dailyTasksToggleText" class="text-[10px] font-extrabold text-[#22741C]">접기</span>
                        <span id="dailyTasksToggleIcon" class="text-[10px] font-black text-[#22741C] transition-transform duration-300 transform rotate-0">▲</span>
                    </div>
                </div>
-           </button>
+           </div>
            
            <div id="dpTasksContainer" class="flex flex-col max-h-[220px] transition-all">
                <div id="plannerTaskList" class="flex flex-col gap-1 overflow-y-auto custom-scrollbar p-2"></div>
