@@ -873,17 +873,17 @@
                    <span class="text-sm">☑️</span>
                    <span id="dailyTasksTitleText" class="text-[13px] font-black tracking-wide text-[#1b4332]">오늘 할 일 (계산 중...)</span>
                </div>
-               <div class="flex items-center gap-1.5 bg-white border border-[#cce8d6] px-2.5 py-1 rounded-full shadow-sm group-hover:border-[#22741C] transition-colors">
-                   <span id="dailyTasksToggleText" class="text-[10px] font-extrabold text-[#22741C]">접기</span>
-                   <span id="dailyTasksToggleIcon" class="text-[10px] font-black text-[#22741C] transition-transform duration-300 transform rotate-0">▲</span>
+               <div class="flex items-center gap-2">
+                   <button onclick="event.stopPropagation(); if(currentPlannerDateKey) openModal('createSingle', { dateKey: currentPlannerDateKey });" class="text-[11px] font-black text-white bg-[#22741C] hover:bg-[#1b5e16] px-2.5 py-1 rounded-full shadow-sm transition-all active:scale-95">+ 일정 추가</button>
+                   <div class="flex items-center gap-1 bg-white border border-[#cce8d6] px-2.5 py-1 rounded-full shadow-sm group-hover:border-[#22741C] transition-colors">
+                       <span id="dailyTasksToggleText" class="text-[10px] font-extrabold text-[#22741C]">접기</span>
+                       <span id="dailyTasksToggleIcon" class="text-[10px] font-black text-[#22741C] transition-transform duration-300 transform rotate-0">▲</span>
+                   </div>
                </div>
            </button>
            
            <div id="dpTasksContainer" class="flex flex-col max-h-[220px] transition-all">
                <div id="plannerTaskList" class="flex flex-col gap-1 overflow-y-auto custom-scrollbar p-2"></div>
-               <div class="border-t border-gray-100 bg-gray-50/50 p-2">
-                   <input type="text" id="plannerNewTaskInput" placeholder="+ 새로운 할 일 추가 (작성 후 Enter)" class="w-full text-[12px] font-bold px-3 py-2 rounded-lg border border-transparent focus:border-[#22741C] focus:bg-white bg-transparent transition-all outline-none text-gray-700">
-               </div>
            </div>
         </div>
         
@@ -1096,6 +1096,7 @@
             <button onclick="setRepeatType('daily')" data-rtype="daily" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매일</button>
             <button onclick="setRepeatType('weekly')" data-rtype="weekly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매주</button>
             <button onclick="setRepeatType('monthly')" data-rtype="monthly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매월</button>
+            <button onclick="setRepeatType('yearly')" data-rtype="yearly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매년</button>
           </div>
           <!-- 매주: 요일 선택 -->
           <div id="repeatDaysRow" class="hidden flex gap-1 justify-between">
@@ -4411,7 +4412,7 @@ function renderTimeGrid(dateKey) {
             b.className = `repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition ${active ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600'}`;
         });
         $('repeatDaysRow').classList.toggle('hidden', type !== 'weekly');
-        const labels = { daily: '매일 반복', weekly: '매주 반복', monthly: '매월 반복' };
+        const labels = { daily: '매일 반복', weekly: '매주 반복', monthly: '매월 반복', yearly: '매년 반복' };
         $('repeatToggleLabel').textContent = labels[type];
     }
 
@@ -4439,6 +4440,7 @@ function renderTimeGrid(dateKey) {
             if (task.type === 'daily') match = true;
             else if (task.type === 'weekly') match = task.days.includes(date.getDay());
             else if (task.type === 'monthly') match = date.getDate() === startDate.getDate();
+            else if (task.type === 'yearly') match = date.getDate() === startDate.getDate() && date.getMonth() === startDate.getMonth();
             if (match) results.push(getDateKey(date));
         }
         return results;
@@ -5558,8 +5560,7 @@ function renderCalendar() {
             // extMemoContent는 이제 contenteditable div라 oninput으로 처리됨
             const inboxInput = $('inboxInput'); 
             if(inboxInput) { inboxInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { const txt = this.value.trim(); if (txt) { inboxTasks.push({ text: txt, categoryId: selectedCategoryId || categories[0].id, isChecked: false }); setLocal('ianInboxTasks', inboxTasks); renderInbox(); this.value = ''; } } }); }
-            const plannerNewTaskInput = $('plannerNewTaskInput');
-            if(plannerNewTaskInput) { plannerNewTaskInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { const txt = this.value.trim(); const dateKey = currentPlannerDateKey; if (txt && dateKey) { if (!allTasks[dateKey]) allTasks[dateKey] = []; allTasks[dateKey].push({ text: txt, categoryId: 'cat1', isChecked: false }); saveAndRefresh(); renderPlannerTasks(dateKey); this.value = ''; } } }); }
+            // plannerNewTaskInput 제거됨 → 헤더의 '+ 일정 추가' 버튼으로 대체
         } catch(err) { console.error("초기화 중 에러 발생:", err); }
     };
 
