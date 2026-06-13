@@ -1095,6 +1095,7 @@
           <div class="flex gap-2">
             <button onclick="setRepeatType('daily')" data-rtype="daily" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매일</button>
             <button onclick="setRepeatType('weekly')" data-rtype="weekly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매주</button>
+            <button onclick="setRepeatType('biweekly')" data-rtype="biweekly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">격주</button>
             <button onclick="setRepeatType('monthly')" data-rtype="monthly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매월</button>
             <button onclick="setRepeatType('yearly')" data-rtype="yearly" class="repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600 transition">매년</button>
           </div>
@@ -4411,8 +4412,8 @@ function renderTimeGrid(dateKey) {
             const active = b.dataset.rtype === type;
             b.className = `repeat-type-btn flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition ${active ? 'border-green-400 bg-green-50 text-green-600' : 'border-gray-200 bg-white text-gray-500 hover:border-green-400 hover:text-green-600'}`;
         });
-        $('repeatDaysRow').classList.toggle('hidden', type !== 'weekly');
-        const labels = { daily: '매일 반복', weekly: '매주 반복', monthly: '매월 반복', yearly: '매년 반복' };
+        $('repeatDaysRow').classList.toggle('hidden', type !== 'weekly' && type !== 'biweekly');
+        const labels = { daily: '매일 반복', weekly: '매주 반복', biweekly: '격주 반복', monthly: '매월 반복', yearly: '매년 반복' };
         $('repeatToggleLabel').textContent = labels[type];
     }
 
@@ -4430,8 +4431,8 @@ function renderTimeGrid(dateKey) {
     function getRepeatDatesInMonth(task, year, month) {
         const results = [];
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const endDate = task.endDate ? new Date(task.endDate) : null;
-        const startDate = new Date(task.startDate);
+        const endDate = task.endDate ? parseLocalDate(task.endDate) : null;
+        const startDate = parseLocalDate(task.startDate);
         for (let d = 1; d <= daysInMonth; d++) {
             const date = new Date(year, month, d);
             if (date < startDate) continue;
@@ -4439,6 +4440,14 @@ function renderTimeGrid(dateKey) {
             let match = false;
             if (task.type === 'daily') match = true;
             else if (task.type === 'weekly') match = task.days.includes(date.getDay());
+            else if (task.type === 'biweekly') {
+                // 격주: 시작일 기준 2주 단위로 해당 요일 매칭
+                if (task.days && task.days.includes(date.getDay())) {
+                    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+                    const weeksDiff = Math.round((date - startDate) / msPerWeek);
+                    match = weeksDiff >= 0 && weeksDiff % 2 === 0;
+                }
+            }
             else if (task.type === 'monthly') match = date.getDate() === startDate.getDate();
             else if (task.type === 'yearly') match = date.getDate() === startDate.getDate() && date.getMonth() === startDate.getMonth();
             if (match) results.push(getDateKey(date));
