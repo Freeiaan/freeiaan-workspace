@@ -84,7 +84,7 @@
     .drag-handle-dash { cursor: grab; color: #9ca3af; font-size: 16px; user-select: none; display: flex; align-items: center; }
     .cat-badge-bg { padding: 2px 5px; border-radius: 4px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
     .color-circle { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); position: relative; }
-    .color-circle.selected { outline: 4px solid #000; outline-offset: 2px; }
+    .color-circle.selected { box-shadow: 0 0 0 2.5px #fff, 0 0 0 5px #22741C; outline: none; }
     .delete-cat-btn { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background-color: #ef4444; color: white; border-radius: 50%; font-size: 12px; display: none; align-items: center; justify-content: center; border: 2px solid white; z-index: 50; font-weight: 900; cursor: pointer; line-height: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .category-name { width: 100%; text-align: center; border: none; background: transparent; font-size: 12px; font-weight: 700; color: #000; outline: none; margin-top: 8px !important; padding: 0 !important; }
     .edit-mode .category-name { border-bottom: 2px solid #000; }
@@ -1128,6 +1128,26 @@
           <button id="modalSaveBtn" class="bg-[#22741C] text-white px-8 py-3 rounded-xl font-black text-sm shadow-md hover:bg-[#1b5e16] transition-all active:scale-95">저장 🚀</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ✅ 커스텀 카테고리 색상 피커 모달 -->
+  <div id="catColorPickerModal" class="hidden fixed inset-0 z-[700] flex items-end sm:items-center justify-center" onclick="if(event.target===this)closeCatColorPicker()">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-[320px] p-5 pb-8 sm:pb-5">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-[14px] font-black text-gray-800">색상 선택</span>
+        <button onclick="closeCatColorPicker()" class="text-gray-300 hover:text-gray-500 text-3xl font-light leading-none">&times;</button>
+      </div>
+      <!-- 미리보기 + HEX 입력 -->
+      <div class="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-2xl">
+        <div id="catColorPreview" class="w-10 h-10 rounded-full flex-shrink-0 border border-gray-200 shadow-sm transition-colors"></div>
+        <input id="catColorHexInput" type="text" maxlength="7" placeholder="#000000"
+               class="flex-1 text-[13px] font-bold bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[#22741C] uppercase tracking-widest">
+      </div>
+      <!-- 프리셋 팔레트 -->
+      <div id="catColorPresetGrid" class="grid grid-cols-6 gap-2.5 justify-items-center mb-5"></div>
+      <!-- 확인 버튼 -->
+      <button onclick="applyCatColor()" class="w-full bg-[#22741C] hover:bg-[#1b5e16] text-white font-black py-3 rounded-2xl text-[13px] transition-all active:scale-95 shadow-md">확인 ✓</button>
     </div>
   </div>
 
@@ -4203,10 +4223,6 @@ function renderTimeGrid(dateKey) {
 
         const delBtn = document.createElement('div'); delBtn.className = 'delete-cat-btn'; delBtn.innerHTML = '×'; delBtn.style.display = isEditMode ? 'flex' : 'none';
         delBtn.onclick = (e) => { e.stopPropagation(); if (categories.length > 1) { categories = categories.filter(c => c.id !== cat.id); saveCategories(); buildCategoryUI(); } else { alert("최소 1개의 카테고리는 유지해야 합니다."); } };
-        const picker = document.createElement('input'); picker.type = 'color';
-        // 🔥 [버그수정] pointer-events-none 제거 → iOS/iPadOS에서 picker.click() 정상 동작
-        picker.style.cssText = 'position:absolute;opacity:0;width:26px;height:26px;top:0;left:0;cursor:pointer;border:none;padding:0;';
-        picker.onchange = (e) => { cat.color = e.target.value; saveCategories(); buildCategoryUI(); saveAndRefresh(); };
 
         // ── 길게 눌러서 드래그(편집 모드 전용) + 짧게 클릭은 기존 동작 ──
         const LONG_PRESS_MS = 350;
@@ -4310,9 +4326,8 @@ function renderTimeGrid(dateKey) {
 
         // 짧게 클릭: 기존 동작 유지 (방금 드래그했으면 무시)
         circle.onclick = (e) => {
-            e.preventDefault(); e.stopPropagation(); // 크롬 색상 피커 감지 차단
-            if (_justDragged) return;
-            if (isEditMode) picker.click();
+            if (_justDragged) { e.preventDefault(); e.stopPropagation(); return; }
+            if (isEditMode) openCatColorPicker(cat.id, cat.color);
             else { selectedCategoryId = cat.id; buildCategoryUI(); }
         };
         
@@ -4325,7 +4340,7 @@ function renderTimeGrid(dateKey) {
         if (isEditMode) nameInput.classList.add('border-b-2', 'border-black');
 
         nameInput.onchange = (e) => { cat.name = e.target.value; saveCategories(); renderCalendar(); };
-        circle.appendChild(picker); circle.appendChild(delBtn); item.appendChild(circle); item.appendChild(nameInput); container.appendChild(item);
+        circle.appendChild(delBtn); item.appendChild(circle); item.appendChild(nameInput); container.appendChild(item);
       });
     }
 
@@ -4340,6 +4355,69 @@ function renderTimeGrid(dateKey) {
         buildCategoryUI(); 
     }
     function toggleCategoryEdit() { isEditMode = !isEditMode; buildCategoryUI(); $('toggleEditBtn').textContent = isEditMode ? '완료' : '변경'; }
+
+    // ✅ 커스텀 카테고리 컬러피커
+    const CAT_PRESET_COLORS = [
+        '#000000','#3C3C43','#8E8E93','#C7C7CC','#E5E5EA','#FFFFFF',
+        '#FF3B30','#FF6B35','#FF9500','#FFCC02','#34C759','#00C7BE',
+        '#5AC8FA','#007AFF','#5856D6','#BF5AF2','#FF2D55','#FF6B6B',
+        '#30B0C7','#1C7F5E','#8B4513','#D2691E','#A8D8A8','#FFB6C1'
+    ];
+    let _catPickerTargetId = null;
+    let _catPickerTempColor = '#000000';
+
+    function openCatColorPicker(catId, currentColor) {
+        _catPickerTargetId = catId;
+        _catPickerTempColor = currentColor || '#000000';
+        const preview = $('catColorPreview');
+        const hexInput = $('catColorHexInput');
+        const grid = $('catColorPresetGrid');
+        preview.style.backgroundColor = _catPickerTempColor;
+        hexInput.value = _catPickerTempColor.toUpperCase();
+        grid.innerHTML = '';
+        CAT_PRESET_COLORS.forEach(hex => {
+            const btn = document.createElement('div');
+            btn.style.cssText = `width:36px;height:36px;border-radius:50%;background-color:${hex};cursor:pointer;border:1.5px solid rgba(0,0,0,0.08);transition:transform 0.1s,box-shadow 0.1s;flex-shrink:0;`;
+            if (hex.toUpperCase() === _catPickerTempColor.toUpperCase()) {
+                btn.style.boxShadow = '0 0 0 2.5px #fff, 0 0 0 5px #22741C';
+            }
+            btn.onclick = () => {
+                _catPickerTempColor = hex;
+                preview.style.backgroundColor = hex;
+                hexInput.value = hex.toUpperCase();
+                grid.querySelectorAll('div').forEach(b => b.style.boxShadow = '');
+                btn.style.boxShadow = '0 0 0 2.5px #fff, 0 0 0 5px #22741C';
+            };
+            grid.appendChild(btn);
+        });
+        hexInput.oninput = (e) => {
+            let val = e.target.value.trim();
+            if (!val.startsWith('#')) val = '#' + val;
+            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                _catPickerTempColor = val;
+                preview.style.backgroundColor = val;
+                grid.querySelectorAll('div').forEach(b => b.style.boxShadow = '');
+            }
+        };
+        $('catColorPickerModal').classList.remove('hidden');
+    }
+
+    function closeCatColorPicker() {
+        $('catColorPickerModal').classList.add('hidden');
+        _catPickerTargetId = null;
+    }
+
+    function applyCatColor() {
+        if (!_catPickerTargetId) { closeCatColorPicker(); return; }
+        const cat = categories.find(c => c.id === _catPickerTargetId);
+        if (cat) {
+            cat.color = _catPickerTempColor;
+            saveCategories();
+            buildCategoryUI();
+            saveAndRefresh();
+        }
+        closeCatColorPicker();
+    }
     function saveCategories() { setLocal('ianCategories', categories); renderFilterBar(); }
     function renderFilterBar() { const bar = $('filterBar'); bar.innerHTML = `<button onclick="toggleFilter('all')" class="filter-btn ${selectedFilters.has('all') ? 'active' : ''}" style="color:#000; background:#eee">전체보기</button>`; categories.forEach(cat => { const btn = document.createElement('button'); btn.onclick = () => toggleFilter(cat.id); btn.className = `filter-btn ${selectedFilters.has(cat.id) ? 'active' : ''}`; btn.style.color = cat.color; btn.style.backgroundColor = hexToRgba(cat.color, 0.12); btn.textContent = cat.name; bar.appendChild(btn); }); }
     function toggleFilter(id) { if (id === 'all') { selectedFilters.clear(); selectedFilters.add('all'); } else { selectedFilters.delete('all'); selectedFilters.has(id) ? selectedFilters.delete(id) : selectedFilters.add(id); if (selectedFilters.size === 0) selectedFilters.add('all'); } renderFilterBar(); renderCalendar(); renderDashboard(); }
