@@ -1644,7 +1644,8 @@ function syncToCloud() {
             // 📝 인덱스 메모장 데이터
             richMemoTabs: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTabs') || 'null'); } catch(e) { return null; } })() || [],
             richMemoTrash: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTrash') || 'null'); } catch(e) { return null; } })() || [],
-            richMemoActiveId: localStorage.getItem('freeiaan_activeMemoTab') || ''
+            richMemoActiveId: localStorage.getItem('freeiaan_activeMemoTab') || '',
+            mondayStart: localStorage.getItem('ianMondayStart') || '0'
         };
 
         db.collection("users").doc(currentUser.email).set(dataToSave)
@@ -2488,6 +2489,7 @@ function loadFromCloud() {
             }
             if (data.richMemoActiveId) {
                 localStorage.setItem('freeiaan_activeMemoTab', data.richMemoActiveId);
+                if (data.mondayStart !== undefined) localStorage.setItem('ianMondayStart', data.mondayStart);
             }
 
             // 로컬이 더 최신이었으면, 이제 클라우드 데이터가 메모리에 올라간 상태로 재동기화 (안전)
@@ -6802,6 +6804,7 @@ function renderMemoFolders() {
         window.currentWeekKey = getDateKey(getStartOfWeek(new Date()));
         renderCalendar();
         renderDashboard();
+        syncToCloud(); // 월요일 시작 설정 클라우드 동기화
     };
     window.openSettingsModal = function() {
         document.getElementById('settingsModal').classList.remove('hidden');
@@ -6911,7 +6914,13 @@ function renderMemoFolders() {
 
         if (confirm("정말 복원하시겠습니까? 현재 입력된 데이터는 사라지고 백업 데이터로 덮어씌워집니다.")) {
             try {
-                const parsedData = JSON.parse(backupData);
+                const parsedData = (() => {
+                    try {
+                        return JSON.parse(decodeURIComponent(atob(backupData.trim())));
+                    } catch {
+                        return JSON.parse(backupData.trim()); // 구버전 raw JSON 백업 호환
+                    }
+                })();
                 for (let key in parsedData) {
                     localStorage.setItem(key, JSON.stringify(parsedData[key]));
                 }
