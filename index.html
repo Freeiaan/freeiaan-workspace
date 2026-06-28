@@ -4310,7 +4310,8 @@ function renderTimeGrid(dateKey) {
 
         // 짧게 클릭: 기존 동작 유지 (방금 드래그했으면 무시)
         circle.onclick = (e) => {
-            if (_justDragged) { e.preventDefault(); e.stopPropagation(); return; }
+            e.preventDefault(); e.stopPropagation(); // 크롬 색상 피커 감지 차단
+            if (_justDragged) return;
             if (isEditMode) picker.click();
             else { selectedCategoryId = cat.id; buildCategoryUI(); }
         };
