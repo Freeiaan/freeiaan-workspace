@@ -1613,6 +1613,14 @@ window.addEventListener('beforeunload', (event) => {
     }
 });
 
+// ☁️ 앱이 백그라운드로 가는 순간 즉시 저장 (모바일 PWA 데이터 유실 방지)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && currentUser) {
+        clearTimeout(syncTimeout);
+        _syncNow();
+    }
+});
+
 // ☁️ 동기화 팝업 조종 마법사
 function showSyncUI(isSaving) {
     // 모바일/태블릿에서는 저장 알림 숨김 (하단 탭바 가림 방지)
@@ -1642,52 +1650,52 @@ function showSyncUI(isSaving) {
     }
 }
 
-// ☁️ 데이터를 클라우드에 저장하는 함수
+// ☁️ 실제 Firebase 저장 실행 함수 (debounce 없이 즉시)
+function _syncNow() {
+    if (!currentUser) return;
+    const now = Date.now();
+    localStorage.setItem('ianLastSavedAt', String(now));
+    const dataToSave = {
+        categories: categories || [],
+        trackerColors: trackerColors || {},
+        allTasks: allTasks || {},
+        multiTasks: multiTasks || [],
+        dailyRecords: dailyRecords || {},
+        inboxTasks: inboxTasks || [],
+        weeklyMemos: weeklyMemos || {},
+        weeklyHabits: weeklyHabits || {},
+        extendedMemos: extendedMemos || [{title:'',content:''},{title:'',content:''},{title:'',content:''},{title:'',content:''}],
+        memo: document.getElementById('memoArea') ? document.getElementById('memoArea').value : '',
+        lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '',
+        ledgerData: ledgerData || {},
+        repeatTasks: repeatTasks || [],
+        savedAt: now,
+        // 📝 인덱스 메모장 데이터
+        richMemoTabs: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTabs') || 'null'); } catch(e) { return null; } })() || [],
+        richMemoTrash: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTrash') || 'null'); } catch(e) { return null; } })() || [],
+        richMemoActiveId: localStorage.getItem('freeiaan_activeMemoTab') || '',
+        mondayStart: localStorage.getItem('ianMondayStart') || '0'
+    };
+    db.collection("users").doc(currentUser.email).set(dataToSave)
+        .then(() => { 
+            console.log("Cloud Sync Success!"); 
+            isSyncing = false; 
+            showSyncUI(false);
+        })
+        .catch((error) => { 
+            console.error("Error syncing to cloud: ", error); 
+            isSyncing = false; 
+            showSyncUI(false); 
+        });
+}
+
+// ☁️ 데이터를 클라우드에 저장하는 함수 (1초 debounce)
 function syncToCloud() {
     if (!currentUser) return;
-
     isSyncing = true; 
-    showSyncUI(true); // 🌟 글씨 쓰자마자 '저장 중 🟡' 팝업 띄우기!
-
+    showSyncUI(true);
     clearTimeout(syncTimeout);
-    syncTimeout = setTimeout(() => {
-        const now = Date.now();
-        localStorage.setItem('ianLastSavedAt', String(now));
-        // undefined 값을 기본값으로 대체 (Firebase는 undefined 허용 안 함)
-        const dataToSave = {
-            categories: categories || [],
-            trackerColors: trackerColors || {},
-            allTasks: allTasks || {},
-            multiTasks: multiTasks || [],
-            dailyRecords: dailyRecords || {},
-            inboxTasks: inboxTasks || [],
-            weeklyMemos: weeklyMemos || {},
-            weeklyHabits: weeklyHabits || {},
-            extendedMemos: extendedMemos || [{title:'',content:''},{title:'',content:''},{title:'',content:''},{title:'',content:''}],
-            memo: document.getElementById('memoArea') ? document.getElementById('memoArea').value : '',
-            lastNoticeVersion: localStorage.getItem('ianLastNoticeVersion') || '',
-            ledgerData: ledgerData || {},
-            repeatTasks: repeatTasks || [],
-            savedAt: now,
-            // 📝 인덱스 메모장 데이터
-            richMemoTabs: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTabs') || 'null'); } catch(e) { return null; } })() || [],
-            richMemoTrash: (() => { try { return JSON.parse(localStorage.getItem('freeiaan_memoTrash') || 'null'); } catch(e) { return null; } })() || [],
-            richMemoActiveId: localStorage.getItem('freeiaan_activeMemoTab') || '',
-            mondayStart: localStorage.getItem('ianMondayStart') || '0'
-        };
-
-        db.collection("users").doc(currentUser.email).set(dataToSave)
-            .then(() => { 
-                console.log("Cloud Sync Success!"); 
-                isSyncing = false; 
-                showSyncUI(false); // 🌟 구글 도착 완료! '저장 완료 🟢' 팝업으로 변경!
-            })
-            .catch((error) => { 
-                console.error("Error syncing to cloud: ", error); 
-                isSyncing = false; 
-                showSyncUI(false); 
-            });
-    }, 1000); // 1초 모아서 한 번에 저장
+    syncTimeout = setTimeout(_syncNow, 1000);
 }
 
           // 🖱️ 우클릭 커스텀 메뉴 기능
