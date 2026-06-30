@@ -1571,7 +1571,7 @@
         const diff = d.getDate() - day;
         return new Date(d.setDate(diff));
     }
-    const isDateBetween = (d, s, e) => { const ct = d.getTime(), st = new Date(s).getTime(), et = new Date(e).getTime(); return ct >= st && ct <= et; };
+    const isDateBetween = (d, s, e) => { const ct = d.getTime(), st = parseLocalDate(s).getTime(), et = parseLocalDate(e).getTime(); return ct >= st && ct <= et; };
     const firebaseConfig = {
       apiKey: "AIzaSyCox_I7nCXxYOF0AvfwG2i_-oSl5Gbu8Tk",
       authDomain: "freeiaan-scheduler.firebaseapp.com",
