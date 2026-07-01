@@ -1461,6 +1461,16 @@
 
               <!-- 🗑️ 초기화 -->
               <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
+                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">자동 백업 🔄</h3>
+                  <p id="autoBackupTime" class="text-[11px] text-gray-400 font-bold mb-2">백업 없음</p>
+                  <div class="flex gap-2">
+                      <button onclick="copyAutoBackup()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-xl text-[11px] font-black transition-all">📋 백업 코드 복사</button>
+                      <button onclick="triggerAutoBackup()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">지금 백업</button>
+                  </div>
+              </div>
+
+              <!-- 🗑️ 초기화 -->
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
                   <button onclick="openResetConfirmModal()" class="w-full py-3 bg-[#fdfbf7] border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-400 text-red-400 rounded-xl text-[11px] font-black transition-all">🗑️ 초기화하기</button>
               </div>
           </div>
@@ -2631,6 +2641,7 @@ function loadFromCloud() {
 
         const memoArea = document.getElementById('memoArea'); 
         if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
+        checkAutoBackup();
     }
 
     function toggleDrawer() {
@@ -4361,6 +4372,50 @@ function renderTimeGrid(dateKey) {
     }
 
     function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos, repeatTasks })))); alert("데이터 백업 완료 (클립보드 복사됨)"); }
+
+    // ✅ 자동 백업 (24시간 주기)
+    function _generateBackupCode() {
+        return btoa(encodeURIComponent(JSON.stringify({
+            allTasks, multiTasks, categories, trackerColors,
+            memo: localStorage.getItem('ianMemo'),
+            dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos, repeatTasks
+        })));
+    }
+
+    function checkAutoBackup() {
+        const stored = localStorage.getItem('ianAutoBackup');
+        const lastAt = stored ? (JSON.parse(stored).savedAt || 0) : 0;
+        if (Date.now() - lastAt >= 24 * 60 * 60 * 1000) {
+            triggerAutoBackup();
+        } else {
+            updateAutoBackupUI();
+        }
+    }
+
+    function triggerAutoBackup() {
+        try {
+            const code = _generateBackupCode();
+            localStorage.setItem('ianAutoBackup', JSON.stringify({ code, savedAt: Date.now() }));
+            updateAutoBackupUI();
+        } catch(e) { console.error('자동 백업 실패:', e); }
+    }
+
+    function updateAutoBackupUI() {
+        const el = document.getElementById('autoBackupTime');
+        if (!el) return;
+        const stored = localStorage.getItem('ianAutoBackup');
+        if (!stored) { el.textContent = '백업 없음'; return; }
+        const { savedAt } = JSON.parse(stored);
+        const d = new Date(savedAt);
+        el.textContent = `마지막 백업: ${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} (24시간마다 자동 저장)`;
+    }
+
+    function copyAutoBackup() {
+        const stored = localStorage.getItem('ianAutoBackup');
+        if (!stored) { alert('저장된 자동 백업이 없습니다. 지금 백업을 먼저 실행해 주세요.'); return; }
+        const { code } = JSON.parse(stored);
+        navigator.clipboard.writeText(code).then(() => alert('자동 백업 코드 복사 완료!\n데이터 복원에서 붙여넣기 하시면 돼요 😊'));
+    }
     function addNewCategory() { 
         if (categories.length >= 14) {
             alert("카테고리는 최대 14개까지만 만들 수 있습니다! 😅");
@@ -4532,6 +4587,13 @@ function renderTimeGrid(dateKey) {
         if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; 
         if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; 
         $('eventModal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; document.body.style.touchAction = 'none';
+
+        // ✅ [버그수정] createSingle 모드에서 이전 반복 설정이 남아있지 않도록 초기화
+        if (mode === 'createSingle') {
+            currentRepeatType = null; currentRepeatDays = []; currentRepeatEndDate = null;
+            const _rp = $('repeatPanel'); if (_rp) _rp.classList.add('hidden');
+            const _rl = $('repeatToggleLabel'); if (_rl) _rl.textContent = '반복 없음';
+        }
         
         $('modalInput').value = (data && data.text) ? data.text : ''; 
         // 세부 메모장 값 세팅
@@ -6961,6 +7023,7 @@ function renderMemoFolders() {
         document.getElementById('settingsModal').classList.remove('hidden');
         updateDarkModeToggleUI();
         updateMondayStartUI();
+        updateAutoBackupUI();
     };
     // 초기 복원
     (function() { updateMondayStartUI(); })();
