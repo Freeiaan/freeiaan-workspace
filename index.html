@@ -5383,7 +5383,10 @@ function renderCalendar() {
       const slots = [];
       filteredMulti.sort((a, b) => new Date(a.start) - new Date(b.start)).forEach(t => { let slot = slots.findIndex(s => new Date(t.start) > new Date(s)); if (slot === -1) { slot = slots.length; slots.push(t.end); } else slots[slot] = t.end; t.slot = slot; });
 
-      for (let i = 0; i < 42; i++) {
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+      for (let i = 0; i < totalCells; i++) {
         const d = new Date(year, month, i - firstDay + 1); const key = getDateKey(d);
         const isWeekend = d.getDay() === 0 || d.getDay() === 6; 
 
