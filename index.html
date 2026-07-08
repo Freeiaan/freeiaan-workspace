@@ -2030,6 +2030,11 @@ function handleContextAdd() {
     document.getElementById('contextMenu').classList.add('hidden');
 }
     
+    // 📌 모달 스크롤 잠금/해제 헬퍼 (전역 스코프)
+    let _scrollLockCount = 0;
+    function _lockScroll() { _scrollLockCount++; document.body.style.overflow = 'hidden'; document.body.style.touchAction = 'none'; }
+    function _unlockScroll() { _scrollLockCount = Math.max(0, _scrollLockCount - 1); if (_scrollLockCount === 0) { document.body.style.overflow = ''; document.body.style.touchAction = ''; } }
+
     // 🔥 [UX] 팝업 전체 닫기 + 스크롤 잠금 해제 유틸
     function closeAllPopups() {
         const ctx = document.getElementById('contextMenu');
@@ -5556,12 +5561,7 @@ function renderCalendar() {
               let _ghost = null;
               let _startX, _startY;
 
-              // 📌 모달 스크롤 잠금/해제 헬퍼
-    let _scrollLockCount = 0;
-    function _lockScroll() { _scrollLockCount++; document.body.style.overflow = 'hidden'; document.body.style.touchAction = 'none'; }
-    function _unlockScroll() { _scrollLockCount = Math.max(0, _scrollLockCount - 1); if (_scrollLockCount === 0) { document.body.style.overflow = ''; document.body.style.touchAction = ''; } }
-
-    // 🔒 드래그 모드 시 touchmove preventDefault로 스크롤 완전 차단
+              // 🔒 드래그 모드 시 touchmove preventDefault로 스크롤 완전 차단
               const _blockScroll = (e) => { if (_dragMode) e.preventDefault(); };
 
               const _cleanupDrag = () => {
