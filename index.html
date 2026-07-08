@@ -1136,7 +1136,7 @@
 
   <!-- ✅ 커스텀 카테고리 색상 피커 모달 -->
   <div id="catColorPickerModal" class="hidden fixed inset-0 z-[700] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onclick="if(event.target===this)closeCatColorPicker()">
-    <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-[340px] p-5 pb-8 sm:pb-5">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-[340px] p-5 pb-8 sm:pb-5 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between mb-4">
         <span class="text-[14px] font-black text-gray-800">색상 선택</span>
         <button onclick="closeCatColorPicker()" class="text-gray-300 hover:text-gray-500 text-3xl font-light leading-none">&times;</button>
@@ -4525,6 +4525,8 @@ function renderTimeGrid(dateKey) {
         $('catHueSlider').value = Math.round(_catPicker.hue);
         $('catColorPreview').style.backgroundColor = _catPickerTempColor;
         $('catColorPickerModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // 뒷배경 스크롤 잠금
+        document.body.style.touchAction = 'none';
         _attachCatCanvasEvents();
         requestAnimationFrame(() => requestAnimationFrame(() => _drawCatCanvas()));
     }
@@ -4532,6 +4534,13 @@ function renderTimeGrid(dateKey) {
     function closeCatColorPicker() {
         $('catColorPickerModal').classList.add('hidden');
         _catPickerTargetId = null;
+        // touch-through 방지: 잠시 pointer-events 차단 후 스크롤 해제
+        document.body.style.pointerEvents = 'none';
+        setTimeout(() => {
+            document.body.style.pointerEvents = '';
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
+        }, 300);
     }
 
     function applyCatColor() {
