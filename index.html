@@ -1392,86 +1392,85 @@
   </button>
 
   <div id="settingsModal" class="hidden fixed inset-0 z-[5000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-[#faf8f5] w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl border border-[#e6e2d8]">
-          <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-black text-gray-800 flex items-center gap-2">설정 ⚙️</h2>
-              <button onclick="closeSettingsModal()" class="text-3xl text-gray-400 hover:text-black transition-colors">&times;</button>
+      <div class="bg-[#faf8f5] w-full max-w-sm rounded-2xl p-4 shadow-2xl border border-[#e6e2d8]">
+          <div class="flex items-center justify-between mb-4">
+              <h2 class="text-[15px] font-black text-gray-800 flex items-center gap-2">설정 ⚙️</h2>
+              <button onclick="closeSettingsModal()" class="text-2xl text-gray-400 hover:text-black transition-colors">&times;</button>
           </div>
 
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-2">
               <!-- 🌙 다크모드 토글 -->
-              <div id="darkModeToggleWrap" class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center">
+              <div id="darkModeToggleWrap" class="bg-white border border-[#e6e2d8] rounded-xl p-3 flex justify-between items-center">
                   <div>
-                      <h3 class="text-[13px] font-black text-gray-800">다크모드 🌙</h3>
-                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">어두운 화면으로 전환해요</p>
+                      <h3 class="text-[12px] font-black text-gray-800">다크모드 🌙</h3>
+                      <p class="text-[10px] font-bold text-gray-400 mt-0.5">어두운 화면으로 전환해요</p>
                   </div>
                   <button id="darkModeToggleBtn" onclick="toggleDarkMode()"
-                      class="relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none"
+                      class="relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none flex-shrink-0"
                       style="background:#d1d5db;">
                       <span id="darkModeToggleThumb"
-                          class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300"
+                          class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300"
                           style="transform:translateX(0)"></span>
                   </button>
               </div>
 
               <!-- 📅 월요일 시작 토글 -->
-              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center">
+              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3 flex justify-between items-center">
                   <div>
-                      <h3 class="text-[13px] font-black text-gray-800">월요일 시작 📅</h3>
-                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">캘린더를 월~일 순서로 표시해요</p>
+                      <h3 class="text-[12px] font-black text-gray-800">월요일 시작 📅</h3>
+                      <p class="text-[10px] font-bold text-gray-400 mt-0.5">캘린더를 월~일 순서로 표시해요</p>
                   </div>
                   <button id="mondayStartToggleBtn" onclick="toggleMondayStart()"
-                      class="relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none"
+                      class="relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none flex-shrink-0"
                       style="background:#d1d5db;">
                       <span id="mondayStartToggleThumb"
-                          class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300"
+                          class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300"
                           style="transform:translateX(0)"></span>
                   </button>
               </div>
-              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center hover:border-[#22741C] transition-colors group cursor-pointer" onclick="closeSettingsModal(); openFeedbackModal();">
+
+              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3 flex justify-between items-center hover:border-[#22741C] transition-colors group cursor-pointer" onclick="closeSettingsModal(); openFeedbackModal();">
                   <div>
-                      <h3 class="text-[13px] font-black text-gray-800 group-hover:text-[#22741C] transition-colors flex items-center gap-2">
+                      <h3 class="text-[12px] font-black text-gray-800 group-hover:text-[#22741C] transition-colors flex items-center gap-2">
                           이안의 우체통 📮
                           <span id="innerNotification" class="hidden flex h-2.5 w-2.5">
                               <span class="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-red-400 opacity-75"></span>
                               <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span>
                           </span>
                       </h3>
-                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">건의사항 남기기 및 이안의 답장 확인</p>
+                      <p class="text-[10px] font-bold text-gray-400 mt-0.5">건의사항 남기기 및 이안의 답장 확인</p>
                   </div>
-                  <span class="text-gray-300 group-hover:text-[#22741C] text-lg font-bold">〉</span>
+                  <span class="text-gray-300 group-hover:text-[#22741C] text-base font-bold">〉</span>
               </div>
 
               <!-- 🔄 새로고침 / 로그아웃 -->
-              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
-                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">계정</h3>
+              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
+                  <h3 class="text-[11px] font-black text-gray-800 mb-2 border-b border-gray-50 pb-1.5">계정</h3>
                   <div class="flex gap-2">
-                      <button onclick="closeSettingsModal(); window.location.reload();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">🔄 새로고침</button>
-                      <button onclick="closeSettingsModal(); logout();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-red-50 hover:text-red-500 hover:border-red-200 text-gray-600 rounded-xl text-[11px] font-black transition-all">🚪 로그아웃</button>
+                      <button onclick="closeSettingsModal(); window.location.reload();" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-lg text-[11px] font-black transition-all">🔄 새로고침</button>
+                      <button onclick="closeSettingsModal(); logout();" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-red-50 hover:text-red-500 hover:border-red-200 text-gray-600 rounded-lg text-[11px] font-black transition-all">🚪 로그아웃</button>
                   </div>
               </div>
 
-              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
-                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">데이터 관리 (보안)</h3>
+              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
+                  <h3 class="text-[11px] font-black text-gray-800 mb-2 border-b border-gray-50 pb-1.5">데이터 관리 (보안)</h3>
                   <div class="flex gap-2">
-                      <button onclick="exportData()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-xl text-[11px] font-black transition-all">수동 백업 💾</button>
-                      <button onclick="closeSettingsModal(); window.openRestoreModal();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">데이터 복원 📥</button>
+                      <button onclick="exportData()" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-lg text-[11px] font-black transition-all">수동 백업 💾</button>
+                      <button onclick="closeSettingsModal(); window.openRestoreModal();" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-lg text-[11px] font-black transition-all">데이터 복원 📥</button>
                   </div>
               </div>
 
-              <!-- 🗑️ 초기화 -->
-              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
-                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">자동 백업 🔄</h3>
-                  <p id="autoBackupTime" class="text-[11px] text-gray-400 font-bold mb-2">백업 없음</p>
+              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
+                  <h3 class="text-[11px] font-black text-gray-800 mb-1.5 border-b border-gray-50 pb-1.5">자동 백업 🔄</h3>
+                  <p id="autoBackupTime" class="text-[10px] text-gray-400 font-bold mb-2">백업 없음</p>
                   <div class="flex gap-2">
-                      <button onclick="copyAutoBackup()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-xl text-[11px] font-black transition-all">📋 백업 코드 복사</button>
-                      <button onclick="triggerAutoBackup()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">지금 백업</button>
+                      <button onclick="copyAutoBackup()" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-lg text-[11px] font-black transition-all">📋 백업 코드 복사</button>
+                      <button onclick="triggerAutoBackup()" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-lg text-[11px] font-black transition-all">지금 백업</button>
                   </div>
               </div>
 
-              <!-- 🗑️ 초기화 -->
-              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
-                  <button onclick="openResetConfirmModal()" class="w-full py-3 bg-[#fdfbf7] border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-400 text-red-400 rounded-xl text-[11px] font-black transition-all">🗑️ 초기화하기</button>
+              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
+                  <button onclick="openResetConfirmModal()" class="w-full py-2 bg-[#fdfbf7] border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-400 text-red-400 rounded-lg text-[11px] font-black transition-all">🗑️ 초기화하기</button>
               </div>
           </div>
       </div>
