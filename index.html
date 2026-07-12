@@ -3382,30 +3382,64 @@ function loadFromCloud() {
     }
 
     function submitSmartRecord() {
-        const todayKey = getDateKey(new Date()); // 무조건 오늘 날짜로 저장!
-        if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
-        if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; 
-        let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; 
-        dailyRecords[todayKey].recorded[type] += pendingRecordSec; 
+        // 🔥 [버그수정] 하루 기준(오전 5시~다음날 4:59)을 넘는 기록은 날짜별로 분할 저장
+        const now = new Date();
+        // "스케줄러 기준 오늘" 계산: 새벽 0~4시는 전날로 취급
+        const schedToday = new Date(now);
+        if (now.getHours() < 5) schedToday.setDate(schedToday.getDate() - 1);
+        const todayKey = getDateKey(schedToday);
+        // 전날 키 (분할 저장용)
+        const schedPrev = new Date(schedToday); schedPrev.setDate(schedPrev.getDate() - 1);
+        const prevKey = getDateKey(schedPrev);
+
+        const _ensureDay = (k) => {
+            if (!dailyRecords[k]) dailyRecords[k] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
+            if (!dailyRecords[k].recorded) dailyRecords[k].recorded = { stopwatch: 0, timer: 0 };
+            if (!dailyRecords[k].labels) dailyRecords[k].labels = {};
+        };
+        _ensureDay(todayKey);
+
+        let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer';
         const inputText = $('smartRecordInput').value.trim(); const inputColor = $('smartRecordColor').value; const taskIdx = $('smartRecordModal').dataset.taskIdx;
-      
+
         // 🍅 뽀모도로 태그 선택됐으면 이름 앞에 붙이기
-          const pomoSelected = $('pomodoroTagBtn')?.dataset.selected === 'true';
-          const finalText = pomoSelected ? `🍅 ${$('pomodoroTagLabel').textContent} | ${inputText}` : inputText;
+        const pomoSelected = $('pomodoroTagBtn')?.dataset.selected === 'true';
+        const finalText = pomoSelected ? `🍅 ${$('pomodoroTagLabel').textContent} | ${inputText}` : inputText;
 
-        // 🔥 이안님 요청: 타이머 기록 시 할 일 자동 체크(완료) 기능 제거! (이름과 색상만 복사해 옵니다)
-        // if (taskIdx !== '' && allTasks[todayKey][taskIdx]) allTasks[todayKey][taskIdx].isChecked = true;
-
+        // ── 그리드 분할 색칠 ──
+        let prevOverflowBlocks = 0; // 전날로 넘어간 블록 수 (recorded 분배용)
         if ($('syncTrackerToggle').checked && finalText) {
-            const now = new Date(); let currentHour = now.getHours(); if (currentHour < 5) currentHour += 24; const currentMin = now.getMinutes();
-            let endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
-            let blocksToFill = Math.floor(pendingRecordSec / 600); if (blocksToFill < 1) blocksToFill = 1; let startIdx = Math.max(0, endIdx - blocksToFill + 1);
+            let currentHour = now.getHours(); if (currentHour < 5) currentHour += 24; const currentMin = now.getMinutes();
+            const endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
+            let blocksToFill = Math.floor(pendingRecordSec / 600); if (blocksToFill < 1) blocksToFill = 1;
+            let startIdx = endIdx - blocksToFill + 1;
+
+            if (startIdx < 0) {
+                // 🔥 전날(5시 기준) 그리드 뒤쪽에 넘친 만큼 색칠
+                prevOverflowBlocks = -startIdx;
+                _ensureDay(prevKey);
+                const prevStart = Math.max(0, 144 - prevOverflowBlocks);
+                for (let i = prevStart; i < 144; i++) { dailyRecords[prevKey].grid[i] = inputColor; }
+                dailyRecords[prevKey].labels[prevStart] = { text: finalText, color: inputColor };
+                startIdx = 0;
+            }
+
             for (let i = startIdx; i <= endIdx; i++) { dailyRecords[todayKey].grid[i] = inputColor; }
-            if (!dailyRecords[todayKey].labels) dailyRecords[todayKey].labels = {};
             dailyRecords[todayKey].labels[startIdx] = { text: finalText, color: inputColor };
         }
+
+        // ── recorded(총 기록 시간) 날짜별 비례 분배 ──
+        if (prevOverflowBlocks > 0) {
+            const prevSec = Math.min(pendingRecordSec, prevOverflowBlocks * 600);
+            dailyRecords[prevKey].recorded[type] += prevSec;
+            dailyRecords[todayKey].recorded[type] += (pendingRecordSec - prevSec);
+        } else {
+            dailyRecords[todayKey].recorded[type] += pendingRecordSec;
+        }
+
         savePlannerData(); saveAndRefresh(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); 
         if (currentPlannerDateKey === todayKey) { updateModalRecordDisplay(todayKey); renderTimeGrid(todayKey); renderPlannerTasks(todayKey); }
+        if (currentPlannerDateKey === prevKey) { updateModalRecordDisplay(prevKey); renderTimeGrid(prevKey); renderPlannerTasks(prevKey); }
         $('smartRecordModal').classList.add('hidden');
     }
 
