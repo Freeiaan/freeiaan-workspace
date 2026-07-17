@@ -1623,12 +1623,29 @@ window.addEventListener('beforeunload', (event) => {
 });
 
 // ☁️ 앱이 백그라운드로 가는 순간 즉시 저장 (모바일 PWA 데이터 유실 방지)
+// ☁️ 앱이 포그라운드로 돌아오면 클라우드에 더 최신 데이터가 있는지 확인 후 자동 동기화
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && currentUser) {
         clearTimeout(syncTimeout);
         _syncNow();
+    } else if (document.visibilityState === 'visible' && currentUser && _cloudLoaded) {
+        _refreshFromCloudIfNewer();
     }
 });
+
+// ☁️ 다른 기기가 올린 최신 데이터 감지 → 자동 재로드 (새로고침 없이 동기화)
+function _refreshFromCloudIfNewer() {
+    if (!currentUser || !_cloudLoaded || isSyncing) return;
+    db.collection("users").doc(currentUser.email).get({ source: 'server' }).then(doc => {
+        if (!doc.exists) return;
+        const remoteSavedAt = doc.data().savedAt || 0;
+        const localSavedAt = parseInt(localStorage.getItem('ianLastSavedAt') || '0');
+        if (remoteSavedAt > localSavedAt + 1000) {
+            console.log('다른 기기의 최신 데이터 감지 - 자동 동기화');
+            loadFromCloud();
+        }
+    }).catch(() => {}); // 오프라인이면 조용히 무시
+}
 
 // ☁️ 동기화 팝업 조종 마법사
 function showSyncUI(isSaving) {
@@ -2507,14 +2524,15 @@ function loadFromCloud() {
             const _shouldResync = localSavedAt > cloudSavedAt + 5000;
 
             // 🔥 [버그수정] 빈 배열로 카테고리 날아가는 버그 방지
-            // 🔥 [자동복구] 클라우드 카테고리가 오염(기본 5개로 리셋)됐는데 이 기기 localStorage에
-            // 커스텀 카테고리가 더 풍부하게 남아있으면 → 로컬을 채택하고 클라우드로 복구
+            // 🔥 [자동복구] 이 기기 localStorage의 카테고리가 클라우드보다 많고,
+            // 클라우드의 모든 카테고리가 로컬에도 포함(로컬이 상위집합)되어 있으면
+            // → 클라우드가 옛날 스냅샷으로 오염된 것으로 판단, 로컬을 채택하고 클라우드로 복구
             if(data.categories && data.categories.length > 0) {
                 const _localCats = getLocal('ianCategories', null);
-                const _cloudIsDefaultish = data.categories.length <= defaultCats.length
-                    && data.categories.every(c => defaultCats.some(d => d.id === c.id));
-                const _localIsRicher = Array.isArray(_localCats) && _localCats.length > data.categories.length;
-                if (_cloudIsDefaultish && _localIsRicher) {
+                const _localIsSuperset = Array.isArray(_localCats)
+                    && _localCats.length > data.categories.length
+                    && data.categories.every(c => _localCats.some(l => l.id === c.id));
+                if (_localIsSuperset) {
                     console.log('⚠️ 카테고리 오염 감지 - 로컬 카테고리로 자동 복구');
                     categories = _localCats;
                     _categoryRecovered = true; // 로드 완료 후 클라우드로 재업로드
@@ -2567,6 +2585,8 @@ function loadFromCloud() {
 
             // ✅ 클라우드 로드 완료 - 이제부터 동기화 허용
             _cloudLoaded = true;
+            // 로드 시점 동기화: 이후 visible 리프레시 판단 기준
+            if (cloudSavedAt) localStorage.setItem('ianLastSavedAt', String(cloudSavedAt));
             // 카테고리 자동 복구됐으면 즉시 클라우드로 재업로드
             if (_categoryRecovered) { console.log("복구된 카테고리 클라우드 재업로드"); syncToCloud(); }
             // 로컬이 더 최신이었으면, 이제 클라우드 데이터가 메모리에 올라간 상태로 재동기화 (안전)
