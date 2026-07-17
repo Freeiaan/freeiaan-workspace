@@ -1659,9 +1659,13 @@ function showSyncUI(isSaving) {
     }
 }
 
+// ☁️ 클라우드 로드 완료 플래그: 로드 전 동기화로 오래된 로컬이 클라우드를 덮어쓰는 사고 방지
+let _cloudLoaded = false;
+
 // ☁️ 실제 Firebase 저장 실행 함수 (debounce 없이 즉시)
 function _syncNow() {
     if (!currentUser) return;
+    if (!_cloudLoaded) { console.log('클라우드 로드 전 - 동기화 차단'); return; }
     const now = Date.now();
     localStorage.setItem('ianLastSavedAt', String(now));
     const dataToSave = {
@@ -1701,6 +1705,7 @@ function _syncNow() {
 // ☁️ 데이터를 클라우드에 저장하는 함수 (1초 debounce)
 function syncToCloud() {
     if (!currentUser) return;
+    if (!_cloudLoaded) { console.log('클라우드 로드 전 - 동기화 예약 차단'); return; }
     isSyncing = true; 
     showSyncUI(true);
     clearTimeout(syncTimeout);
@@ -2490,6 +2495,7 @@ function loadFromCloud() {
 
     // (이름 바꿔치기 하는 코드는 깔끔하게 삭제했습니다!)
 
+    let _categoryRecovered = false;
     db.collection("users").doc(currentUser.email).get().then((doc) => {
         if (doc.exists) {
             const data = doc.data();
@@ -2501,7 +2507,23 @@ function loadFromCloud() {
             const _shouldResync = localSavedAt > cloudSavedAt + 5000;
 
             // 🔥 [버그수정] 빈 배열로 카테고리 날아가는 버그 방지
-            if(data.categories && data.categories.length > 0) categories = data.categories;
+            // 🔥 [자동복구] 클라우드 카테고리가 오염(기본 5개로 리셋)됐는데 이 기기 localStorage에
+            // 커스텀 카테고리가 더 풍부하게 남아있으면 → 로컬을 채택하고 클라우드로 복구
+            if(data.categories && data.categories.length > 0) {
+                const _localCats = getLocal('ianCategories', null);
+                const _cloudIsDefaultish = data.categories.length <= defaultCats.length
+                    && data.categories.every(c => defaultCats.some(d => d.id === c.id));
+                const _localIsRicher = Array.isArray(_localCats) && _localCats.length > data.categories.length;
+                if (_cloudIsDefaultish && _localIsRicher) {
+                    console.log('⚠️ 카테고리 오염 감지 - 로컬 카테고리로 자동 복구');
+                    categories = _localCats;
+                    _categoryRecovered = true; // 로드 완료 후 클라우드로 재업로드
+                } else {
+                    categories = data.categories;
+                }
+                // 🔥 클라우드에서 받은 최종 카테고리를 localStorage에도 저장 (캐시 최신 유지)
+                localStorage.setItem('ianCategories', JSON.stringify(categories));
+            }
             if(data.trackerColors) trackerColors = data.trackerColors;
             if(data.allTasks) allTasks = data.allTasks;
             if(data.multiTasks) multiTasks = data.multiTasks;
@@ -2539,13 +2561,20 @@ function loadFromCloud() {
             }
             if (data.richMemoActiveId) {
                 localStorage.setItem('freeiaan_activeMemoTab', data.richMemoActiveId);
-                if (data.mondayStart !== undefined) localStorage.setItem('ianMondayStart', data.mondayStart);
             }
+            // 🔥 [버그수정] mondayStart 복원을 richMemoActiveId 조건 밖으로 분리
+            if (data.mondayStart !== undefined) localStorage.setItem('ianMondayStart', data.mondayStart);
 
+            // ✅ 클라우드 로드 완료 - 이제부터 동기화 허용
+            _cloudLoaded = true;
+            // 카테고리 자동 복구됐으면 즉시 클라우드로 재업로드
+            if (_categoryRecovered) { console.log("복구된 카테고리 클라우드 재업로드"); syncToCloud(); }
             // 로컬이 더 최신이었으면, 이제 클라우드 데이터가 메모리에 올라간 상태로 재동기화 (안전)
-            if (_shouldResync) { console.log("로컬 최신 감지. 클라우드 로드 후 재동기화."); syncToCloud(); }
+            else if (_shouldResync) { console.log("로컬 최신 감지. 클라우드 로드 후 재동기화."); syncToCloud(); }
             initAppRenders();
         } else {
+            // 신규 유저: 로드할 데이터가 없으므로 바로 동기화 허용
+            _cloudLoaded = true;
             syncToCloud();
             initAppRenders(); // 🔥 신규 유저를 위해 빈 달력과 기본 화면을 쫙 그려주는 마법의 한 줄!
         }
