@@ -5423,24 +5423,17 @@ function renderTimeGrid(dateKey) {
     // 🔥 [iOS 핵심] 키보드가 올라오면 메모 모달 높이를 키보드 위 영역으로 축소
     // → 입력 영역 하단 = 키보드 상단이 되어 커서가 키보드 뒤로 갈 수 없음
     function _adjustExtMemoHeight() {
-        const m = $('extendedMemoModal');
-        if (!m || m.classList.contains('hidden')) return;
-        const inner = m.firstElementChild;
-        if (!inner) return;
+        // 🔥 [방식 변경] 모달 크기 조정 대신, 스크롤 영역 바닥에 키보드 높이만큼 여백 추가
+        // → 스크롤 최대치가 키보드만큼 늘어나 마지막 줄이 항상 키보드 위까지 올라올 수 있음
+        // → iOS가 화면을 밀어도 스크롤 범위 자체가 확보되어 있어 영향 없음
+        const wrap = $('extMemoScrollWrap');
+        if (!wrap) return;
         const vv = window.visualViewport;
-        if (vv && vv.height < window.innerHeight - 50) {
-            // 키보드 열림: iOS가 화면을 위로 민 만큼(offsetTop) 따라 내려가면서
-            // 보이는 영역(vv.height)에 정확히 맞춤 → 모달 하단 = 키보드 상단
-            inner.style.top = (vv.offsetTop || 0) + 'px';
-            inner.style.height = vv.height + 'px';
-            inner.style.bottom = 'auto';
-            inner.style.paddingTop = '0px'; // 밀린 상태에선 safe-area 여백 불필요
+        const kbHeight = vv ? Math.max(0, window.innerHeight - vv.height) : 0;
+        if (kbHeight > 50) {
+            wrap.style.paddingBottom = (kbHeight + 40) + 'px'; // 키보드 높이 + 여유 40px
         } else {
-            // 키보드 닫힘: 원래대로 복원
-            inner.style.top = '';
-            inner.style.height = '';
-            inner.style.bottom = '';
-            inner.style.paddingTop = '';
+            wrap.style.paddingBottom = '';
         }
     }
     // 키보드 열림/닫힘(resize) + iOS 화면 밀림(scroll) 모두 감지 → 위치/높이 조정 + 커서 보정
@@ -5471,7 +5464,7 @@ function renderTimeGrid(dateKey) {
         const m = $('extendedMemoModal');
         m.classList.add('hidden');
         // 키보드 대응으로 변경했던 높이 복원
-        if (m.firstElementChild) { const ic = m.firstElementChild; ic.style.top = ''; ic.style.height = ''; ic.style.bottom = ''; ic.style.paddingTop = ''; }
+        const _wrap = $('extMemoScrollWrap'); if (_wrap) _wrap.style.paddingBottom = '';
         _unlockScroll();
         currentExtMemoIndex = null;
     }
