@@ -5429,24 +5429,31 @@ function renderTimeGrid(dateKey) {
         if (!inner) return;
         const vv = window.visualViewport;
         if (vv && vv.height < window.innerHeight - 50) {
-            // 키보드 열림: 보이는 영역 높이로 제한
+            // 키보드 열림: iOS가 화면을 위로 민 만큼(offsetTop) 따라 내려가면서
+            // 보이는 영역(vv.height)에 정확히 맞춤 → 모달 하단 = 키보드 상단
+            inner.style.top = (vv.offsetTop || 0) + 'px';
             inner.style.height = vv.height + 'px';
             inner.style.bottom = 'auto';
+            inner.style.paddingTop = '0px'; // 밀린 상태에선 safe-area 여백 불필요
         } else {
             // 키보드 닫힘: 원래대로 복원
+            inner.style.top = '';
             inner.style.height = '';
             inner.style.bottom = '';
+            inner.style.paddingTop = '';
         }
     }
-    // 키보드 열림/닫힘(viewport 축소/복원) 감지 → 높이 조정 + 커서 보정
+    // 키보드 열림/닫힘(resize) + iOS 화면 밀림(scroll) 모두 감지 → 위치/높이 조정 + 커서 보정
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
+        const _extVVHandler = () => {
             const m = $('extendedMemoModal');
             if (m && !m.classList.contains('hidden')) {
                 _adjustExtMemoHeight();
                 _extKeepCursorVisible();
             }
-        });
+        };
+        window.visualViewport.addEventListener('resize', _extVVHandler);
+        window.visualViewport.addEventListener('scroll', _extVVHandler);
     }
 
     function renderExtMemoButtons() { for(let i=0; i<4; i++) { const btn = $('extMemoBtn' + i); if(btn && extendedMemos[i]) { btn.textContent = extendedMemos[i].title || `메모 ${i+1}`; } } }
@@ -5464,7 +5471,7 @@ function renderTimeGrid(dateKey) {
         const m = $('extendedMemoModal');
         m.classList.add('hidden');
         // 키보드 대응으로 변경했던 높이 복원
-        if (m.firstElementChild) { m.firstElementChild.style.height = ''; m.firstElementChild.style.bottom = ''; }
+        if (m.firstElementChild) { const ic = m.firstElementChild; ic.style.top = ''; ic.style.height = ''; ic.style.bottom = ''; ic.style.paddingTop = ''; }
         _unlockScroll();
         currentExtMemoIndex = null;
     }
