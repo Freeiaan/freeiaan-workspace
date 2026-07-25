@@ -5420,11 +5420,32 @@ function renderTimeGrid(dateKey) {
             }
         });
     }
-    // 키보드가 올라오는 순간(viewport 축소)에도 커서 위치 보정
+    // 🔥 [iOS 핵심] 키보드가 올라오면 메모 모달 높이를 키보드 위 영역으로 축소
+    // → 입력 영역 하단 = 키보드 상단이 되어 커서가 키보드 뒤로 갈 수 없음
+    function _adjustExtMemoHeight() {
+        const m = $('extendedMemoModal');
+        if (!m || m.classList.contains('hidden')) return;
+        const inner = m.firstElementChild;
+        if (!inner) return;
+        const vv = window.visualViewport;
+        if (vv && vv.height < window.innerHeight - 50) {
+            // 키보드 열림: 보이는 영역 높이로 제한
+            inner.style.height = vv.height + 'px';
+            inner.style.bottom = 'auto';
+        } else {
+            // 키보드 닫힘: 원래대로 복원
+            inner.style.height = '';
+            inner.style.bottom = '';
+        }
+    }
+    // 키보드 열림/닫힘(viewport 축소/복원) 감지 → 높이 조정 + 커서 보정
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             const m = $('extendedMemoModal');
-            if (m && !m.classList.contains('hidden')) _extKeepCursorVisible();
+            if (m && !m.classList.contains('hidden')) {
+                _adjustExtMemoHeight();
+                _extKeepCursorVisible();
+            }
         });
     }
 
@@ -5439,7 +5460,14 @@ function renderTimeGrid(dateKey) {
         else el.classList.remove('ext-memo-empty');
         $('extendedMemoModal').classList.remove('hidden'); _lockScroll();
     }
-    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); _unlockScroll(); currentExtMemoIndex = null; }
+    function closeExtendedMemo() {
+        const m = $('extendedMemoModal');
+        m.classList.add('hidden');
+        // 키보드 대응으로 변경했던 높이 복원
+        if (m.firstElementChild) { m.firstElementChild.style.height = ''; m.firstElementChild.style.bottom = ''; }
+        _unlockScroll();
+        currentExtMemoIndex = null;
+    }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
     function updateExtMemoContentDiv() {
@@ -5860,7 +5888,7 @@ function renderCalendar() {
             if (key === t.start) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'start')"></div>`;
             innerHTML += `<div class="h-[1.5px] opacity-50 absolute" style="background-color: ${cat.color}; left: ${key === t.start ? '8px' : '0'}; right: ${key === t.end ? '8px' : '0'};"></div>`;
             if (key === t.end) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'end')"></div>`;
-            if (showLabel) { innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-1.5 py-0 md:py-0.5 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)}; min-width: 0; max-width: calc(${_li.len * 100}% - 24px); overflow: hidden;" draggable="true" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[8px] md:text-[11px] text-black leading-none" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.text}${descIcon}</span></div>`; }
+            if (showLabel) { innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-1.5 py-0 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)}; min-width: 0; max-width: calc(${_li.len * 100}% - 24px); overflow: hidden;" draggable="true" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[8px] md:text-[12px] text-black leading-none" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.text}${descIcon}</span></div>`; }
             innerHTML += `</div>`; bar.innerHTML = innerHTML; bar.onclick = (e) => { e.stopPropagation(); if (!isResizing) openModal('editMulti', t); }; cell.appendChild(bar);
           }
         });
