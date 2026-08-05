@@ -1463,6 +1463,15 @@
               <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
                   <button onclick="openResetConfirmModal()" class="w-full py-3 bg-[#fdfbf7] border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-400 text-red-400 rounded-xl text-[11px] font-black transition-all">🗑️ 초기화하기</button>
               </div>
+
+              <!-- 📦 주간 자동 백업 -->
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
+                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">📦 주간 자동 백업</h3>
+                  <p class="text-[10px] text-gray-400 font-bold mb-3">매일 첫 접속 시 자동 저장 · 1주일치 보관</p>
+                  <div id="weeklyBackupList" class="flex flex-col gap-2">
+                      <div class="text-[11px] text-gray-300 font-bold text-center py-2">불러오는 중...</div>
+                  </div>
+              </div>
           </div>
       </div>
   </div>
@@ -2626,6 +2635,7 @@ function loadFromCloud() {
 
         const memoArea = document.getElementById('memoArea'); 
         if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
+        checkWeeklyBackup();
     }
 
     function toggleDrawer() {
@@ -6952,10 +6962,109 @@ function renderMemoFolders() {
         renderDashboard();
         syncToCloud(); // 월요일 시작 설정 클라우드 동기화
     };
+    // ✅ 주간 자동 백업 (Firebase weeklyBackups 컬렉션)
+    const WEEK_DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
+    const WEEK_LABELS = { sun:'일', mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토' };
+
+    function _getWeeklyBackupData() {
+        return {
+            allTasks: allTasks || {},
+            categories: categories || [],
+            trackerColors: trackerColors || {},
+            multiTasks: multiTasks || [],
+            dailyRecords: dailyRecords || {},
+            inboxTasks: inboxTasks || [],
+            weeklyMemos: weeklyMemos || {},
+            weeklyHabits: weeklyHabits || {},
+            extendedMemos: extendedMemos || [],
+            repeatTasks: repeatTasks || [],
+            ledgerData: ledgerData || {},
+            memo: localStorage.getItem('ianMemo') || ''
+        };
+    }
+
+    function checkWeeklyBackup() {
+        if (!currentUser) return;
+        const today = new Date();
+        const dayKey = WEEK_DAYS[today.getDay()];
+        const todayStr = getDateKey(today);
+        const docRef = db.collection('users').doc(currentUser.email).collection('weeklyBackups').doc(dayKey);
+        docRef.get().then(doc => {
+            const lastDate = doc.exists ? (doc.data().date || '') : '';
+            if (lastDate !== todayStr) {
+                // 오늘 백업 없으면 저장
+                docRef.set({
+                    data: _getWeeklyBackupData(),
+                    date: todayStr,
+                    savedAt: today.toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+                }).then(() => console.log('주간 자동 백업 완료:', dayKey));
+            }
+        }).catch(e => console.error('주간 백업 확인 오류:', e));
+    }
+
+    function loadWeeklyBackups() {
+        if (!currentUser) return;
+        const list = document.getElementById('weeklyBackupList');
+        if (!list) return;
+        list.innerHTML = '<div class="text-[11px] text-gray-300 font-bold text-center py-2">불러오는 중...</div>';
+        db.collection('users').doc(currentUser.email).collection('weeklyBackups').get().then(snap => {
+            const backups = {};
+            snap.forEach(doc => { backups[doc.id] = doc.data(); });
+            list.innerHTML = '';
+            WEEK_DAYS.forEach(day => {
+                const b = backups[day];
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between py-2 border-b border-gray-50 last:border-0';
+                if (b) {
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-[#22741C] text-white text-[10px] font-black flex items-center justify-center">${WEEK_LABELS[day]}</span>
+                            <span class="text-[11px] font-bold text-gray-600">${b.savedAt || b.date || '-'}</span>
+                        </div>
+                        <button onclick="restoreWeeklyBackup('${day}')" class="text-[10px] font-black text-[#22741C] border border-[#22741C] rounded-lg px-2.5 py-1 hover:bg-[#22741C] hover:text-white transition-all active:scale-95">복원</button>`;
+                } else {
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-gray-100 text-gray-300 text-[10px] font-black flex items-center justify-center">${WEEK_LABELS[day]}</span>
+                            <span class="text-[11px] font-bold text-gray-300">백업 없음</span>
+                        </div>`;
+                }
+                list.appendChild(row);
+            });
+        }).catch(e => {
+            list.innerHTML = '<div class="text-[11px] text-red-300 font-bold text-center py-2">불러오기 실패</div>';
+        });
+    }
+
+    window.restoreWeeklyBackup = function(day) {
+        if (!currentUser) return;
+        if (!confirm(`${WEEK_LABELS[day]}요일 백업으로 복원하시겠어요?\n현재 데이터는 사라집니다.`)) return;
+        db.collection('users').doc(currentUser.email).collection('weeklyBackups').doc(day).get().then(doc => {
+            if (!doc.exists) { alert('백업 데이터가 없습니다.'); return; }
+            const d = doc.data().data;
+            if (d.allTasks) allTasks = d.allTasks;
+            if (d.categories && d.categories.length > 0) categories = d.categories;
+            if (d.trackerColors) trackerColors = d.trackerColors;
+            if (d.multiTasks) multiTasks = d.multiTasks;
+            if (d.dailyRecords) dailyRecords = d.dailyRecords;
+            if (d.inboxTasks) inboxTasks = d.inboxTasks;
+            if (d.weeklyMemos) weeklyMemos = d.weeklyMemos;
+            if (d.weeklyHabits) weeklyHabits = d.weeklyHabits;
+            if (d.extendedMemos) extendedMemos = d.extendedMemos;
+            if (d.repeatTasks) repeatTasks = d.repeatTasks;
+            if (d.ledgerData) ledgerData = d.ledgerData;
+            if (d.memo !== undefined) { localStorage.setItem('ianMemo', d.memo); const ma = document.getElementById('memoArea'); if (ma) ma.value = d.memo; }
+            saveAndRefresh();
+            syncToCloud();
+            alert(`${WEEK_LABELS[day]}요일 백업으로 복원 완료! ✅`);
+        }).catch(e => alert('복원 실패: ' + e.message));
+    };
+
     window.openSettingsModal = function() {
         document.getElementById('settingsModal').classList.remove('hidden');
         updateDarkModeToggleUI();
         updateMondayStartUI();
+        loadWeeklyBackups();
     };
     // 초기 복원
     (function() { updateMondayStartUI(); })();
