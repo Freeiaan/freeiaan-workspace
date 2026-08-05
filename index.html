@@ -825,13 +825,13 @@
         <button onclick="applyExtFormat('clear')" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-xl text-gray-400 text-xs font-bold transition-colors">✕</button>
       </div>
       <!-- 스크롤 래퍼 -->
-      <div id="extMemoScrollWrap" class="flex-1 px-4 py-4 bg-[#fffbeb] overflow-y-auto custom-scrollbar" style="overscroll-behavior:none; -webkit-overflow-scrolling:touch; overflow-x:hidden; touch-action:pan-y;">
+      <div class="flex-1 px-4 py-4 bg-[#fffbeb] overflow-y-auto custom-scrollbar" style="overscroll-behavior:none; -webkit-overflow-scrolling:touch;">
         <div id="extMemoContent"
           contenteditable="true"
           spellcheck="false"
-          oninput="updateExtMemoContentDiv(); _extKeepCursorVisible();"
+          oninput="updateExtMemoContentDiv()"
           class="w-full bg-transparent outline-none text-[15px] font-medium leading-relaxed text-gray-800 relative"
-          style="min-height:60vh; word-break:break-word; overflow-wrap:anywhere; max-width:100%; overflow-x:hidden;"
+          style="min-height:60vh; word-break:break-word; overflow-wrap:break-word;"
           data-placeholder="자유롭게 긴 메모를 작성하세요..."></div>
       </div>
     </div>
@@ -1135,8 +1135,8 @@
   </div>
 
   <!-- ✅ 커스텀 카테고리 색상 피커 모달 -->
-  <div id="catColorPickerModal" class="hidden fixed inset-0 z-[700] flex items-center justify-center bg-black/40 backdrop-blur-sm" onclick="if(event.target===this)closeCatColorPicker()">
-    <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-[340px] p-5 pb-8 sm:pb-5 max-h-[90vh] overflow-y-auto">
+  <div id="catColorPickerModal" class="hidden fixed inset-0 z-[700] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onclick="if(event.target===this)closeCatColorPicker()">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-[340px] p-5 pb-8 sm:pb-5">
       <div class="flex items-center justify-between mb-4">
         <span class="text-[14px] font-black text-gray-800">색상 선택</span>
         <button onclick="closeCatColorPicker()" class="text-gray-300 hover:text-gray-500 text-3xl font-light leading-none">&times;</button>
@@ -1392,85 +1392,76 @@
   </button>
 
   <div id="settingsModal" class="hidden fixed inset-0 z-[5000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-[#faf8f5] w-full max-w-sm rounded-2xl p-4 shadow-2xl border border-[#e6e2d8]">
-          <div class="flex items-center justify-between mb-4">
-              <h2 class="text-[15px] font-black text-gray-800 flex items-center gap-2">설정 ⚙️</h2>
-              <button onclick="closeSettingsModal()" class="text-2xl text-gray-400 hover:text-black transition-colors">&times;</button>
+      <div class="bg-[#faf8f5] w-full max-w-sm rounded-3xl p-6 md:p-8 shadow-2xl border border-[#e6e2d8]">
+          <div class="flex items-center justify-between mb-6">
+              <h2 class="text-xl font-black text-gray-800 flex items-center gap-2">설정 ⚙️</h2>
+              <button onclick="closeSettingsModal()" class="text-3xl text-gray-400 hover:text-black transition-colors">&times;</button>
           </div>
 
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-3">
               <!-- 🌙 다크모드 토글 -->
-              <div id="darkModeToggleWrap" class="bg-white border border-[#e6e2d8] rounded-xl p-3 flex justify-between items-center">
+              <div id="darkModeToggleWrap" class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center">
                   <div>
-                      <h3 class="text-[12px] font-black text-gray-800">다크모드 🌙</h3>
-                      <p class="text-[10px] font-bold text-gray-400 mt-0.5">어두운 화면으로 전환해요</p>
+                      <h3 class="text-[13px] font-black text-gray-800">다크모드 🌙</h3>
+                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">어두운 화면으로 전환해요</p>
                   </div>
                   <button id="darkModeToggleBtn" onclick="toggleDarkMode()"
-                      class="relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none flex-shrink-0"
+                      class="relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none"
                       style="background:#d1d5db;">
                       <span id="darkModeToggleThumb"
-                          class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300"
+                          class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300"
                           style="transform:translateX(0)"></span>
                   </button>
               </div>
 
               <!-- 📅 월요일 시작 토글 -->
-              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3 flex justify-between items-center">
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center">
                   <div>
-                      <h3 class="text-[12px] font-black text-gray-800">월요일 시작 📅</h3>
-                      <p class="text-[10px] font-bold text-gray-400 mt-0.5">캘린더를 월~일 순서로 표시해요</p>
+                      <h3 class="text-[13px] font-black text-gray-800">월요일 시작 📅</h3>
+                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">캘린더를 월~일 순서로 표시해요</p>
                   </div>
                   <button id="mondayStartToggleBtn" onclick="toggleMondayStart()"
-                      class="relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none flex-shrink-0"
+                      class="relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none"
                       style="background:#d1d5db;">
                       <span id="mondayStartToggleThumb"
-                          class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300"
+                          class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300"
                           style="transform:translateX(0)"></span>
                   </button>
               </div>
-
-              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3 flex justify-between items-center hover:border-[#22741C] transition-colors group cursor-pointer" onclick="closeSettingsModal(); openFeedbackModal();">
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4 flex justify-between items-center hover:border-[#22741C] transition-colors group cursor-pointer" onclick="closeSettingsModal(); openFeedbackModal();">
                   <div>
-                      <h3 class="text-[12px] font-black text-gray-800 group-hover:text-[#22741C] transition-colors flex items-center gap-2">
+                      <h3 class="text-[13px] font-black text-gray-800 group-hover:text-[#22741C] transition-colors flex items-center gap-2">
                           이안의 우체통 📮
                           <span id="innerNotification" class="hidden flex h-2.5 w-2.5">
                               <span class="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-red-400 opacity-75"></span>
                               <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span>
                           </span>
                       </h3>
-                      <p class="text-[10px] font-bold text-gray-400 mt-0.5">건의사항 남기기 및 이안의 답장 확인</p>
+                      <p class="text-[11px] font-bold text-gray-400 mt-0.5">건의사항 남기기 및 이안의 답장 확인</p>
                   </div>
-                  <span class="text-gray-300 group-hover:text-[#22741C] text-base font-bold">〉</span>
+                  <span class="text-gray-300 group-hover:text-[#22741C] text-lg font-bold">〉</span>
               </div>
 
               <!-- 🔄 새로고침 / 로그아웃 -->
-              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
-                  <h3 class="text-[11px] font-black text-gray-800 mb-2 border-b border-gray-50 pb-1.5">계정</h3>
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
+                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">계정</h3>
                   <div class="flex gap-2">
-                      <button onclick="closeSettingsModal(); window.location.reload();" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-lg text-[11px] font-black transition-all">🔄 새로고침</button>
-                      <button onclick="closeSettingsModal(); logout();" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-red-50 hover:text-red-500 hover:border-red-200 text-gray-600 rounded-lg text-[11px] font-black transition-all">🚪 로그아웃</button>
+                      <button onclick="closeSettingsModal(); window.location.reload();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">🔄 새로고침</button>
+                      <button onclick="closeSettingsModal(); logout();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-red-50 hover:text-red-500 hover:border-red-200 text-gray-600 rounded-xl text-[11px] font-black transition-all">🚪 로그아웃</button>
                   </div>
               </div>
 
-              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
-                  <h3 class="text-[11px] font-black text-gray-800 mb-2 border-b border-gray-50 pb-1.5">데이터 관리 (보안)</h3>
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
+                  <h3 class="text-[12px] font-black text-gray-800 mb-3 border-b border-gray-50 pb-2">데이터 관리 (보안)</h3>
                   <div class="flex gap-2">
-                      <button onclick="exportData()" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-lg text-[11px] font-black transition-all">수동 백업 💾</button>
-                      <button onclick="closeSettingsModal(); window.openRestoreModal();" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-lg text-[11px] font-black transition-all">데이터 복원 📥</button>
+                      <button onclick="exportData()" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-xl text-[11px] font-black transition-all">수동 백업 💾</button>
+                      <button onclick="closeSettingsModal(); window.openRestoreModal();" class="flex-1 py-3 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-xl text-[11px] font-black transition-all">데이터 복원 📥</button>
                   </div>
               </div>
 
-              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
-                  <h3 class="text-[11px] font-black text-gray-800 mb-1.5 border-b border-gray-50 pb-1.5">자동 백업 🔄</h3>
-                  <p id="autoBackupTime" class="text-[10px] text-gray-400 font-bold mb-2">백업 없음</p>
-                  <div class="flex gap-2">
-                      <button onclick="copyAutoBackup()" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-[#e4f8c4] hover:text-[#1b4332] hover:border-[#22741C] text-gray-600 rounded-lg text-[11px] font-black transition-all">📋 백업 코드 복사</button>
-                      <button onclick="triggerAutoBackup()" class="flex-1 py-2 bg-[#fdfbf7] border border-[#e6e2d8] hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-gray-600 rounded-lg text-[11px] font-black transition-all">지금 백업</button>
-                  </div>
-              </div>
-
-              <div class="bg-white border border-[#e6e2d8] rounded-xl p-3">
-                  <button onclick="openResetConfirmModal()" class="w-full py-2 bg-[#fdfbf7] border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-400 text-red-400 rounded-lg text-[11px] font-black transition-all">🗑️ 초기화하기</button>
+              <!-- 🗑️ 초기화 -->
+              <div class="bg-white border border-[#e6e2d8] rounded-2xl p-4">
+                  <button onclick="openResetConfirmModal()" class="w-full py-3 bg-[#fdfbf7] border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-400 text-red-400 rounded-xl text-[11px] font-black transition-all">🗑️ 초기화하기</button>
               </div>
           </div>
       </div>
@@ -1623,29 +1614,12 @@ window.addEventListener('beforeunload', (event) => {
 });
 
 // ☁️ 앱이 백그라운드로 가는 순간 즉시 저장 (모바일 PWA 데이터 유실 방지)
-// ☁️ 앱이 포그라운드로 돌아오면 클라우드에 더 최신 데이터가 있는지 확인 후 자동 동기화
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && currentUser) {
         clearTimeout(syncTimeout);
         _syncNow();
-    } else if (document.visibilityState === 'visible' && currentUser && _cloudLoaded) {
-        _refreshFromCloudIfNewer();
     }
 });
-
-// ☁️ 다른 기기가 올린 최신 데이터 감지 → 자동 재로드 (새로고침 없이 동기화)
-function _refreshFromCloudIfNewer() {
-    if (!currentUser || !_cloudLoaded || isSyncing) return;
-    db.collection("users").doc(currentUser.email).get({ source: 'server' }).then(doc => {
-        if (!doc.exists) return;
-        const remoteSavedAt = doc.data().savedAt || 0;
-        const localSavedAt = parseInt(localStorage.getItem('ianLastSavedAt') || '0');
-        if (remoteSavedAt > localSavedAt + 1000) {
-            console.log('다른 기기의 최신 데이터 감지 - 자동 동기화');
-            loadFromCloud();
-        }
-    }).catch(() => {}); // 오프라인이면 조용히 무시
-}
 
 // ☁️ 동기화 팝업 조종 마법사
 function showSyncUI(isSaving) {
@@ -1676,14 +1650,9 @@ function showSyncUI(isSaving) {
     }
 }
 
-// ☁️ 클라우드 로드 완료 플래그: 로드 전 동기화로 오래된 로컬이 클라우드를 덮어쓰는 사고 방지
-let _cloudLoaded = false;
-let _cloudLoadRetries = 0; // 로드 실패 재시도 카운터
-
 // ☁️ 실제 Firebase 저장 실행 함수 (debounce 없이 즉시)
 function _syncNow() {
     if (!currentUser) return;
-    if (!_cloudLoaded) { console.log('클라우드 로드 전 - 동기화 차단'); return; }
     const now = Date.now();
     localStorage.setItem('ianLastSavedAt', String(now));
     const dataToSave = {
@@ -1723,7 +1692,6 @@ function _syncNow() {
 // ☁️ 데이터를 클라우드에 저장하는 함수 (1초 debounce)
 function syncToCloud() {
     if (!currentUser) return;
-    if (!_cloudLoaded) { console.log('클라우드 로드 전 - 동기화 예약 차단'); return; }
     isSyncing = true; 
     showSyncUI(true);
     clearTimeout(syncTimeout);
@@ -2052,37 +2020,6 @@ function handleContextAdd() {
     document.getElementById('contextMenu').classList.add('hidden');
 }
     
-    // 📌 모달 스크롤 잠금/해제 헬퍼 (전역 스코프)
-    // 🔥 iOS는 overflow:hidden만으로는 키보드 오픈 시 body가 밀려 올라가므로 position:fixed 방식 사용
-    let _scrollLockCount = 0;
-    let _lockedScrollY = 0;
-    function _lockScroll() {
-        _scrollLockCount++;
-        if (_scrollLockCount === 1) {
-            _lockedScrollY = window.scrollY || 0;
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${_lockedScrollY}px`;
-            document.body.style.left = '0';
-            document.body.style.right = '0';
-            document.body.style.width = '100%';
-            document.body.style.overflow = 'hidden';
-            document.body.style.touchAction = 'none';
-        }
-    }
-    function _unlockScroll() {
-        _scrollLockCount = Math.max(0, _scrollLockCount - 1);
-        if (_scrollLockCount === 0) {
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.left = '';
-            document.body.style.right = '';
-            document.body.style.width = '';
-            document.body.style.overflow = '';
-            document.body.style.touchAction = '';
-            window.scrollTo(0, _lockedScrollY);
-        }
-    }
-
     // 🔥 [UX] 팝업 전체 닫기 + 스크롤 잠금 해제 유틸
     function closeAllPopups() {
         const ctx = document.getElementById('contextMenu');
@@ -2311,7 +2248,7 @@ function handleContextAdd() {
 
     // 🚀 모달 열고 좌측 히스토리 목록 불러오기
     function openNoticeModalAndLoadHistory(initialData, isLatest) {
-        $('noticeModal').classList.remove('hidden'); _lockScroll();
+        $('noticeModal').classList.remove('hidden');
         renderNoticeDetail(initialData, isLatest);
         
         // 읽은 목록 가져오기 (로컬 스토리지)
@@ -2462,7 +2399,7 @@ function handleContextAdd() {
 
     // ❌ 그냥 창 닫기
     function closeNotice() {
-        $('noticeModal').classList.add('hidden'); _unlockScroll();
+        $('noticeModal').classList.add('hidden');
     }
 
     // 🔄 목록 항목 전체 선택 해제 헬퍼 (고정 항목은 초기 스타일로 복원)
@@ -2539,44 +2476,13 @@ function loadFromCloud() {
 
     // (이름 바꿔치기 하는 코드는 깔끔하게 삭제했습니다!)
 
-    let _categoryRecovered = false;
     db.collection("users").doc(currentUser.email).get().then((doc) => {
         if (doc.exists) {
             const data = doc.data();
 
-            // 🔥 [버그수정] 항상 클라우드 데이터를 먼저 로드한 뒤, 로컬이 더 최신이면 그 상태로 재동기화
-            // (기존: 로컬이 5초 이상 최신이면 클라우드 무시 → 기본 카테고리로 덮어쓰는 버그 수정)
-            const localSavedAt  = parseInt(localStorage.getItem('ianLastSavedAt') || '0');
-            const cloudSavedAt  = data.savedAt || 0;
-            const _shouldResync = localSavedAt > cloudSavedAt + 5000;
-
-            // 🔥 [버그수정] 빈 배열로 카테고리 날아가는 버그 방지
-            // 🔥 [자동복구] 클라우드가 옛날 스냅샷으로 오염된 경우 로컬로 복구
-            // 조건 1) 로컬이 상위집합 (클라우드의 모든 카테고리가 로컬에 포함 + 로컬이 더 많음)
-            // 조건 2) 클라우드가 전부 기본 id(cat1~cat5)로만 구성인데 로컬에 커스텀 id가 존재
-            //         (기본 스냅샷으로 리셋된 오염 - cat3 등 로컬에서 지운 기본 카테고리가 있어도 감지)
-            if(data.categories && data.categories.length > 0) {
-                const _localCats = getLocal('ianCategories', null);
-                const _defaultIds = defaultCats.map(d => d.id);
-                const _localIsSuperset = Array.isArray(_localCats)
-                    && _localCats.length > data.categories.length
-                    && data.categories.every(c => _localCats.some(l => l.id === c.id));
-                const _cloudAllDefaultIds = data.categories.every(c => _defaultIds.includes(c.id));
-                const _localHasCustom = Array.isArray(_localCats) && _localCats.some(l => !_defaultIds.includes(l.id));
-
-                if (_localIsSuperset || (_cloudAllDefaultIds && _localHasCustom)) {
-                    console.log('⚠️ 카테고리 오염 감지 - 로컬 기준 병합 복구');
-                    // 병합: 로컬 우선 + 클라우드에만 있는 카테고리도 보존 (일정의 categoryId 연결 유지)
-                    const _merged = [..._localCats];
-                    data.categories.forEach(c => { if (!_merged.some(m => m.id === c.id)) _merged.push(c); });
-                    categories = _merged;
-                    _categoryRecovered = true; // 로드 완료 후 클라우드로 재업로드
-                } else {
-                    categories = data.categories;
-                }
-                // 🔥 클라우드에서 받은 최종 카테고리를 localStorage에도 저장 (캐시 최신 유지)
-                localStorage.setItem('ianCategories', JSON.stringify(categories));
-            }
+            // ✅ [버그수정] _shouldResync 제거 - visibilitychange로 앱 종료 시 즉시 저장되므로
+            // 로컬 타임스탬프가 Firebase보다 커도 Firebase를 항상 신뢰함 (덮어쓰기 사고 방지)
+            if(data.categories && data.categories.length > 0) categories = data.categories;
             if(data.trackerColors) trackerColors = data.trackerColors;
             if(data.allTasks) allTasks = data.allTasks;
             if(data.multiTasks) multiTasks = data.multiTasks;
@@ -2614,23 +2520,13 @@ function loadFromCloud() {
             }
             if (data.richMemoActiveId) {
                 localStorage.setItem('freeiaan_activeMemoTab', data.richMemoActiveId);
+                if (data.mondayStart !== undefined) localStorage.setItem('ianMondayStart', data.mondayStart);
             }
-            // 🔥 [버그수정] mondayStart 복원을 richMemoActiveId 조건 밖으로 분리
-            if (data.mondayStart !== undefined) localStorage.setItem('ianMondayStart', data.mondayStart);
 
-            // ✅ 클라우드 로드 완료 - 이제부터 동기화 허용
-            _cloudLoaded = true;
-            _cloudLoadRetries = 0;
-            // 로드 시점 동기화: 이후 visible 리프레시 판단 기준
-            if (cloudSavedAt) localStorage.setItem('ianLastSavedAt', String(cloudSavedAt));
-            // 카테고리 자동 복구됐으면 즉시 클라우드로 재업로드
-            if (_categoryRecovered) { console.log("복구된 카테고리 클라우드 재업로드"); syncToCloud(); }
-            // 로컬이 더 최신이었으면, 이제 클라우드 데이터가 메모리에 올라간 상태로 재동기화 (안전)
-            else if (_shouldResync) { console.log("로컬 최신 감지. 클라우드 로드 후 재동기화."); syncToCloud(); }
+            // Firebase 로드 완료 후 로컬 타임스탬프를 Firebase 기준으로 동기화 (다음 로드 시 오판 방지)
+            if (data.savedAt) localStorage.setItem('ianLastSavedAt', String(data.savedAt));
             initAppRenders();
         } else {
-            // 신규 유저: 로드할 데이터가 없으므로 바로 동기화 허용
-            _cloudLoaded = true;
             syncToCloud();
             initAppRenders(); // 🔥 신규 유저를 위해 빈 달력과 기본 화면을 쫙 그려주는 마법의 한 줄!
         }
@@ -2651,16 +2547,6 @@ function loadFromCloud() {
         // 🌟 에러가 나도 화면은 볼 수 있게 가림막 치워주기
         let shield = document.getElementById('loadingShield');
         if (shield) shield.classList.add('hidden');
-
-        // 🔥 [보완] 로드 실패 시 자동 재시도 (최대 3회, 5초 간격)
-        // _cloudLoaded=false 상태로 방치되면 그 세션의 작업이 클라우드에 저장되지 않음
-        if (_cloudLoadRetries < 3) {
-            _cloudLoadRetries++;
-            console.log('클라우드 로드 재시도 ' + _cloudLoadRetries + '/3');
-            setTimeout(loadFromCloud, 5000);
-        } else {
-            alert('⚠️ 클라우드 연결에 실패했어요.\n지금 작업하는 내용은 이 기기에만 저장되고 다른 기기와 동기화되지 않아요.\n네트워크 확인 후 새로고침 해주세요!');
-        }
     });
 }
 
@@ -2740,7 +2626,6 @@ function loadFromCloud() {
 
         const memoArea = document.getElementById('memoArea'); 
         if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
-        checkAutoBackup();
     }
 
     function toggleDrawer() {
@@ -3477,64 +3362,30 @@ function loadFromCloud() {
     }
 
     function submitSmartRecord() {
-        // 🔥 [버그수정] 하루 기준(오전 5시~다음날 4:59)을 넘는 기록은 날짜별로 분할 저장
-        const now = new Date();
-        // "스케줄러 기준 오늘" 계산: 새벽 0~4시는 전날로 취급
-        const schedToday = new Date(now);
-        if (now.getHours() < 5) schedToday.setDate(schedToday.getDate() - 1);
-        const todayKey = getDateKey(schedToday);
-        // 전날 키 (분할 저장용)
-        const schedPrev = new Date(schedToday); schedPrev.setDate(schedPrev.getDate() - 1);
-        const prevKey = getDateKey(schedPrev);
-
-        const _ensureDay = (k) => {
-            if (!dailyRecords[k]) dailyRecords[k] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
-            if (!dailyRecords[k].recorded) dailyRecords[k].recorded = { stopwatch: 0, timer: 0 };
-            if (!dailyRecords[k].labels) dailyRecords[k].labels = {};
-        };
-        _ensureDay(todayKey);
-
-        let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer';
+        const todayKey = getDateKey(new Date()); // 무조건 오늘 날짜로 저장!
+        if (!dailyRecords[todayKey]) dailyRecords[todayKey] = { grid: Array(144).fill(null), note: '', labels: {}, recorded: { stopwatch: 0, timer: 0 } };
+        if (!dailyRecords[todayKey].recorded) dailyRecords[todayKey].recorded = { stopwatch: 0, timer: 0 }; 
+        let type = timerMode === 'stopwatch' ? 'stopwatch' : 'timer'; if (timerMode === 'idle') type = 'timer'; 
+        dailyRecords[todayKey].recorded[type] += pendingRecordSec; 
         const inputText = $('smartRecordInput').value.trim(); const inputColor = $('smartRecordColor').value; const taskIdx = $('smartRecordModal').dataset.taskIdx;
-
+      
         // 🍅 뽀모도로 태그 선택됐으면 이름 앞에 붙이기
-        const pomoSelected = $('pomodoroTagBtn')?.dataset.selected === 'true';
-        const finalText = pomoSelected ? `🍅 ${$('pomodoroTagLabel').textContent} | ${inputText}` : inputText;
+          const pomoSelected = $('pomodoroTagBtn')?.dataset.selected === 'true';
+          const finalText = pomoSelected ? `🍅 ${$('pomodoroTagLabel').textContent} | ${inputText}` : inputText;
 
-        // ── 그리드 분할 색칠 ──
-        let prevOverflowBlocks = 0; // 전날로 넘어간 블록 수 (recorded 분배용)
+        // 🔥 이안님 요청: 타이머 기록 시 할 일 자동 체크(완료) 기능 제거! (이름과 색상만 복사해 옵니다)
+        // if (taskIdx !== '' && allTasks[todayKey][taskIdx]) allTasks[todayKey][taskIdx].isChecked = true;
+
         if ($('syncTrackerToggle').checked && finalText) {
-            let currentHour = now.getHours(); if (currentHour < 5) currentHour += 24; const currentMin = now.getMinutes();
-            const endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
-            let blocksToFill = Math.floor(pendingRecordSec / 600); if (blocksToFill < 1) blocksToFill = 1;
-            let startIdx = endIdx - blocksToFill + 1;
-
-            if (startIdx < 0) {
-                // 🔥 전날(5시 기준) 그리드 뒤쪽에 넘친 만큼 색칠
-                prevOverflowBlocks = -startIdx;
-                _ensureDay(prevKey);
-                const prevStart = Math.max(0, 144 - prevOverflowBlocks);
-                for (let i = prevStart; i < 144; i++) { dailyRecords[prevKey].grid[i] = inputColor; }
-                dailyRecords[prevKey].labels[prevStart] = { text: finalText, color: inputColor };
-                startIdx = 0;
-            }
-
+            const now = new Date(); let currentHour = now.getHours(); if (currentHour < 5) currentHour += 24; const currentMin = now.getMinutes();
+            let endIdx = (currentHour - 5) * 6 + Math.floor(currentMin / 10);
+            let blocksToFill = Math.floor(pendingRecordSec / 600); if (blocksToFill < 1) blocksToFill = 1; let startIdx = Math.max(0, endIdx - blocksToFill + 1);
             for (let i = startIdx; i <= endIdx; i++) { dailyRecords[todayKey].grid[i] = inputColor; }
+            if (!dailyRecords[todayKey].labels) dailyRecords[todayKey].labels = {};
             dailyRecords[todayKey].labels[startIdx] = { text: finalText, color: inputColor };
         }
-
-        // ── recorded(총 기록 시간) 날짜별 비례 분배 ──
-        if (prevOverflowBlocks > 0) {
-            const prevSec = Math.min(pendingRecordSec, prevOverflowBlocks * 600);
-            dailyRecords[prevKey].recorded[type] += prevSec;
-            dailyRecords[todayKey].recorded[type] += (pendingRecordSec - prevSec);
-        } else {
-            dailyRecords[todayKey].recorded[type] += pendingRecordSec;
-        }
-
         savePlannerData(); saveAndRefresh(); updateRecordDisplay(); resetTimer(); renderTimerHistory(); 
         if (currentPlannerDateKey === todayKey) { updateModalRecordDisplay(todayKey); renderTimeGrid(todayKey); renderPlannerTasks(todayKey); }
-        if (currentPlannerDateKey === prevKey) { updateModalRecordDisplay(prevKey); renderTimeGrid(prevKey); renderPlannerTasks(prevKey); }
         $('smartRecordModal').classList.add('hidden');
     }
 
@@ -3759,7 +3610,7 @@ function loadFromCloud() {
     function openPlanner(dateKey, dateObj) {
       currentPlannerDateKey = dateKey; $('plannerTitle').textContent = `Day ${dateObj.getDate()}`; $('plannerSubtitle').textContent = `${dateObj.getFullYear()} . ${String(dateObj.getMonth() + 1).padStart(2, '0')} . ${String(dateObj.getDate()).padStart(2, '0')}`;
       if(!dailyRecords[dateKey]) dailyRecords[dateKey] = { grid: Array(144).fill(null), note: '', labels: {} }; if(!dailyRecords[dateKey].labels) dailyRecords[dateKey].labels = {}; 
-      $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden'); _lockScroll();
+      $('plannerNote').value = dailyRecords[dateKey].note; activeBrushColor = null; updateModalRecordDisplay(dateKey); renderPlannerTasks(dateKey); renderTimeGrid(dateKey); $('dailyPlannerModal').classList.remove('hidden');
       if(window.innerWidth < 768 && window.switchDpTab) switchDpTab('tracker');
       
       // 🔥 [추가] 모달이 열리면 뒷배경 스크롤을 꽁꽁 얼려버립니다!
@@ -3768,8 +3619,10 @@ function loadFromCloud() {
     
     function closePlanner() { 
       $('dailyPlannerModal').classList.add('hidden'); 
-      currentPlannerDateKey = null;
-      _unlockScroll();
+      currentPlannerDateKey = null; 
+      
+      // 🔥 [추가] 모달이 닫히면 뒷배경 스크롤을 다시 부드럽게 풀어줍니다!
+      document.body.style.overflow = '';
     }
     function renderPlannerTasks(dateKey) { 
         const list = $('plannerTaskList'); 
@@ -4503,50 +4356,6 @@ function renderTimeGrid(dateKey) {
     }
 
     function exportData() { navigator.clipboard.writeText(btoa(encodeURIComponent(JSON.stringify({ allTasks, multiTasks, categories, trackerColors, memo: localStorage.getItem('ianMemo'), dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos, repeatTasks })))); alert("데이터 백업 완료 (클립보드 복사됨)"); }
-
-    // ✅ 자동 백업 (24시간 주기)
-    function _generateBackupCode() {
-        return btoa(encodeURIComponent(JSON.stringify({
-            allTasks, multiTasks, categories, trackerColors,
-            memo: localStorage.getItem('ianMemo'),
-            dailyRecords, inboxTasks, weeklyMemos, weeklyHabits, extendedMemos, repeatTasks
-        })));
-    }
-
-    function checkAutoBackup() {
-        const stored = localStorage.getItem('ianAutoBackup');
-        const lastAt = stored ? (JSON.parse(stored).savedAt || 0) : 0;
-        if (Date.now() - lastAt >= 24 * 60 * 60 * 1000) {
-            triggerAutoBackup();
-        } else {
-            updateAutoBackupUI();
-        }
-    }
-
-    function triggerAutoBackup() {
-        try {
-            const code = _generateBackupCode();
-            localStorage.setItem('ianAutoBackup', JSON.stringify({ code, savedAt: Date.now() }));
-            updateAutoBackupUI();
-        } catch(e) { console.error('자동 백업 실패:', e); }
-    }
-
-    function updateAutoBackupUI() {
-        const el = document.getElementById('autoBackupTime');
-        if (!el) return;
-        const stored = localStorage.getItem('ianAutoBackup');
-        if (!stored) { el.textContent = '백업 없음'; return; }
-        const { savedAt } = JSON.parse(stored);
-        const d = new Date(savedAt);
-        el.textContent = `마지막 백업: ${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} (24시간마다 자동 저장)`;
-    }
-
-    function copyAutoBackup() {
-        const stored = localStorage.getItem('ianAutoBackup');
-        if (!stored) { alert('저장된 자동 백업이 없습니다. 지금 백업을 먼저 실행해 주세요.'); return; }
-        const { code } = JSON.parse(stored);
-        navigator.clipboard.writeText(code).then(() => alert('자동 백업 코드 복사 완료!\n데이터 복원에서 붙여넣기 하시면 돼요 😊'));
-    }
     function addNewCategory() { 
         if (categories.length >= 14) {
             alert("카테고리는 최대 14개까지만 만들 수 있습니다! 😅");
@@ -4656,7 +4465,6 @@ function renderTimeGrid(dateKey) {
         $('catHueSlider').value = Math.round(_catPicker.hue);
         $('catColorPreview').style.backgroundColor = _catPickerTempColor;
         $('catColorPickerModal').classList.remove('hidden');
-        _lockScroll();
         _attachCatCanvasEvents();
         requestAnimationFrame(() => requestAnimationFrame(() => _drawCatCanvas()));
     }
@@ -4664,9 +4472,6 @@ function renderTimeGrid(dateKey) {
     function closeCatColorPicker() {
         $('catColorPickerModal').classList.add('hidden');
         _catPickerTargetId = null;
-        // touch-through 방지: 잠시 pointer-events 차단 후 스크롤 해제
-        document.body.style.pointerEvents = 'none';
-        setTimeout(() => { document.body.style.pointerEvents = ''; _unlockScroll(); }, 300);
     }
 
     function applyCatColor() {
@@ -4721,14 +4526,7 @@ function renderTimeGrid(dateKey) {
         if (mode === 'editSingle' && data && data.dateKey) editData._origDateKey = data.dateKey;
         if (mode.includes('create')) $('modalDeleteBtn').style.display = 'none'; else $('modalDeleteBtn').style.display = 'block'; 
         if (data && data.categoryId) selectedCategoryId = data.categoryId; else selectedCategoryId = categories.length > 0 ? categories[0].id : 'cat1'; 
-        $('eventModal').classList.remove('hidden'); _lockScroll();
-
-        // ✅ [버그수정] createSingle 모드에서 이전 반복 설정이 남아있지 않도록 초기화
-        if (mode === 'createSingle') {
-            currentRepeatType = null; currentRepeatDays = []; currentRepeatEndDate = null;
-            const _rp = $('repeatPanel'); if (_rp) _rp.classList.add('hidden');
-            const _rl = $('repeatToggleLabel'); if (_rl) _rl.textContent = '반복 없음';
-        }
+        $('eventModal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; document.body.style.touchAction = 'none';
         
         $('modalInput').value = (data && data.text) ? data.text : ''; 
         // 세부 메모장 값 세팅
@@ -4754,7 +4552,7 @@ function renderTimeGrid(dateKey) {
         if (editData) editData.dateKey = normalized;
     };
     
-    function closeModal() { $('eventModal').classList.add('hidden'); _unlockScroll(); }
+    function closeModal() { $('eventModal').classList.add('hidden'); document.body.style.overflow = ''; document.body.style.touchAction = ''; }
     // 🔁 반복 일정 상태
     let currentRepeatType = null, currentRepeatDays = [], currentRepeatEndDate = null;
 
@@ -4823,7 +4621,7 @@ function renderTimeGrid(dateKey) {
         const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
         $('detailTitle').textContent = `${date.getMonth() + 1}월 ${date.getDate()}일 ${dayNames[date.getDay()]}`; 
         l.innerHTML = ''; 
-        m.classList.remove('hidden'); _lockScroll();
+        m.classList.remove('hidden'); document.body.style.overflow = 'hidden'; document.body.style.touchAction = 'none';
 
         // 바깥 블러 배경 터치 → 닫기
         m.onclick = (e) => { if (e.target === m) closeDetailModal(); };
@@ -4921,7 +4719,7 @@ function renderTimeGrid(dateKey) {
             openModal('createSingle', { dateKey: key }); 
         }; 
     }
-    function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); _unlockScroll(); }
+    function closeDetailModal() { $('mobileDetailModal').classList.add('hidden'); document.body.style.overflow = ''; document.body.style.touchAction = ''; }
 
     // 🔥 [수정됨] 저장 버튼을 누를 때 세부 내용(description)도 묶어서 클라우드에 전송
     $('modalSaveBtn').onclick = () => {
@@ -5333,10 +5131,10 @@ function renderTimeGrid(dateKey) {
          }
          col.appendChild(body); gridContainer.appendChild(col);
       }
-      $('weeklyPlannerModal').classList.remove('hidden'); _lockScroll();
+      $('weeklyPlannerModal').classList.remove('hidden');
     }
 
-    function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); _unlockScroll(); isHabitEditMode = false; const btn = $('habitEditBtn'); if(btn) btn.textContent = '- 삭제'; 
+    function closeWeeklyPlanner() { $('weeklyPlannerModal').classList.add('hidden'); isHabitEditMode = false; const btn = $('habitEditBtn'); if(btn) btn.textContent = '- 삭제'; 
                                   document.body.style.overflow = '';}
 
     // 📅 [위클리] 버튼 클릭 시 현재 주차 열기
@@ -5397,58 +5195,6 @@ function renderTimeGrid(dateKey) {
         if (scoreEl) { const score = totalBoxes > 0 ? Math.round((checkedBoxes / totalBoxes) * 100) : 0; scoreEl.textContent = score + '%'; }
     }
 
-    // 🔥 [iOS] 입력 중인 커서가 키보드에 가려지지 않게 스크롤 자동 조정
-    function _extKeepCursorVisible() {
-        const wrap = $('extMemoScrollWrap');
-        if (!wrap) return;
-        requestAnimationFrame(() => {
-            const sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return;
-            let rect = sel.getRangeAt(0).getBoundingClientRect();
-            if (!rect || (rect.top === 0 && rect.bottom === 0)) {
-                // 빈 줄 등 rect를 못 구하면 커서가 있는 요소 기준으로 대체
-                const node = sel.focusNode;
-                const el = node && (node.nodeType === 1 ? node : node.parentElement);
-                if (el && el.getBoundingClientRect) rect = el.getBoundingClientRect();
-            }
-            if (!rect) return;
-            const vv = window.visualViewport;
-            // 키보드 위 안전선: visualViewport 하단에서 60px 여유
-            const safeBottom = (vv ? vv.offsetTop + vv.height : window.innerHeight) - 60;
-            if (rect.bottom > safeBottom) {
-                wrap.scrollTop += (rect.bottom - safeBottom);
-            }
-        });
-    }
-    // 🔥 [iOS 핵심] 키보드가 올라오면 메모 모달 높이를 키보드 위 영역으로 축소
-    // → 입력 영역 하단 = 키보드 상단이 되어 커서가 키보드 뒤로 갈 수 없음
-    function _adjustExtMemoHeight() {
-        // 🔥 [방식 변경] 모달 크기 조정 대신, 스크롤 영역 바닥에 키보드 높이만큼 여백 추가
-        // → 스크롤 최대치가 키보드만큼 늘어나 마지막 줄이 항상 키보드 위까지 올라올 수 있음
-        // → iOS가 화면을 밀어도 스크롤 범위 자체가 확보되어 있어 영향 없음
-        const wrap = $('extMemoScrollWrap');
-        if (!wrap) return;
-        const vv = window.visualViewport;
-        const kbHeight = vv ? Math.max(0, window.innerHeight - vv.height) : 0;
-        if (kbHeight > 50) {
-            wrap.style.paddingBottom = (kbHeight + 40) + 'px'; // 키보드 높이 + 여유 40px
-        } else {
-            wrap.style.paddingBottom = '';
-        }
-    }
-    // 키보드 열림/닫힘(resize) + iOS 화면 밀림(scroll) 모두 감지 → 위치/높이 조정 + 커서 보정
-    if (window.visualViewport) {
-        const _extVVHandler = () => {
-            const m = $('extendedMemoModal');
-            if (m && !m.classList.contains('hidden')) {
-                _adjustExtMemoHeight();
-                _extKeepCursorVisible();
-            }
-        };
-        window.visualViewport.addEventListener('resize', _extVVHandler);
-        window.visualViewport.addEventListener('scroll', _extVVHandler);
-    }
-
     function renderExtMemoButtons() { for(let i=0; i<4; i++) { const btn = $('extMemoBtn' + i); if(btn && extendedMemos[i]) { btn.textContent = extendedMemos[i].title || `메모 ${i+1}`; } } }
     function openExtendedMemo(index) {
         currentExtMemoIndex = index;
@@ -5458,16 +5204,9 @@ function renderTimeGrid(dateKey) {
         el.innerHTML = rawContent.includes('<') ? rawContent : rawContent.split('\n').join('<br>');
         if (!el.innerHTML.trim()) el.classList.add('ext-memo-empty');
         else el.classList.remove('ext-memo-empty');
-        $('extendedMemoModal').classList.remove('hidden'); _lockScroll();
+        $('extendedMemoModal').classList.remove('hidden');
     }
-    function closeExtendedMemo() {
-        const m = $('extendedMemoModal');
-        m.classList.add('hidden');
-        // 키보드 대응으로 변경했던 높이 복원
-        const _wrap = $('extMemoScrollWrap'); if (_wrap) _wrap.style.paddingBottom = '';
-        _unlockScroll();
-        currentExtMemoIndex = null;
-    }
+    function closeExtendedMemo() { $('extendedMemoModal').classList.add('hidden'); currentExtMemoIndex = null; }
     function updateExtMemoTitle(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].title = val; setLocal('ianExtendedMemos', extendedMemos); const btn = $('extMemoBtn' + currentExtMemoIndex); if(btn) btn.textContent = val || `메모 ${currentExtMemoIndex+1}`; } }
     function updateExtMemoContent(val) { if (currentExtMemoIndex !== null) { extendedMemos[currentExtMemoIndex].content = val; setLocal('ianExtendedMemos', extendedMemos); } }
     function updateExtMemoContentDiv() {
@@ -5577,10 +5316,7 @@ function renderCalendar() {
       const slots = [];
       filteredMulti.sort((a, b) => new Date(a.start) - new Date(b.start)).forEach(t => { let slot = slots.findIndex(s => new Date(t.start) > new Date(s)); if (slot === -1) { slot = slots.length; slots.push(t.end); } else slots[slot] = t.end; t.slot = slot; });
 
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-
-      for (let i = 0; i < totalCells; i++) {
+      for (let i = 0; i < 42; i++) {
         const d = new Date(year, month, i - firstDay + 1); const key = getDateKey(d);
         const isWeekend = d.getDay() === 0 || d.getDay() === 6; 
 
@@ -5877,9 +5613,8 @@ function renderCalendar() {
         let maxSlotInCell = -1;
         filteredMulti.forEach(t => {
           if (isDateBetween(d, t.start, t.end)) {
-            maxSlotInCell = Math.max(maxSlotInCell, t.slot); const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const _isMobileCal = window.innerWidth < 768; const _slotH = _isMobileCal ? 20 : 25; const bar = document.createElement('div'); bar.className = `absolute ${_isMobileCal ? 'h-5' : 'h-6'} left-0 right-0 multi-task flex items-center justify-center pointer-events-none`; bar.style.bottom = `${t.slot * _slotH + 4}px`; bar.setAttribute('data-multi-id', t.id);
-            const _li = _getMultiLabelInfo(t);
-            const showLabel = (key === _li.key); bar.style.zIndex = showLabel ? '50' : '10';
+            maxSlotInCell = Math.max(maxSlotInCell, t.slot); const cat = categories.find(c => c.id === t.categoryId) || categories[0]; const bar = document.createElement('div'); bar.className = 'absolute h-6 left-0 right-0 multi-task flex items-center justify-center pointer-events-none'; bar.style.bottom = `${t.slot * 25 + 4}px`; bar.setAttribute('data-multi-id', t.id);
+            const isStartOrSunday = (key === t.start || d.getDay() === 0); bar.style.zIndex = isStartOrSunday ? '50' : '10';
             
             // 🔥 달력 위 다중 일정 메모 아이콘 표시!
             const descIcon = (t.description && t.description.trim() !== '') ? '<span class="ml-1 text-[10px] opacity-70" title="메모 있음">📝</span>' : '';
@@ -5888,36 +5623,15 @@ function renderCalendar() {
             if (key === t.start) innerHTML += `<svg class="w-4 h-4 absolute left-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'start')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7z"/></svg><div class="resize-handle resize-handle-start pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'start')"></div>`;
             innerHTML += `<div class="h-[1.5px] opacity-50 absolute" style="background-color: ${cat.color}; left: ${key === t.start ? '8px' : '0'}; right: ${key === t.end ? '8px' : '0'};"></div>`;
             if (key === t.end) innerHTML += `<svg class="w-4 h-4 absolute right-0 pointer-events-auto cursor-col-resize z-[100]" onpointerdown="startResize(event, '${t.id}', 'end')" style="fill: ${cat.color}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7z"/></svg><div class="resize-handle resize-handle-end pointer-events-auto" onpointerdown="startResize(event, '${t.id}', 'end')"></div>`;
-            if (showLabel) { innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-1.5 py-0 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)}; min-width: 0; max-width: calc(${_li.len * 100}% - 24px); overflow: hidden;" draggable="true" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[8px] md:text-[12px] text-black leading-none" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.text}${descIcon}</span></div>`; }
+            if (isStartOrSunday) { innerHTML += `<div class="multi-task-text-container grab-handle pointer-events-auto px-2 py-0.5 rounded-md flex items-center justify-center" style="border: 1px solid ${hexToRgba(cat.color, 0.5)};" draggable="true" ondragstart="startMultiDrag(event, '${t.id}')"><div class="multi-task-color-overlay" style="background-color: ${cat.color};"></div><span class="relative text-[11px] md:text-[12px] pt-px text-black leading-none">${t.text}${descIcon}</span></div>`; }
             innerHTML += `</div>`; bar.innerHTML = innerHTML; bar.onclick = (e) => { e.stopPropagation(); if (!isResizing) openModal('editMulti', t); }; cell.appendChild(bar);
           }
         });
-        cell.style.paddingBottom = maxSlotInCell >= 0 ? `${(maxSlotInCell + 1) * (window.innerWidth < 768 ? 20 : 25) + 8}px` : '4px'; calendar.appendChild(cell);
+        cell.style.paddingBottom = maxSlotInCell >= 0 ? `${(maxSlotInCell + 1) * 25 + 8}px` : '4px'; calendar.appendChild(cell);
       }
     }
 
     window.goToToday = function() { displayDate = new Date(); renderCalendar(); };
-
-    // 🔥 긴 일정 라벨 위치 계산: 주 단위로 나뉘는 구간 중 가장 긴 구간의 시작 키 반환
-    function _getMultiLabelInfo(t) {
-        const mondayStart = localStorage.getItem('ianMondayStart') === '1';
-        const ws = mondayStart ? 1 : 0; // 주 시작 요일
-        const s = parseLocalDate(t.start), e = parseLocalDate(t.end);
-        let best = new Date(s), bestLen = 0;
-        let segStart = new Date(s), len = 0;
-        let cur = new Date(s);
-        while (cur <= e) {
-            len++;
-            const next = new Date(cur); next.setDate(next.getDate() + 1);
-            const segEnds = (next.getDay() === ws) || (cur.getTime() === e.getTime());
-            if (segEnds) {
-                if (len > bestLen) { bestLen = len; best = new Date(segStart); }
-                segStart = new Date(next); len = 0;
-            }
-            cur = next;
-        }
-        return { key: getDateKey(best), len: bestLen };
-    }
 
     // 긴 일정 우클릭 복제
     function handleMultiDuplicate(id) {
@@ -6274,7 +5988,7 @@ function renderMemoFolders() {
         $('feedbackWarningText').textContent = `접속하신 구글 이메일(${currentUser.email})이 함께 전송됩니다. 악의적인 비방 시 서비스 이용이 제한됩니다.`;
         
         $('feedbackContent').value = ''; // 창 열 때마다 내용 깔끔하게 비우기
-        $('feedbackModal').classList.remove('hidden'); _lockScroll();
+        $('feedbackModal').classList.remove('hidden');
 
         // 🔴 우체통을 열면 겉(톱니바퀴)과 속(우체통)의 빨간 점을 모두 끕니다!
         const outerDot = document.getElementById('feedbackNotification');
@@ -6285,7 +5999,7 @@ function renderMemoFolders() {
 
     // ❌ 피드백 모달 닫기
     function closeFeedbackModal() {
-        $('feedbackModal').classList.add('hidden'); _unlockScroll();
+        $('feedbackModal').classList.add('hidden');
     }
 
     // 🚀 피드백 파이어베이스로 쏘기!
@@ -7239,14 +6953,13 @@ function renderMemoFolders() {
         syncToCloud(); // 월요일 시작 설정 클라우드 동기화
     };
     window.openSettingsModal = function() {
-        document.getElementById('settingsModal').classList.remove('hidden'); _lockScroll();
+        document.getElementById('settingsModal').classList.remove('hidden');
         updateDarkModeToggleUI();
         updateMondayStartUI();
-        updateAutoBackupUI();
     };
     // 초기 복원
     (function() { updateMondayStartUI(); })();
-    window.closeSettingsModal = function() { document.getElementById('settingsModal').classList.add('hidden'); _unlockScroll(); };
+    window.closeSettingsModal = function() { document.getElementById('settingsModal').classList.add('hidden'); };
 
     // 🌙 다크모드
     function applyDarkMode(isDark) {
@@ -8402,7 +8115,7 @@ function renderMemoFolders() {
   </script>
 
   <!-- 📐 메모 레이아웃 선택 모달 -->
-  <div id="memoLayoutModal" class="hidden fixed inset-0 z-[9300] flex items-center justify-center">
+  <div id="memoLayoutModal" class="hidden fixed inset-0 z-[9300] flex items-center justify-center md:items-center md:justify-center items-end justify-center">
     <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeMemoLayoutModal()"></div>
     <div class="relative bg-[#faf8f5] rounded-2xl w-full max-w-[260px] p-4 shadow-2xl border border-[#e6e2d8]
                 md:rounded-2xl md:max-w-[260px] md:p-4
