@@ -1467,8 +1467,14 @@
                       <span id="weeklyBackupChevron" class="text-gray-400 text-[11px] font-black transition-transform duration-200 flex-shrink-0">▼</span>
                   </button>
                   <div id="weeklyBackupAccordion" class="hidden px-4 pb-4">
-                      <div id="weeklyBackupList" class="flex flex-col gap-2">
-                          <div class="text-[11px] text-gray-300 font-bold text-center py-2">불러오는 중...</div>
+                      <!-- 가로 동그라미 요일 배열 -->
+                      <div id="weeklyBackupDots" class="flex justify-between mb-3">
+                          <div class="text-[11px] text-gray-300 font-bold text-center py-2 w-full">불러오는 중...</div>
+                      </div>
+                      <!-- 선택된 요일 상세 -->
+                      <div id="weeklyBackupDetail" class="hidden bg-gray-50 rounded-xl p-3 flex items-center justify-between">
+                          <span id="weeklyBackupDetailText" class="text-[11px] font-bold text-gray-600"></span>
+                          <button id="weeklyBackupRestoreBtn" class="text-[10px] font-black text-[#22741C] border border-[#22741C] rounded-lg px-2.5 py-1 hover:bg-[#22741C] hover:text-white transition-all active:scale-95">복원</button>
                       </div>
                   </div>
               </div>
@@ -7010,35 +7016,42 @@ function renderMemoFolders() {
 
     function loadWeeklyBackups() {
         if (!currentUser) return;
-        const list = document.getElementById('weeklyBackupList');
-        if (!list) return;
-        list.innerHTML = '<div class="text-[11px] text-gray-300 font-bold text-center py-2">불러오는 중...</div>';
+        const dots = $('weeklyBackupDots');
+        if (!dots) return;
+        dots.innerHTML = '<div class="text-[11px] text-gray-300 font-bold text-center py-2 w-full">불러오는 중...</div>';
+        $('weeklyBackupDetail').classList.add('hidden');
         db.collection('users').doc(currentUser.email).collection('weeklyBackups').get().then(snap => {
             const backups = {};
             snap.forEach(doc => { backups[doc.id] = doc.data(); });
-            list.innerHTML = '';
+            dots.innerHTML = '';
             WEEK_DAYS.forEach(day => {
                 const b = backups[day];
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between py-2 border-b border-gray-50 last:border-0';
-                if (b) {
-                    row.innerHTML = `
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-[#22741C] text-white text-[10px] font-black flex items-center justify-center">${WEEK_LABELS[day]}</span>
-                            <span class="text-[11px] font-bold text-gray-600">${b.savedAt || b.date || '-'}</span>
-                        </div>
-                        <button onclick="restoreWeeklyBackup('${day}')" class="text-[10px] font-black text-[#22741C] border border-[#22741C] rounded-lg px-2.5 py-1 hover:bg-[#22741C] hover:text-white transition-all active:scale-95">복원</button>`;
-                } else {
-                    row.innerHTML = `
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-gray-100 text-gray-300 text-[10px] font-black flex items-center justify-center">${WEEK_LABELS[day]}</span>
-                            <span class="text-[11px] font-bold text-gray-300">백업 없음</span>
-                        </div>`;
-                }
-                list.appendChild(row);
+                const col = document.createElement('div');
+                col.className = 'flex flex-col items-center gap-1 cursor-pointer';
+                const circle = document.createElement('div');
+                circle.className = 'w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-black transition-all active:scale-95 ' + (b ? 'bg-[#22741C] text-white shadow-sm' : 'bg-gray-100 text-gray-300');
+                circle.textContent = WEEK_LABELS[day];
+                const label = document.createElement('div');
+                label.className = 'text-[9px] font-bold ' + (b ? 'text-[#22741C]' : 'text-gray-200');
+                label.textContent = b ? '있음' : '없음';
+                col.appendChild(circle);
+                col.appendChild(label);
+                col.onclick = () => {
+                    dots.querySelectorAll('div > div:first-child').forEach(c => c.style.outline = '');
+                    if (b) {
+                        circle.style.outline = '3px solid #22741C';
+                        circle.style.outlineOffset = '2px';
+                        $('weeklyBackupDetailText').textContent = `${WEEK_LABELS[day]}요일 · ${b.savedAt || b.date}`;
+                        $('weeklyBackupRestoreBtn').onclick = () => restoreWeeklyBackup(day);
+                        $('weeklyBackupDetail').classList.remove('hidden');
+                    } else {
+                        $('weeklyBackupDetail').classList.add('hidden');
+                    }
+                };
+                dots.appendChild(col);
             });
-        }).catch(e => {
-            list.innerHTML = '<div class="text-[11px] text-red-300 font-bold text-center py-2">불러오기 실패</div>';
+        }).catch(() => {
+            dots.innerHTML = '<div class="text-[11px] text-red-300 font-bold text-center py-2 w-full">불러오기 실패</div>';
         });
     }
 
@@ -7076,12 +7089,18 @@ function renderMemoFolders() {
 
     window.openSettingsModal = function() {
         document.getElementById('settingsModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
         updateDarkModeToggleUI();
         updateMondayStartUI();
     };
     // 초기 복원
     (function() { updateMondayStartUI(); })();
-    window.closeSettingsModal = function() { document.getElementById('settingsModal').classList.add('hidden'); };
+    window.closeSettingsModal = function() {
+        document.getElementById('settingsModal').classList.add('hidden');
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+    };
 
     // 🌙 다크모드
     function applyDarkMode(isDark) {
