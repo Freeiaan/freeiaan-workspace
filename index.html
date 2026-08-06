@@ -1639,6 +1639,7 @@ document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && currentUser) {
         clearTimeout(syncTimeout);
         _syncNow();
+        checkWeeklyBackup(); // ✅ 앱 닫힐 때 오늘 백업 없으면 자동 저장
     }
 });
 
@@ -2647,7 +2648,6 @@ function loadFromCloud() {
 
         const memoArea = document.getElementById('memoArea'); 
         if(memoArea) { memoArea.value = localStorage.getItem('ianMemo') || ''; memoArea.oninput = () => { localStorage.setItem('ianMemo', memoArea.value); syncToCloud(); }; }
-        checkWeeklyBackup();
     }
 
     function toggleDrawer() {
